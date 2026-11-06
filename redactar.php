@@ -32,7 +32,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     <title><?= htmlspecialchars($tpl['nombre']) ?> | SinNotario.cl</title>
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=20261106_4">
     <style>
         .wizard-container {
             display: grid;
@@ -524,27 +524,49 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js"></script>
+    <script src="assets/js/app.js?v=20261106_4"></script>
     <script>
+        // Funciones auxiliares seguras locales
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.toString()
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         const CURRENT_TEMPLATE = <?= json_encode($tpl, JSON_UNESCAPED_UNICODE) ?>;
         let currentStep = 1;
         const isUnipersonal = ['declaracion-jurada-residencia', 'declaracion-jurada-ingresos-informales', 'salvoconducto-mudanza', 'autorizacion-domicilio-tributario-sii'].includes(CURRENT_TEMPLATE.slug);
 
-        document.addEventListener('DOMContentLoaded', () => {
+        function initUniversalWizard() {
             setupTemplateFields();
 
-            // Rut validation setup
+            // Rut validation setup defensivo
             const rutA = document.getElementById('f_parte_a_rut');
             const errA = document.getElementById('err_parte_a_rut');
-            RutHelper.attachToInput(rutA, errA);
+            if (rutA && typeof RutHelper !== 'undefined') {
+                RutHelper.attachToInput(rutA, errA);
+            }
 
             const rutB = document.getElementById('f_parte_b_rut');
             const errB = document.getElementById('err_parte_b_rut');
-            if (rutB) RutHelper.attachToInput(rutB, errB);
+            if (rutB && typeof RutHelper !== 'undefined') {
+                RutHelper.attachToInput(rutB, errB);
+            }
 
             bindUniversalPreviewSync();
             updateUniversalPreview();
-        });
+        }
+
+        // Ejecución inmediata o diferida según estado del DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initUniversalWizard);
+        } else {
+            initUniversalWizard();
+        }
 
         function setupTemplateFields() {
             const specificWrap = document.getElementById('dynamicSpecificFields');
@@ -566,6 +588,39 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
             let fieldsHtml = '';
 
             switch (CURRENT_TEMPLATE.slug) {
+                case 'contrato-arriendo-ley-21461':
+                    fieldsHtml = `
+                        <div class="form-group">
+                            <label>Dirección del Inmueble a Arrendar *</label>
+                            <input type="text" id="f_arr_direccion" class="form-control" value="Av. Providencia 1234, Depto 402, Providencia">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Renta Mensual de Arriendo ($ CLP) *</label>
+                                <input type="number" id="f_arr_renta" class="form-control" value="650000">
+                            </div>
+                            <div class="form-group">
+                                <label>Garantía de Arriendo ($ CLP) *</label>
+                                <input type="number" id="f_arr_garantia" class="form-control" value="650000">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Día de Pago Mensual (1 al 31) *</label>
+                                <input type="number" id="f_arr_dia_pago" class="form-control" value="5" min="1" max="31">
+                            </div>
+                            <div class="form-group">
+                                <label>Duración del Contrato (Meses) *</label>
+                                <input type="number" id="f_arr_duracion" class="form-control" value="12">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre y RUT del Aval / Codeudor Solidario (Opcional)</label>
+                            <input type="text" id="f_arr_aval" class="form-control" placeholder="Ej: Carlos Silva - 11.222.333-4">
+                        </div>
+                    `;
+                    break;
+
                 case 'promesa-compraventa-inmueble':
                     fieldsHtml = `
                         <div class="form-group">
@@ -796,7 +851,27 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     <p>Las partes mayores de edad acuerdan celebrar el presente instrumento privado bajo amparo de la Ley N° 19.799 con Firma Electrónica Avanzada.</p>
                 `;
 
-                if (CURRENT_TEMPLATE.slug === 'promesa-compraventa-inmueble') {
+                if (CURRENT_TEMPLATE.slug === 'contrato-arriendo-ley-21461') {
+                    const arrDir = document.getElementById('f_arr_direccion')?.value || 'Inmueble arrendado';
+                    const arrRenta = document.getElementById('f_arr_renta')?.value || '650000';
+                    const arrGarantia = document.getElementById('f_arr_garantia')?.value || '650000';
+                    const arrDia = document.getElementById('f_arr_dia_pago')?.value || '5';
+                    const arrDur = document.getElementById('f_arr_duracion')?.value || '12';
+                    const arrAval = document.getElementById('f_arr_aval')?.value || '';
+                    const rentaFmt = new Intl.NumberFormat('es-CL').format(arrRenta);
+                    const garFmt = new Intl.NumberFormat('es-CL').format(arrGarantia);
+                    html += `
+                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Inmueble, Renta y Vigencia (Ley 21.461)</div>
+                        <p>El Arrendador da en arrendamiento la propiedad ubicada en <span class="highlight-var">${escapeHtml(arrDir)}</span> por una renta mensual de <span class="highlight-var">$${rentaFmt} CLP</span> pagadera hasta el día <span class="highlight-var">${escapeHtml(arrDia)}</span> de cada mes, con garantía de <span class="highlight-var">$${garFmt} CLP</span> y duración de <span class="highlight-var">${escapeHtml(arrDur)} meses</span>.</p>
+                        <p style="margin-top:0.4rem; font-size:0.82rem; color:#475569;">Las partes se someten al procedimiento monitorio de restitución rápida consagrado en la Ley N° 21.461 'Devuélveme Mi Casa'.</p>
+                    `;
+                    if (arrAval.trim()) {
+                        html += `
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: Aval y Codeudor Solidario</div>
+                            <p>Comparece además como fiador, aval y codeudor solidario Don/Doña <span class="highlight-var">${escapeHtml(arrAval)}</span> quien se obliga a todas las prestaciones emanadas del contrato.</p>
+                        `;
+                    }
+                } else if (CURRENT_TEMPLATE.slug === 'promesa-compraventa-inmueble') {
                     const prop = document.getElementById('f_propiedad_dir')?.value || 'Inmueble prometido';
                     const precio = document.getElementById('f_precio_total')?.value || 'Precio convenido';
                     const arras = document.getElementById('f_arras')?.value || 'Monto arras';
@@ -840,20 +915,34 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
         }
 
         function nextUniversalStep(step) {
-            // Validar RUT parte A
+            // Formatear y validar RUT parte A
             if (currentStep === 1) {
-                const rut = document.getElementById('f_parte_a_rut').value;
-                if (!RutHelper.validate(rut)) {
-                    alert('Por favor ingresa un RUT válido con dígito verificador correcto.');
-                    document.getElementById('f_parte_a_rut').focus();
-                    return;
+                const inputRutA = document.getElementById('f_parte_a_rut');
+                if (inputRutA) {
+                    if (typeof RutHelper !== 'undefined') {
+                        inputRutA.value = RutHelper.format(inputRutA.value);
+                    }
+                    const rut = inputRutA.value;
+                    const isValid = typeof RutHelper !== 'undefined' ? RutHelper.validate(rut) : rut.length >= 8;
+                    if (!isValid) {
+                        alert('Por favor ingresa un RUT válido con dígito verificador correcto.');
+                        inputRutA.focus();
+                        return;
+                    }
                 }
             } else if (currentStep === 2 && !isUnipersonal) {
-                const rut = document.getElementById('f_parte_b_rut').value;
-                if (!RutHelper.validate(rut)) {
-                    alert('Por favor ingresa un RUT de Contraparte válido con dígito verificador correcto.');
-                    document.getElementById('f_parte_b_rut').focus();
-                    return;
+                const inputRutB = document.getElementById('f_parte_b_rut');
+                if (inputRutB) {
+                    if (typeof RutHelper !== 'undefined') {
+                        inputRutB.value = RutHelper.format(inputRutB.value);
+                    }
+                    const rut = inputRutB.value;
+                    const isValid = typeof RutHelper !== 'undefined' ? RutHelper.validate(rut) : rut.length >= 8;
+                    if (!isValid) {
+                        alert('Por favor ingresa un RUT de Contraparte válido con dígito verificador correcto.');
+                        inputRutB.focus();
+                        return;
+                    }
                 }
             }
 

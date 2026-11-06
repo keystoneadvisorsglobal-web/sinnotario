@@ -228,3 +228,23 @@
   - **Pruebas Validadas:**
     - Carga directa con HTTP/2 200 OK en `https://sinnotario.cl/terminos-condiciones.php` y `https://sinnotario.cl/politica-privacidad.php`.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
+
+---
+
+### Entrada: 2026-11-06 10:55:00 UTC-3
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0025`
+- **Resumen de la Ejecución:**
+  - **Diagnóstico y Corrección de Condición de Carrera en Wizard (`redactar.php`):**
+    1. Se diagnosticó que al cargar `<script src="assets/js/app.js"></script>` al final del `<body>`, en navegadores modernos el evento `DOMContentLoaded` ya había disparado (`document.readyState === 'interactive' | 'complete'`), lo que impedía que los listeners de formateo de RUT, actualización del preview y botones de navegación inicializaran.
+    2. Se implementó la rutina resiliente `initUniversalWizard()`, la cual valida si `document.readyState === 'loading'` para suscribirse al evento o se autoejecuta de inmediato en caso afirmativo.
+    3. Se expuso `window.RutHelper` y `window.escapeHtml` de forma global en `app.js` y se añadió una función local `escapeHtml()` de resguardo en `redactar.php` para prevenir cualquier excepción `ReferenceError` que bloquee el renderizado dinámico de la cláusula central (`#pv_dynamic_body_content`).
+    4. En `nextUniversalStep()`, se incorporó autoformateo defensivo previo a la validación para admitir tanto RUTs sin puntos ni guión (`109930318`) como formateados (`10.993.031-8`).
+    5. Se extendió el switch del Wizard y el previsualizador para cubrir explícitamente el Contrato de Arriendo Residencial Ley N° 21.461 (`contrato-arriendo-ley-21461`), Promesa de Compraventa (`promesa-compraventa-inmueble`) y la totalidad de los 13 trámites del catálogo.
+    6. Se inyectó versión de cache-busting `?v=20261106_4` tanto en `app.js` como en `style.css` para invalidar cachés agresivas en el servidor y navegadores.
+  - **Pruebas Validadas:**
+    - Verificación sintáctica remota (`php -l redactar.php` -> 0 errores).
+    - Carga directa con HTTP/2 200 OK en `https://sinnotario.cl/redactar.php?slug=promesa-compraventa-inmueble` y `https://sinnotario.cl/redactar.php?slug=contrato-arriendo-ley-21461`.
+    - Validación de flujo dinámico en consola JS simulada sin excepciones.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.

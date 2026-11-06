@@ -3,7 +3,7 @@
  */
 
 // Utilidad Oficial: Validación y Formato de RUT Chileno (Módulo 11)
-const RutHelper = {
+window.RutHelper = {
     clean(rut) {
         return typeof rut === 'string' ? rut.replace(/[^0-9kK]/g, '').toUpperCase() : '';
     },
@@ -47,12 +47,15 @@ const RutHelper = {
     },
     attachToInput(inputElement, errorElement) {
         if (!inputElement) return;
-        inputElement.addEventListener('input', (e) => {
+        
+        const handler = (e) => {
             const raw = e.target.value;
             const formatted = this.format(raw);
-            e.target.value = formatted;
+            if (e.type === 'blur' || e.type === 'change' || (raw && raw.length >= 8)) {
+                e.target.value = formatted;
+            }
             
-            const clean = this.clean(formatted);
+            const clean = this.clean(e.target.value);
             if (clean.length >= 8) {
                 const isValid = this.validate(clean);
                 if (isValid) {
@@ -71,9 +74,14 @@ const RutHelper = {
                 inputElement.classList.remove('rut-valid', 'rut-invalid');
                 if (errorElement) errorElement.style.display = 'none';
             }
-        });
+        };
+
+        inputElement.addEventListener('input', handler);
+        inputElement.addEventListener('blur', handler);
+        inputElement.addEventListener('change', handler);
     }
 };
+const RutHelper = window.RutHelper;
 
 // Catálogo de trámites prohibidos / exclusivos de Notaría (Detector Negativo)
 const NOTARY_EXCLUSIVE_KEYWORDS = [
@@ -340,7 +348,7 @@ function openWizard(slug) {
     window.location.href = `redactar.php?slug=${encodeURIComponent(slug)}`;
 }
 
-function escapeHtml(text) {
+window.escapeHtml = function(text) {
     if (!text) return '';
     return text.toString()
         .replace(/&/g, '&amp;')
@@ -348,4 +356,7 @@ function escapeHtml(text) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+};
+function escapeHtml(text) {
+    return window.escapeHtml(text);
 }
