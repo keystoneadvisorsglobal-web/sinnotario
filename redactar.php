@@ -557,7 +557,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js?v=20261106_12"></script>
+    <script src="assets/js/app.js?v=20261106_13"></script>
     <script>
         // Funciones auxiliares seguras locales
         function escapeHtml(text) {
@@ -726,6 +726,29 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
             updateUniversalPreview();
         }
 
+        function toggleMudanzaFields() {
+            const sel = document.getElementById('f_mud_modalidad');
+            if (!sel) return;
+            const val = sel.value;
+            const wrapB = document.getElementById('wrap_mud_opcion_b');
+            const wrapC = document.getElementById('wrap_mud_opcion_c');
+            const help = document.getElementById('mud_modalidad_help');
+
+            if (wrapB) wrapB.style.display = (val === 'opcion_b') ? 'block' : 'none';
+            if (wrapC) wrapC.style.display = (val === 'opcion_c') ? 'block' : 'none';
+
+            if (help) {
+                if (val === 'opcion_a') {
+                    help.innerText = 'Formato estándar Ley N° 20.227 con declaración de dominio o arriendo al día, datos de vehículo y chofer, sin impedimentos (5 cláusulas).';
+                } else if (val === 'opcion_b') {
+                    help.innerText = 'Traslado interregional de larga distancia con desglose de bultos mayores y artefactos electrónicos para controles de Carabineros/SAG (6 cláusulas).';
+                } else if (val === 'opcion_c') {
+                    help.innerText = 'Mudanza corporativa / empresarial: traslado de activos fijos, mobiliario, servidores y archivos entre sucursales (5 cláusulas).';
+                }
+            }
+            updateUniversalPreview();
+        }
+
         // Ejecución inmediata o diferida según estado del DOM
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initUniversalWizard);
@@ -887,6 +910,18 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                 document.getElementById('f_parte_b_profesion').value = 'Rep. Legal: María José Valenzuela, C.I. 15.444.555-6';
                 document.getElementById('f_parte_b_domicilio').value = 'Av. Providencia 1234, Depto 402';
                 document.getElementById('f_parte_b_comuna').value = 'Providencia, Santiago';
+            } else if (CURRENT_TEMPLATE.slug === 'salvoconducto-mudanza') {
+                document.getElementById('lblStep1').innerText = 'Declarante';
+                document.getElementById('lblStep2').innerText = 'Datos Destino';
+                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Declarante / Propietario de Enseres';
+                document.getElementById('step1Desc').innerText = 'Identificación de la persona natural o jurídica que realiza el traslado de muebles y enseres.';
+                document.getElementById('lbl_parte_a_nombre').innerText = 'Nombre Completo o Razón Social *';
+                document.getElementById('f_parte_a_nombre').value = 'Juan Andrés Pérez González';
+                document.getElementById('f_parte_a_rut').value = '12.345.678-5';
+                document.getElementById('f_parte_a_civil').value = 'chileno, soltero';
+                document.getElementById('f_parte_a_profesion').value = 'Ingeniero Comercial';
+                document.getElementById('f_parte_a_domicilio').value = 'Av. Grecia 1234, Depto 301';
+                document.getElementById('f_parte_a_comuna').value = 'Ñuñoa, Santiago';
             }
             let fieldsHtml = '';
 
@@ -1262,24 +1297,102 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                 case 'salvoconducto-mudanza':
                     fieldsHtml = `
+                        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#166534;">
+                            <i class="fas fa-truck-moving"></i> <strong>Declaración Jurada de Traslado de Enseres / Mudanza (Ley N° 20.227)</strong>:
+                            Documento legal obligatorio para el transporte de muebles y enseres domésticos o corporativos, acreditable ante Carabineros de Chile y controles carreteros.
+                        </div>
+
+                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad de Traslado / Mudanza *</label>
+                            <select id="f_mud_modalidad" class="form-control" onchange="toggleMudanzaFields()" style="font-weight:600; border-color:#059669;">
+                                <option value="opcion_a" selected>Opción A: Formato Ley 20.227 con Acreditación de Dominio / No Impedimento (5 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Interregional de Larga Distancia con Declaración de Carga (6 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: Mudanza Corporativa / Traslado de Oficinas y Bienes de Capital (5 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="mud_modalidad_help">Formato estándar Ley N° 20.227 con declaración de dominio o arriendo al día, datos de vehículo y chofer, sin impedimentos (5 cláusulas).</small>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Dirección de Origen (Desde donde se traslada) *</label>
-                                <input type="text" id="f_mud_origen" class="form-control" value="Av. Grecia 1234, Ñuñoa">
+                                <label>Dirección Exacta de Origen (Desde donde sale la mudanza) *</label>
+                                <input type="text" id="f_mud_origen" class="form-control" value="Av. Grecia 1234, Depto 301, Ñuñoa, Santiago">
                             </div>
                             <div class="form-group">
-                                <label>Dirección de Destino (Hacia donde se traslada) *</label>
-                                <input type="text" id="f_mud_destino" class="form-control" value="Av. El Bosque 567, Viña del Mar">
+                                <label>Dirección Exacta de Destino (Hacia donde se traslada) *</label>
+                                <input type="text" id="f_mud_destino" class="form-control" value="Av. El Bosque 567, Reñaca, Viña del Mar">
                             </div>
                         </div>
+
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Fecha Programada del Traslado *</label>
-                                <input type="date" id="f_mud_fecha" class="form-control">
+                                <label>Fecha y Horario Estimado del Traslado *</label>
+                                <input type="text" id="f_mud_fecha" class="form-control" value="Sábado 15 de Noviembre de 2026, entre 08:00 y 18:00 horas">
                             </div>
                             <div class="form-group">
-                                <label>Datos del Vehículo o Empresa de Flete *</label>
-                                <input type="text" id="f_mud_vehiculo" class="form-control" value="Camión Hyundai HD78 patente XX-YY-12">
+                                <label>Calidad Jurídica sobre el Inmueble de Origen *</label>
+                                <select id="f_mud_calidad_inmueble" class="form-control">
+                                    <option value="Propietario legítimo del inmueble de origen" selected>Propietario legítimo del inmueble</option>
+                                    <option value="Arrendatario al día en el pago de rentas y servicios básicos">Arrendatario al día (contrato vigente y cuentas pagadas)</option>
+                                    <option value="Ocupante legítimo autorizado por el titular">Ocupante legítimo autorizado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Datos del Vehículo de Carga (Marca, Modelo y Patente) *</label>
+                                <input type="text" id="f_mud_vehiculo" class="form-control" value="Camión Hyundai HD78, Patente CJ-KL-89">
+                            </div>
+                            <div class="form-group">
+                                <label>Datos del Conductor / Empresa de Flete (Nombre y RUT) *</label>
+                                <input type="text" id="f_mud_conductor" class="form-control" value="Transportes Rápidos SpA / Conductor: Mario González - RUT 10.987.654-3">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Declaración de Inexistencia de Impedimentos Legales *</label>
+                            <input type="text" id="f_mud_impedimentos" class="form-control" value="Se declara bajo juramento no existir orden judicial de embargo, precautoria, retención sobre enseres ni deuda de arriendo pendiente conforme al Art. 1° y 4° de la Ley N° 20.227">
+                        </div>
+
+                        <!-- Campos específicos para Opción B (Interregional de Larga Distancia) -->
+                        <div id="wrap_mud_opcion_b" style="display:none; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#1E40AF; margin-bottom:0.5rem;">
+                                <i class="fas fa-route"></i> Declaración Detallada de Carga y Controles Sanitarios / SAG
+                            </h5>
+                            <div class="form-group">
+                                <label>Desglose de Bultos Mayores, Muebles y Electrodomésticos *</label>
+                                <textarea id="f_mud_bultos" class="form-control" rows="2">Juegos de dormitorio, refrigerador Samsung No Frost, lavadora LG 14kg, televisor Smart TV 65 pulgadas, comedor 6 sillas, sillón seccional, 22 cajas de enseres selladas.</textarea>
+                            </div>
+                            <div class="form-row" style="margin-bottom:0;">
+                                <div class="form-group">
+                                    <label>Ruta Carretera Declarada *</label>
+                                    <input type="text" id="f_mud_ruta" class="form-control" value="Ruta 68 directa Santiago - Valparaíso / Viña del Mar">
+                                </div>
+                                <div class="form-group">
+                                    <label>Declaración Fitosanitaria y Aduanas Sanitarias (SAG) *</label>
+                                    <input type="text" id="f_mud_sag" class="form-control" value="Carga libre de productos agrícolas no autorizados, vegetales frescos o elementos sujetos a barrera fitosanitaria del SAG">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción C (Mudanza Corporativa) -->
+                        <div id="wrap_mud_opcion_c" style="display:none; background:#FEFCE8; border:1px solid #FEF08A; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#854D0E; margin-bottom:0.5rem;">
+                                <i class="fas fa-briefcase"></i> Traslado Corporativo de Mobiliario, TI y Archivos de Oficina
+                            </h5>
+                            <div class="form-group">
+                                <label>Razón Social, RUT y Sucursales de la Empresa Propietaria *</label>
+                                <input type="text" id="f_mud_empresa_datos" class="form-control" value="Keystone Advisors SpA - RUT 77.123.456-7 (Traslado de Casa Matriz a Sucursal Viña)">
+                            </div>
+                            <div class="form-row" style="margin-bottom:0;">
+                                <div class="form-group">
+                                    <label>Inventario de Equipos Computacionales y Servidores *</label>
+                                    <textarea id="f_mud_ti_equipos" class="form-control" rows="2">12 Laptops Dell Latitude, 2 Servidores en rack HP ProLiant, 15 Monitores LG 27", 3 Impresoras multifuncionales láser y 8 puestos de trabajo ergonómicos.</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Custodia de Archivos y Documentación Contable *</label>
+                                    <textarea id="f_mud_archivos" class="form-control" rows="2">14 Cajas rotuladas con archivos tributarios y contables bajo precinto de seguridad, sin valores negociables ni dinero en efectivo.</textarea>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -1801,13 +1914,93 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         <p>Que su residencia fija y morada habitual corresponde a la ubicada en <span class="highlight-var">${escapeHtml(declDom)}</span>, presentada para <span class="highlight-var">${escapeHtml(declFin)}</span>.</p>
                     `;
                 } else if (CURRENT_TEMPLATE.slug === 'salvoconducto-mudanza') {
-                    const origen = document.getElementById('f_mud_origen')?.value || 'Origen declarado';
-                    const destino = document.getElementById('f_mud_destino')?.value || 'Destino declarado';
-                    const vehiculo = document.getElementById('f_mud_vehiculo')?.value || 'Vehículo flete';
-                    html += `
-                        <div class="preview-clause-title">TRASLADO DE ENSERES (LEY N° 20.227)</div>
-                        <p>Que trasladará sus muebles y enseres domésticos desde <span class="highlight-var">${escapeHtml(origen)}</span> con destino a <span class="highlight-var">${escapeHtml(destino)}</span>, mediante el vehículo <span class="highlight-var">${escapeHtml(vehiculo)}</span>, no existiendo impedimento legal ni contractual para dicha mudanza.</p>
-                    `;
+                    const modMud = document.getElementById('f_mud_modalidad')?.value || 'opcion_a';
+                    const origen = document.getElementById('f_mud_origen')?.value || 'Av. Grecia 1234, Depto 301, Ñuñoa, Santiago';
+                    const destino = document.getElementById('f_mud_destino')?.value || 'Av. El Bosque 567, Reñaca, Viña del Mar';
+                    const fechaMud = document.getElementById('f_mud_fecha')?.value || 'Fecha acordada';
+                    const calidad = document.getElementById('f_mud_calidad_inmueble')?.value || 'Propietario legítimo del inmueble de origen';
+                    const vehiculo = document.getElementById('f_mud_vehiculo')?.value || 'Camión de carga';
+                    const chofer = document.getElementById('f_mud_conductor')?.value || 'Empresa de flete / Conductor autorizado';
+                    const impedimentos = document.getElementById('f_mud_impedimentos')?.value || 'Sin orden judicial, embargo ni deuda de arriendo';
+
+                    if (modMud === 'opcion_b') {
+                        // Opción B: Interregional de Larga Distancia con Declaración de Carga (6 Cláusulas)
+                        const bultos = document.getElementById('f_mud_bultos')?.value || 'Muebles de hogar y electrodomésticos';
+                        const ruta = document.getElementById('f_mud_ruta')?.value || 'Ruta carretera interregional';
+                        const sag = document.getElementById('f_mud_sag')?.value || 'Carga libre de productos agropecuarios restringidos';
+
+                        html += `
+                            <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                                DECLARACIÓN JURADA DE MUDANZA INTERREGIONAL Y MANIFIESTO DE CARGA (LEY N° 20.227)
+                            </div>
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: COMPARECENCIA Y CALIDAD JURÍDICA DEL DECLARANTE</div>
+                            <p>Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, cédula de identidad N° <span class="highlight-var">${escapeHtml(rutA)}</span>, declara bajo fe de juramento ser: <strong><span class="highlight-var">${escapeHtml(calidad)}</span></strong> respecto del inmueble de origen.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: ITINERARIO INTERREGIONAL Y FECHA DE TRASLADO</div>
+                            <p>El traslado de muebles, electrodomésticos y efectos personales se efectuará desde el inmueble de origen ubicado en <span class="highlight-var" style="font-weight:600;">${escapeHtml(origen)}</span> con destino definitivo a <span class="highlight-var" style="font-weight:600;">${escapeHtml(destino)}</span>, programado para el: <span class="highlight-var">${escapeHtml(fechaMud)}</span>, a través del trayecto vial: <span class="highlight-var">${escapeHtml(ruta)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: IDENTIFICACIÓN DEL VEHÍCULO DE TRANSPORTE Y CHOFER</div>
+                            <p>El flete y transporte de la carga será ejecutado mediante el móvil: <span class="highlight-var" style="font-weight:600;">${escapeHtml(vehiculo)}</span>, a cargo del transportista/conductor: <span class="highlight-var">${escapeHtml(chofer)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: DESGLOSE DETALLADO DE BULTOS Y EFECTOS DECLARADOS</div>
+                            <p>La carga transportada comprende estrictamente los siguientes enseres y bienes domésticos de propiedad del declarante:<br>
+                            <span class="highlight-var" style="white-space:pre-line;">${escapeHtml(bultos)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: CUMPLIMIENTO SANITARIO, ADUANAS Y SAG</div>
+                            <p>De conformidad a las regulaciones de barreras sanitarias y control fitozoosanitario interregional: <span class="highlight-var">${escapeHtml(sag)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEXTA: INEXISTENCIA DE IMPEDIMENTOS Y VALOR ANTE CARABINEROS (LEY 20.227)</div>
+                            <p>El declarante reitera bajo juramento que: <span class="highlight-var">${escapeHtml(impedimentos)}</span>, extendiéndose el presente instrumento con valor de salvoconducto oficial ante Carabineros de Chile, inspectores fiscales y autoridades competentes.</p>
+                        `;
+                    } else if (modMud === 'opcion_c') {
+                        // Opción C: Mudanza Corporativa / Traslado de Oficinas y Bienes de Capital (5 Cláusulas)
+                        const datosEmp = document.getElementById('f_mud_empresa_datos')?.value || 'Razón social y sucursales de la empresa';
+                        const equipTi = document.getElementById('f_mud_ti_equipos')?.value || 'Equipamiento informático e infraestructura TI';
+                        const archCont = document.getElementById('f_mud_archivos')?.value || 'Archivos de oficina y documentación contable';
+
+                        html += `
+                            <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                                DECLARACIÓN JURADA DE TRASLADO CORPORATIVO DE OFICINAS Y BIENES DE CAPITAL (LEY N° 20.227)
+                            </div>
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: PERSONERÍA Y TITULARIDAD DE ACTIVOS</div>
+                            <p>El declarante comparece en representación de la entidad: <span class="highlight-var" style="font-weight:700; color:#0F2A4A;">${escapeHtml(datosEmp)}</span>, declarando ser legítima propietaria de los activos, equipos y mobiliario que se trasladan.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: SUCURSALES DE ORIGEN, DESTINO Y CALENDARIO</div>
+                            <p>El traslado corporativo se realiza desde las oficinas ubicadas en <span class="highlight-var" style="font-weight:600;">${escapeHtml(origen)}</span> hacia las dependencias de <span class="highlight-var" style="font-weight:600;">${escapeHtml(destino)}</span>, durante la jornada de: <span class="highlight-var">${escapeHtml(fechaMud)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: INVENTARIO DE INFRAESTRUCTURA TI Y MOBILIARIO</div>
+                            <p>La carga transportada está constituida por bienes de oficina y equipamiento tecnológico de la empresa:<br>
+                            - <strong>Equipamiento TI y Servidores:</strong> <span class="highlight-var">${escapeHtml(equipTi)}</span>.<br>
+                            - <strong>Archivos y Libros Contables:</strong> <span class="highlight-var">${escapeHtml(archCont)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: LOGÍSTICA DE TRANSPORTE Y GUÍAS DE TRASLADO</div>
+                            <p>El porteo es realizado por el vehículo: <span class="highlight-var" style="font-weight:600;">${escapeHtml(vehiculo)}</span>, conducido por: <span class="highlight-var">${escapeHtml(chofer)}</span>, acompañándose la correspondiente Guía de Despacho de Traslado Interno sin venta conforme a las normativas del SII.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: INEXISTENCIA DE EMBARGOS Y ACREDITACIÓN LEY N° 20.227</div>
+                            <p>La empresa y su compareciente declaran bajo fe de juramento que: <span class="highlight-var">${escapeHtml(impedimentos)}</span>, siendo un instrumento válido y vinculante para su exhibición ante la fuerza pública (Carabineros de Chile) e inspectores del Ministerio de Transportes.</p>
+                        `;
+                    } else {
+                        // Opción A: Formato Ley 20.227 con Acreditación de Dominio / No Impedimento (5 Cláusulas - Recomendado)
+                        html += `
+                            <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                                DECLARACIÓN JURADA DE TRASLADO DE ENSERES DOMÉSTICOS / MUDANZA (LEY N° 20.227)
+                            </div>
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: DECLARACIÓN BAJO FE DE JURAMENTO Y CALIDAD JURÍDICA</div>
+                            <p>Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutA)}</span>, expone bajo fe de juramento ser: <strong><span class="highlight-var">${escapeHtml(calidad)}</span></strong> respecto de la vivienda o recinto desde donde se efectúa el cambio de domicilio.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: DOMICILIOS DE ORIGEN Y DESTINO</div>
+                            <p>El declarante fija expresamente el punto de partida del traslado de sus muebles y enseres de hogar en: <span class="highlight-var" style="font-weight:600;">${escapeHtml(origen)}</span>, siendo el lugar de destino y nueva residencia: <span class="highlight-var" style="font-weight:600;">${escapeHtml(destino)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: FECHA Y CONDICIONES DE LA MUDANZA</div>
+                            <p>La operación de traslado material de los enseres se desarrollará el día: <span class="highlight-var" style="font-weight:600;">${escapeHtml(fechaMud)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: MEDIO DE TRANSPORTE Y OPERADOR DEL FLETE</div>
+                            <p>El transporte de los bienes corporales muebles será llevado a cabo por el móvil de carga: <span class="highlight-var" style="font-weight:600;">${escapeHtml(vehiculo)}</span>, conducido y operado por: <span class="highlight-var">${escapeHtml(chofer)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: INEXISTENCIA DE IMPEDIMENTOS LEGALES Y SALVOCONDUCTO (LEY N° 20.227)</div>
+                            <p>En cumplimiento a lo prescrito en los artículos 1°, 2°, 3° y 4° de la Ley N° 20.227, el declarante acredita y sostiene solemnemente: <span class="highlight-var" style="color:#059669; font-weight:600;">${escapeHtml(impedimentos)}</span>. Este documento constituye acreditación legal plena y salvoconducto habilitante para ser exhibido ante Carabineros de Chile durante el trayecto.</p>
+                        `;
+                    }
                 } else if (CURRENT_TEMPLATE.slug === 'declaracion-jurada-ingresos-informales') {
                     const activ = document.getElementById('f_ingr_actividad')?.value || 'Actividades comerciales independientes';
                     const montIng = document.getElementById('f_ingr_monto')?.value || '950000';
@@ -2769,7 +2962,21 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     f_sii_restitucion: document.getElementById('f_sii_restitucion')?.value,
                     f_sii_facultad_cowork: document.getElementById('f_sii_facultad_cowork')?.value,
                     f_sii_servicios_virtual: document.getElementById('f_sii_servicios_virtual')?.value,
-                    f_sii_apercibimiento: document.getElementById('f_sii_apercibimiento')?.value
+                    f_sii_apercibimiento: document.getElementById('f_sii_apercibimiento')?.value,
+                    f_mud_modalidad: document.getElementById('f_mud_modalidad')?.value,
+                    f_mud_origen: document.getElementById('f_mud_origen')?.value,
+                    f_mud_destino: document.getElementById('f_mud_destino')?.value,
+                    f_mud_fecha: document.getElementById('f_mud_fecha')?.value,
+                    f_mud_calidad_inmueble: document.getElementById('f_mud_calidad_inmueble')?.value,
+                    f_mud_vehiculo: document.getElementById('f_mud_vehiculo')?.value,
+                    f_mud_conductor: document.getElementById('f_mud_conductor')?.value,
+                    f_mud_impedimentos: document.getElementById('f_mud_impedimentos')?.value,
+                    f_mud_bultos: document.getElementById('f_mud_bultos')?.value,
+                    f_mud_ruta: document.getElementById('f_mud_ruta')?.value,
+                    f_mud_sag: document.getElementById('f_mud_sag')?.value,
+                    f_mud_empresa_datos: document.getElementById('f_mud_empresa_datos')?.value,
+                    f_mud_ti_equipos: document.getElementById('f_mud_ti_equipos')?.value,
+                    f_mud_archivos: document.getElementById('f_mud_archivos')?.value
                 }
             };
 

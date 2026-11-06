@@ -444,8 +444,46 @@ class DocumentPdfService {
                 break;
 
             case 'salvoconducto-mudanza':
-                self::printClause($pdf, 'PRIMERO: DECLARACIÓN BAJO JURAMENTO (LEY N° 20.227)', "El Declarante expone bajo juramento que trasladará sus muebles y enseres domésticos desde el domicilio de origen al de destino singularizado en este instrumento.");
-                self::printClause($pdf, 'SEGUNDO: INEXISTENCIA DE IMPEDIMENTOS', "Declara expresamente no tener impedimento judicial, legal ni contractual para realizar dicho traslado, encontrándose al día en sus obligaciones de arriendo o siendo propietario legítimo del inmueble de origen.");
+                $modMud = $formData['f_mud_modalidad'] ?? 'opcion_a';
+                $origen = $formData['f_mud_origen'] ?? 'Av. Grecia 1234, Depto 301, Nunoa, Santiago';
+                $destino = $formData['f_mud_destino'] ?? 'Av. El Bosque 567, Renaca, Vina del Mar';
+                $fechaMud = $formData['f_mud_fecha'] ?? 'Fecha programada';
+                $calidad = $formData['f_mud_calidad_inmueble'] ?? 'Propietario legitimo del inmueble de origen';
+                $vehiculo = $formData['f_mud_vehiculo'] ?? 'Camion de carga';
+                $chofer = $formData['f_mud_conductor'] ?? 'Empresa de flete / Conductor autorizado';
+                $impedimentos = $formData['f_mud_impedimentos'] ?? 'Sin orden judicial, embargo ni deuda de arriendo pendiente';
+
+                if ($modMud === 'opcion_b') {
+                    // Opción B: Interregional de Larga Distancia con Declaración de Carga (6 Cláusulas)
+                    $bultos = $formData['f_mud_bultos'] ?? 'Muebles de hogar y electrodomesticos';
+                    $ruta = $formData['f_mud_ruta'] ?? 'Ruta carretera interregional';
+                    $sag = $formData['f_mud_sag'] ?? 'Carga libre de productos agropecuarios restringidos por el SAG';
+
+                    self::printClause($pdf, 'PRIMERO: COMPARECENCIA Y CALIDAD JURIDICA DEL DECLARANTE', "El Declarante expone bajo juramento ser {$calidad} respecto del inmueble de origen, teniendo la libre y exclusiva disposicion de los bienes corporales muebles que se trasladan.");
+                    self::printClause($pdf, 'SEGUNDO: ITINERARIO INTERREGIONAL Y FECHA DE TRASLADO', "El traslado se efectuara desde {$origen} con destino definitivo a {$destino}, programado para {$fechaMud}, a traves de la ruta: {$ruta}.");
+                    self::printClause($pdf, 'TERCERO: IDENTIFICACION DEL VEHICULO DE TRANSPORTE Y CHOFER', "El porteo sera ejecutado mediante el vehiculo: {$vehiculo}, a cargo del transportista/conductor: {$chofer}.");
+                    self::printClause($pdf, 'CUARTO: DESGLOSE DETALLADO DE BULTOS Y EFECTOS DECLARADOS', "La carga transportada comprende estrictamente los siguientes enseres y bienes domesticos de propiedad del declarante: {$bultos}.");
+                    self::printClause($pdf, 'QUINTO: CUMPLIMIENTO SANITARIO, ADUANAS Y BARRERAS DEL SAG', "De conformidad a las regulaciones sanitarias y de control fitozoosanitario interregional: {$sag}.");
+                    self::printClause($pdf, 'SEXTO: INEXISTENCIA DE IMPEDIMENTOS Y SALVOCONDUCTO (LEY N° 20.227)', "El declarante reitera bajo juramento que: {$impedimentos}, extendiendose el presente instrumento con pleno valor de salvoconducto oficial ante Carabineros de Chile y autoridades fiscalizadoras.");
+                } else if ($modMud === 'opcion_c') {
+                    // Opción C: Mudanza Corporativa / Traslado de Oficinas y Bienes de Capital (5 Cláusulas)
+                    $datosEmp = $formData['f_mud_empresa_datos'] ?? 'Razon social y sucursales de la empresa';
+                    $equipTi = $formData['f_mud_ti_equipos'] ?? 'Equipamiento informatico e infraestructura TI';
+                    $archCont = $formData['f_mud_archivos'] ?? 'Archivos de oficina y documentacion contable';
+
+                    self::printClause($pdf, 'PRIMERO: PERSONERIA Y TITULARIDAD DE ACTIVOS CORPORATIVOS', "El compareciente actua en representacion de la persona juridica: {$datosEmp}, declarando que la empresa es duena legitima de todos los activos, equipos y mobiliario que se trasladan.");
+                    self::printClause($pdf, 'SEGUNDO: SUCURSALES DE ORIGEN, DESTINO Y CALENDARIO', "El traslado corporativo se efectua desde las oficinas ubicadas en {$origen} hacia las dependencias de {$destino}, durante la jornada de: {$fechaMud}.");
+                    self::printClause($pdf, 'TERCERO: INVENTARIO DE INFRAESTRUCTURA TI Y MOBILIARIO', "La carga esta constituida por: a) Equipamiento TI y Servidores: {$equipTi}; b) Archivos y Libros Contables: {$archCont}.");
+                    self::printClause($pdf, 'CUARTO: LOGISTICA DE TRANSPORTE Y GUIAS DE TRASLADO', "El transporte es ejecutado por el vehiculo {$vehiculo}, conducido por {$chofer}, acompanandose Guia de Despacho de Traslado Interno sin venta conforme a normas del SII.");
+                    self::printClause($pdf, 'QUINTO: INEXISTENCIA DE EMBARGOS Y VALOR ANTE CARABINEROS (LEY 20.227)', "La empresa declara bajo juramento que: {$impedimentos}, sirviendo el presente de salvoconducto corporativo valido ante Carabineros de Chile e inspectores del MTT.");
+                } else {
+                    // Opción A: Formato Ley 20.227 con Acreditación de Dominio / No Impedimento (5 Cláusulas - Recomendado)
+                    self::printClause($pdf, 'PRIMERO: DECLARACION BAJO JURAMENTO Y CALIDAD JURIDICA', "El Declarante expone bajo fe de juramento ser: {$calidad} respecto del inmueble desde donde se efectua la mudanza, contando con plena facultad de disposicion de los bienes muebles que se trasladan.");
+                    self::printClause($pdf, 'SEGUNDO: DOMICILIOS DE ORIGEN Y DESTINO', "El traslado material de muebles y enseres de hogar se efectua desde: {$origen}, teniendo como destino y nueva morada: {$destino}.");
+                    self::printClause($pdf, 'TERCERO: FECHA Y CONDICIONES DE LA MUDANZA', "La operacion de mudanza se desarrollara el dia: {$fechaMud}.");
+                    self::printClause($pdf, 'CUARTO: MEDIO DE TRANSPORTE Y OPERADOR DEL FLETE', "El transporte sera ejecutado por el vehiculo de carga: {$vehiculo}, a cargo de: {$chofer}.");
+                    self::printClause($pdf, 'QUINTO: INEXISTENCIA DE IMPEDIMENTOS LEGALES Y SALVOCONDUCTO (LEY N° 20.227)', "En cumplimiento de los articulos 1°, 2°, 3° y 4° de la Ley N° 20.227, el declarante acredita solemnemente: {$impedimentos}. Este documento constituye salvoconducto habilitante oficial ante Carabineros de Chile.");
+                }
                 break;
 
             case 'autorizacion-domicilio-tributario-sii':

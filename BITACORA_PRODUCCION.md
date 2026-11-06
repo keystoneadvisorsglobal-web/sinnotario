@@ -1,5 +1,28 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-06 15:40 UTC-3] - SOL-0035
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0035`
+- **Alcance de los Cambios:**
+  - **Declaración Jurada de Traslado de Enseres / Mudanza (Ley N° 20.227):**
+    1. **Paso 1 Personalizado:**
+       - Paso 1 adaptado para "Declarante / Propietario de Enseres" (Nombre, RUT, Profesión y Domicilio).
+    2. **Paso 3 con Selector Interactivo de las 3 Modalidades:**
+       - *Opción A: Formato Ley 20.227 con Acreditación de Dominio / No Impedimento (5 Cláusulas - Recomendado).* Individualización del declarante bajo fe de juramento, calidad jurídica (propietario o arrendatario al día en rentas y servicios), fijación de domicilios de origen y destino, fecha de la mudanza, medio de transporte y conductor/empresa de flete, y declaración formal de no existir orden judicial, embargo, precautoria ni deuda de arriendo impaga, sirviendo de salvoconducto habilitante ante Carabineros de Chile.
+       - *Opción B: Interregional de Larga Distancia con Declaración de Carga (6 Cláusulas).* Traslado entre regiones: incorpora itinerario vial de ruta carretera, desglose detallado de bultos mayores, muebles y electrodomésticos de valor, y estipulación de cumplimiento fitosanitario y aduanas sanitarias del SAG (carga libre de especies agrícolas restringidas) para controles de Carabineros y fiscalizadores de transporte.
+       - *Opción C: Mudanza Corporativa / Traslado de Oficinas y Bienes de Capital (5 Cláusulas).* Diseñado para personas jurídicas y empresas: personería del representante legal, identificación de sucursales de origen y destino, inventario categorizado de infraestructura TI (laptops, servidores en rack, monitores, impresoras), archivo contable y tributario bajo precinto, porteo con chofer y Guía de Despacho de Traslado Interno sin venta del SII, y declaración de inexistencia de gravámenes.
+    3. **Motor PDF Criptográfico (`DocumentPdfService.php`):**
+       - Sincronización del método `renderClauses()` para emitir las cláusulas legales y técnicas según la modalidad seleccionada en el PDF descargable con código QR de verificación, Hash SHA-256 y respaldo en Cloudflare R2.
+    4. **Emisión de Borradores (`create_draft`):**
+       - Inclusión de los campos específicos de mudanza (`f_mud_modalidad`, `f_mud_origen`, `f_mud_destino`, `f_mud_fecha`, `f_mud_calidad_inmueble`, `f_mud_vehiculo`, `f_mud_conductor`, `f_mud_impedimentos`, `f_mud_bultos`, `f_mud_ruta`, `f_mud_sag`, `f_mud_empresa_datos`, `f_mud_ti_equipos`, `f_mud_archivos`) en el payload del formulario.
+    5. **Cache-Busting:** Bump a `?v=20261106_13`.
+- **Pruebas Validadas:**
+  - PHP Lint remoto en Hostinger: 0 errores de sintaxis en `redactar.php` y `DocumentPdfService.php`.
+  - Smoke test HTTP en producción: `curl -I "https://sinnotario.cl/redactar.php?slug=salvoconducto-mudanza"` -> `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
 ### [2026-11-06 15:37 UTC-3] - SOL-0034
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
