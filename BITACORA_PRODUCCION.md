@@ -195,3 +195,22 @@
     - Carga directa del CSS con cabeceras `HTTP/2 200` y confirmación de `height: 82px;`.
     - Smoke test del sitio en vivo: `HTTP/2 200 OK`.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
+
+---
+
+### Entrada: 2026-11-06 10:14:00 UTC-3
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0023`
+- **Resumen de la Ejecución:**
+  - **Construcción del Módulo Marco Legal (`marco-legal.php`):** Se desarrolló una página de aterrizaje interactiva y doctrinal para cada normativa legal vinculada al footer del portal:
+    1. **Ley N° 19.799:** Principio de equivalencia del soporte electrónico, firma simple vs avanzada y valor probatorio en tribunales. Enlace oficial: BCN Norma N° 196640.
+    2. **Ley N° 21.461 ("Devuélveme Mi Casa"):** Procedimiento monitorio de cobro de rentas, plazo perentorio de 10 días y medida precautoria de restitución anticipada. Enlace oficial: BCN Norma N° 1178044.
+    3. **Ley N° 18.101:** Régimen general de arrendamiento urbano, irrenunciabilidad de derechos y presunciones legales. Enlace oficial: BCN Norma N° 29526.
+    4. **Código del Trabajo Art. 177:** Formalización del finiquito laboral, ministros de fe, ratificación electrónica con ClaveÚnica (Mi DT) y acreditación de cotizaciones previsionales. Enlace oficial: BCN Norma N° 207436.
+    5. **Bóveda Cifrada Cloudflare R2:** Criptografía SHA-256 inmutable, código QR y cadena de custodia digital forense.
+  - **Vinculación en Frontend (`index.php`):** Se actualizaron todos los hipervínculos del pie de página para dirigir a `marco-legal.php?ley=...`.
+  - **Pruebas Validadas:**
+    - Carga directa con HTTP 200 OK de todas las vistas legales (`ley-19799`, `ley-21461`, etc.).
+    - Validación de redirección de enlaces a `bcn.cl / leychile.cl`.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.

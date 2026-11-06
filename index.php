@@ -235,11 +235,11 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
             <div class="footer-col">
                 <h3>Marco Legal</h3>
                 <ul>
-                    <li><a href="#">Ley N° 19.799 (Firma Electrónica)</a></li>
-                    <li><a href="#">Ley N° 21.461 (Devuélveme Mi Casa)</a></li>
-                    <li><a href="#">Ley N° 18.101 (Arrendamiento)</a></li>
-                    <li><a href="#">Código del Trabajo Art. 177</a></li>
-                    <li><a href="#">Bóveda Cifrada Cloudflare R2</a></li>
+                    <li><a href="marco-legal.php?ley=ley-19799">Ley N° 19.799 (Firma Electrónica)</a></li>
+                    <li><a href="marco-legal.php?ley=ley-21461">Ley N° 21.461 (Devuélveme Mi Casa)</a></li>
+                    <li><a href="marco-legal.php?ley=ley-18101">Ley N° 18.101 (Arrendamiento)</a></li>
+                    <li><a href="marco-legal.php?ley=codigo-trabajo-177">Código del Trabajo Art. 177</a></li>
+                    <li><a href="marco-legal.php?ley=cloudflare-r2">Bóveda Cifrada Cloudflare R2</a></li>
                 </ul>
             </div>
 
