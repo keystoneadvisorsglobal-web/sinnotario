@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once __DIR__ . '/../database/Database.php';
 require_once __DIR__ . '/adapters/StorageR2Adapter.php';
+require_once __DIR__ . '/../src/Services/DocumentPdfService.php';
 
 $pdo = Database::getInstance();
 $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -140,11 +141,15 @@ try {
                 }
             }
 
+            // Generar inmediatamente el PDF oficial y guardarlo en Cloudflare R2
+            $pdfResult = DocumentPdfService::generateAndVaultDocument((int)$docId);
+
             jsonResponse(true, [
                 'document_id' => $docId,
                 'codigo_verificacion' => $verifCode,
                 'precio' => $tpl['precio_base'],
-                'message' => 'Borrador creado exitosamente'
+                'pdf_vault' => $pdfResult,
+                'message' => 'Borrador creado y PDF sellado en Cloudflare R2'
             ]);
             break;
 
