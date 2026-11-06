@@ -365,9 +365,42 @@ class DocumentPdfService {
                 break;
 
             case 'reconocimiento-deuda-pagare-privado':
-                self::printClause($pdf, 'PRIMERO: RECONOCIMIENTO EXPRESO Y LÍQUIDO', "El Deudor reconoce expresa, pura y simplemente adeudar al Acreedor la suma líquida indicada, derivada de obligaciones civiles y mercantiles pendientes entre ambas partes.");
-                self::printClause($pdf, 'SEGUNDO: PLAN DE PAGO Y CLÁUSULA DE ACELERACIÓN', "La deuda se solucionará en las cuotas pactadas. El no pago íntegro y oportuno de cualquiera de ellas facultará al Acreedor a hacer exigible de inmediato el total del saldo insoluto como si fuere de plazo vencido.");
-                self::printClause($pdf, 'TERCERO: PAGARÉ EN GARANTÍA E INTERESES PENALES', "En caso de mora o simple retardo, la obligación devengará el interés penal máximo convencional permitido por la Ley N° 18.010, facultando la acción ejecutiva ante tribunales ordinarios.");
+                $modDeuda = $formData['f_deuda_modalidad'] ?? 'opcion_a';
+                $deuda = !empty($formData['deuda_total']) ? '$' . number_format($formData['deuda_total'], 0, ',', '.') . ' CLP' : '$3.500.000 CLP';
+                $cuotas = $formData['cuotas'] ?? ($formData['f_deuda_cuotas'] ?? '10');
+                $causa = $formData['causa'] ?? ($formData['f_deuda_causa'] ?? 'Saldo insoluto por operaciones y suministros comerciales');
+                $diaPago = $formData['dia_pago'] ?? ($formData['f_deuda_dia_pago'] ?? '10');
+                $interes = $formData['interes'] ?? ($formData['f_deuda_interes'] ?? 'Interes Maximo Convencional fijado por la CMF');
+                $pagare = $formData['pagare'] ?? ($formData['f_deuda_pagare'] ?? 'Con suscripcion paralela de Pagare');
+
+                self::printClause($pdf, 'PRIMERO: RECONOCIMIENTO EXPRESO Y LIQUIDO DE LA DEUDA', "El Deudor reconoce expresa, pura, simple e irrevocablemente adeudar al Acreedor la suma liquida de {$deuda}.");
+                self::printClause($pdf, 'SEGUNDO: CAUSA U ORIGEN LICITO DE LA OBLIGACION', "La deuda proviene de: {$causa}, declarando el Deudor haber recibido a su total conformidad las contraprestaciones y bienes respectivos.");
+                self::printClause($pdf, 'TERCERO: CALENDARIO DE PAGO EN CUOTAS MENSUALES', "La obligacion se solucionara en {$cuotas} cuotas mensuales, iguales y sucesivas, pagaderas a mas tardar el dia {$diaPago} de cada mes calendario mediante transferencia bancaria o vale vista.");
+
+                if ($modDeuda === 'opcion_b') {
+                    // Opción B: Con Codeudor Solidario / Fiador y Aval (8 Cláusulas)
+                    $avalNom = $formData['aval_nombre'] ?? ($formData['f_deuda_aval_nombre'] ?? 'Fiador y Codeudor');
+                    $avalRut = $formData['aval_rut'] ?? ($formData['f_deuda_aval_rut'] ?? '11.222.333-4');
+
+                    self::printClause($pdf, 'CUARTO: INTERES PENAL MORATORIO (LEY N° 18.010)', "En caso de simple retardo o mora en cualquiera de las cuotas, se devengara de pleno derecho: {$interes} hasta su extincion total.");
+                    self::printClause($pdf, 'QUINTO: CLAUSULA DE ACELERACION IPSO FACTO', "El no pago oportuno de cualquiera de las cuotas facultara al Acreedor a hacer exigible de inmediato el total del saldo insoluto como de plazo vencido.");
+                    self::printClause($pdf, 'SEXTO: OBLIGACION SOLIDARIA DE FIADOR Y AVAL', "Comparece Don/Dona {$avalNom}, RUT N° {$avalRut}, constituyendose en fiador, aval y codeudor solidario de todas las obligaciones, cuotas, intereses y costas asumidas en este instrumento, renunciando formalmente a los beneficios de orden y excusion.");
+                    self::printClause($pdf, 'SEPTIMO: PAGARE EN GARANTIA Y MERITO EJECUTIVO', "En resguardo del credito se estipula: {$pagare}, sin que ello importe novacion.");
+                    self::printClause($pdf, 'OCTAVO: DOMICILIO Y JURISDICCION', "Para todos los efectos legales, las partes y el codeudor solidario fijan domicilio en la ciudad de Santiago y prorrogan competencia ante sus Tribunales Ordinarios.");
+                } else if ($modDeuda === 'opcion_c') {
+                    // Opción C: Transaccional Judicial / Pre-Demanda con Confesión de Deuda Art. 434 CPC (7 Cláusulas)
+                    $pactoProc = $formData['pacto_cpc'] ?? ($formData['f_deuda_cpc_tribunal'] ?? 'Sometimiento a gestion preparatoria Art. 434 N° 5 CPC');
+
+                    self::printClause($pdf, 'CUARTO: VALOR DE COSA JUZGADA Y PREVENCION DE LITIGIO (ART. 2446 CC)', "Las partes celebran este acto con el caracter de transaccion extrajudicial para precaver un litigio inminente, con efecto de cosa juzgada en ultima instancia (Art. 2460 Codigo Civil).");
+                    self::printClause($pdf, 'QUINTO: PACTO PROCESAL PREPARATORIO DE VIA EJECUTIVA (ART. 434 N° 5 CPC)', "Para efectos de cobro compulsivo, las partes pactan expresamente: {$pactoProc}, habilitando embargo y ejecucion inmediata de bienes.");
+                    self::printClause($pdf, 'SEXTO: NOTIFICACION ELECTRONICA Y DOMICILIO PROCESAL', "El Deudor designa domicilio procesal el indicado en la comparecencia y autoriza notificacion por correo electronico conforme a la Ley N° 20.886 de Tramitacion Electronica.");
+                    self::printClause($pdf, 'SEPTIMO: COSTAS Y GASTOS DE COBRANZA', "Todas las costas judiciales originadas por el cobro compulsivo seran de exclusivo cargo del Deudor moroso.");
+                } else {
+                    // Opción A: Notarial Bancario con Cláusula de Aceleración y Pagaré (6 Cláusulas - Recomendado)
+                    self::printClause($pdf, 'CUARTO: INTERESES PENALES MORATORIOS (LEY N° 18.010)', "La mora devengara diariamente de pleno derecho: {$interes} sobre el capital insoluto.");
+                    self::printClause($pdf, 'QUINTO: CLAUSULA DE ACELERACION Y RENUNCIA A REQUERIMIENTO', "El no pago de cualquiera de las cuotas hara exigible de inmediato la totalidad del saldo insoluto, renunciando el Deudor a requerimiento judicial previo de pago.");
+                    self::printClause($pdf, 'SEXTO: PAGARE EN GARANTIA Y DOMICILIO ESPECIAL', "Regimen de titulos: {$pagare}. Las partes fijan domicilio unico en Santiago y prorrogan competencia ante sus Tribunales Ordinarios en lo Civil.");
+                }
                 break;
 
             case 'salvoconducto-mudanza':

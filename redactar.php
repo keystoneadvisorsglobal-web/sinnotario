@@ -557,7 +557,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js?v=20261106_9"></script>
+    <script src="assets/js/app.js?v=20261106_10"></script>
     <script>
         // Funciones auxiliares seguras locales
         function escapeHtml(text) {
@@ -635,6 +635,29 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     help.innerText = 'Servicios por proyectos cerrados: pagos contra hitos aprobados, entregables, garantía técnica y soporte correctivo (7 cláusulas).';
                 } else if (val === 'opcion_c') {
                     help.innerText = 'SLA Corporativo continuo: tiempos de respuesta calificados, penalizaciones por demora y sustitución de personal clave (9 cláusulas).';
+                }
+            }
+            updateUniversalPreview();
+        }
+
+        function toggleDeudaFields() {
+            const sel = document.getElementById('f_deuda_modalidad');
+            if (!sel) return;
+            const val = sel.value;
+            const wrapB = document.getElementById('wrap_deuda_opcion_b');
+            const wrapC = document.getElementById('wrap_deuda_opcion_c');
+            const help = document.getElementById('deuda_modalidad_help');
+
+            if (wrapB) wrapB.style.display = (val === 'opcion_b') ? 'block' : 'none';
+            if (wrapC) wrapC.style.display = (val === 'opcion_c') ? 'block' : 'none';
+
+            if (help) {
+                if (val === 'opcion_a') {
+                    help.innerText = 'Obligación pura y simple, aceleración ipso facto e intereses penales al máximo legal permitido (6 cláusulas).';
+                } else if (val === 'opcion_b') {
+                    help.innerText = 'Fianza, aval y codeuda solidaria: comparece un tercero obligado principal a todas las cuotas (8 cláusulas).';
+                } else if (val === 'opcion_c') {
+                    help.innerText = 'Transaccional extrajudicial previa a juicio: confesión judicial de deuda y pacto procesal Art. 434 N° 5 CPC (7 cláusulas).';
                 }
             }
             updateUniversalPreview();
@@ -733,6 +756,28 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                 document.getElementById('f_parte_b_rut').value = '15.444.555-6';
                 document.getElementById('f_parte_b_civil').value = 'chilena, soltera';
                 document.getElementById('f_parte_b_profesion').value = 'Ingeniera Civil en Computación';
+                document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
+                document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
+            } else if (CURRENT_TEMPLATE.slug === 'reconocimiento-deuda-pagare-privado') {
+                document.getElementById('lblStep1').innerText = 'Acreedor';
+                document.getElementById('lblStep2').innerText = 'Deudor';
+                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Acreedor / Beneficiario';
+                document.getElementById('step1Desc').innerText = 'Identificación de la persona o entidad a quien se le adeuda la suma comprometida.';
+                document.getElementById('lbl_parte_a_nombre').innerText = 'Nombre o Razón Social del Acreedor *';
+                document.getElementById('f_parte_a_nombre').value = 'Inversiones y Capitales SpA';
+                document.getElementById('f_parte_a_rut').value = '76.543.210-K';
+                document.getElementById('f_parte_a_civil').value = 'Giro: Inversiones y Servicios Financieros';
+                document.getElementById('f_parte_a_profesion').value = 'Rep. Legal: Juan Andrés Pérez González, C.I. 12.345.678-5';
+                document.getElementById('f_parte_a_domicilio').value = 'Av. El Golf 150, Piso 8';
+                document.getElementById('f_parte_a_comuna').value = 'Las Condes, Santiago';
+
+                document.getElementById('step2Title').innerText = 'Paso 2: Datos del Deudor Principal';
+                document.getElementById('step2Desc').innerText = 'Identificación del deudor que suscribe y asume la obligación de pago y los títulos ejecutivos.';
+                document.getElementById('lbl_parte_b_nombre').innerText = 'Nombre Completo del Deudor *';
+                document.getElementById('f_parte_b_nombre').value = 'María José Valenzuela Soto';
+                document.getElementById('f_parte_b_rut').value = '15.444.555-6';
+                document.getElementById('f_parte_b_civil').value = 'chilena, soltera';
+                document.getElementById('f_parte_b_profesion').value = 'Comerciante Independiente';
                 document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
                 document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
             }
@@ -1289,6 +1334,21 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                 case 'reconocimiento-deuda-pagare-privado':
                     fieldsHtml = `
+                        <div style="background:#FEF3C7; border:1px solid #FDE68A; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#92400E;">
+                            <i class="fas fa-money-bill-wave"></i> <strong>Reconocimiento de Deuda y Compromiso de Pago (Ley N° 18.010)</strong>:
+                            Selecciona la modalidad para estructurar la aceleración de cuotas, el tercero fiador y aval, o la confesión de deuda previa a juicio.
+                        </div>
+
+                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad / Enfoque del Documento *</label>
+                            <select id="f_deuda_modalidad" class="form-control" onchange="toggleDeudaFields()" style="font-weight:600; border-color:#D97706;">
+                                <option value="opcion_a" selected>Opción A: Notarial Bancario con Cláusula de Aceleración y Pagaré (6 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Con Codeudor Solidario / Fiador y Aval (8 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: Transaccional Judicial / Pre-Demanda con Confesión de Deuda Art. 434 CPC (7 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="deuda_modalidad_help">Obligación pura y simple, aceleración ipso facto e intereses penales al máximo legal permitido.</small>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Monto Total de la Deuda Reconocida ($ CLP) *</label>
@@ -1299,22 +1359,72 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                                 <input type="number" id="f_deuda_cuotas" class="form-control" value="10" min="1">
                             </div>
                         </div>
+
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Causa u Origen de la Deuda *</label>
-                                <input type="text" id="f_deuda_causa" class="form-control" value="Saldo insoluto por compraventa de mercaderías y servicios comerciales">
+                                <label>Causa u Origen Lícito de la Deuda *</label>
+                                <input type="text" id="f_deuda_causa" class="form-control" value="Saldo insoluto por compraventa de mercaderías, suministros y servicios comerciales">
                             </div>
                             <div class="form-group">
-                                <label>Día de Vencimiento de Cada Cuota (1 al 31) *</label>
+                                <label>Día de Vencimiento Mensual (1 al 31) *</label>
                                 <input type="number" id="f_deuda_dia_pago" class="form-control" value="10" min="1" max="31">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Cláusula de Aceleración y Pagaré en Garantía *</label>
-                            <select id="f_deuda_pagare" class="form-control">
-                                <option value="Con Cláusula de Aceleración ipso facto e interés penal máximo convencional" selected>Con Cláusula de Aceleración + Interés Máximo Convencional (Ley 18.010)</option>
-                                <option value="Sin intereses penales adicionales">Sin interés moratorio adicional</option>
-                            </select>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Interés Penal por Mora (Ley N° 18.010) *</label>
+                                <select id="f_deuda_interes" class="form-control">
+                                    <option value="Interés Máximo Convencional fijado por la CMF" selected>Interés Máximo Convencional (CMF / Ley 18.010)</option>
+                                    <option value="Interés Corriente para operaciones no reajustables">Interés Corriente para créditos comerciales</option>
+                                    <option value="Sin intereses penales adicionales">Sin interés adicional en caso de mora</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Pagaré Notarial en Garantía *</label>
+                                <select id="f_deuda_pagare" class="form-control">
+                                    <option value="Con suscripción paralela de Pagaré a la vista a la orden del acreedor" selected>Con Pagaré a la vista en garantía (título ejecutivo)</option>
+                                    <option value="Sin suscripción de pagaré paralelo">Solo reconocimiento privado sin pagaré</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción B (Codeudor Solidario) -->
+                        <div id="wrap_deuda_opcion_b" style="display:none; background:#FEFCE8; border:1px solid #FEF08A; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#854D0E; margin-bottom:0.5rem;">
+                                <i class="fas fa-user-shield"></i> Individualización del Tercero Fiador, Aval y Codeudor Solidario
+                            </h5>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nombre Completo del Aval / Codeudor *</label>
+                                    <input type="text" id="f_deuda_aval_nombre" class="form-control" value="Rodrigo Ignacio Morales Soto">
+                                </div>
+                                <div class="form-group">
+                                    <label>RUT del Aval / Codeudor (Módulo 11) *</label>
+                                    <input type="text" id="f_deuda_aval_rut" class="form-control" value="16.789.012-3">
+                                </div>
+                            </div>
+                            <div class="form-row" style="margin-bottom:0;">
+                                <div class="form-group">
+                                    <label>Domicilio del Aval *</label>
+                                    <input type="text" id="f_deuda_aval_domicilio" class="form-control" value="Av. Manquehue Norte 1200, Depto 502, Las Condes">
+                                </div>
+                                <div class="form-group">
+                                    <label>Profesión y Estado Civil del Aval *</label>
+                                    <input type="text" id="f_deuda_aval_prof" class="form-control" value="Empresario, casado en régimen de separación de bienes">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción C (Transaccional Judicial / CPC) -->
+                        <div id="wrap_deuda_opcion_c" style="display:none; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#1E40AF; margin-bottom:0.5rem;">
+                                <i class="fas fa-gavel"></i> Estipulaciones Procesales para Cobro Ejecutivo Inmediato
+                            </h5>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Pacto de Confesión Judicial y Notificación Electrónica (Art. 434 N° 5 CPC) *</label>
+                                <input type="text" id="f_deuda_cpc_tribunal" class="form-control" value="Sometimiento expreso a gestión preparatoria de la vía ejecutiva de reconocimiento de firma y confesión de deuda ante Juzgados Civiles de Santiago">
+                            </div>
                         </div>
                     `;
                     break;
@@ -1864,19 +1974,122 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         <p>De conformidad con el artículo 9° del Código del Trabajo y la Ley N° 21.327, el Empleador registrará el presente contrato en el sitio electrónico de la Dirección del Trabajo (portal Mi DT) dentro de los plazos legales establecidos. El presente contrato se firma electrónicamente mediante firma digital con valor probatorio pleno (Ley N° 19.799), quedando copia íntegra y fehaciente a disposición de cada una de las partes en la plataforma SinNotario.cl.</p>
                     `;
                 } else if (CURRENT_TEMPLATE.slug === 'reconocimiento-deuda-pagare-privado') {
-                    const deuda = document.getElementById('f_deuda_total')?.value || '3500000';
-                    const cuotas = document.getElementById('f_deuda_cuotas')?.value || '10';
-                    const causa = document.getElementById('f_deuda_causa')?.value || 'Causa comercial';
+                    const modDeuda = document.getElementById('f_deuda_modalidad')?.value || 'opcion_a';
+                    const deuda = parseInt(document.getElementById('f_deuda_total')?.value || '0', 10);
+                    const cuotas = parseInt(document.getElementById('f_deuda_cuotas')?.value || '1', 10);
+                    const causa = document.getElementById('f_deuda_causa')?.value || 'Saldo comercial pendiente';
                     const diaPago = document.getElementById('f_deuda_dia_pago')?.value || '10';
-                    const pagare = document.getElementById('f_deuda_pagare')?.value || 'Con Cláusula de Aceleración';
+                    const interes = document.getElementById('f_deuda_interes')?.value || 'Interés Máximo Convencional fijado por la CMF';
+                    const pagare = document.getElementById('f_deuda_pagare')?.value || 'Con suscripción paralela de Pagaré';
+
                     const deudaFmt = new Intl.NumberFormat('es-CL').format(deuda);
-                    const cuotaFmt = new Intl.NumberFormat('es-CL').format(Math.round(deuda / (cuotas || 1)));
-                    html += `
-                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Reconocimiento Expreso de Deuda</div>
-                        <p>El Deudor reconoce expresa, líquida e irrevocablemente adeudar al Acreedor la suma de <span class="highlight-var">$${deudaFmt} CLP</span> por concepto de <span class="highlight-var">${escapeHtml(causa)}</span>.</p>
-                        <div class="preview-clause-title">CLÁUSULA TERCERA: Calendario de Pago y Cláusula de Aceleración</div>
-                        <p>La deuda se cancelará en <span class="highlight-var">${escapeHtml(cuotas)} cuotas mensuales</span> de <span class="highlight-var">$${cuotaFmt} CLP</span> pagaderas hasta el día <span class="highlight-var">${escapeHtml(diaPago)}</span> de cada mes. Régimen de garantías: <span class="highlight-var">${escapeHtml(pagare)}</span> facultando la exigibilidad total inmediata ante simple retardo.</p>
+                    const cuotaMonto = Math.round(deuda / (cuotas || 1));
+                    const cuotaFmt = new Intl.NumberFormat('es-CL').format(cuotaMonto);
+
+                    html = `
+                        <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                            RECONOCIMIENTO DE DEUDA Y COMPROMISO DE PAGO
+                        </div>
+                        <p>En la ciudad de <strong>${escapeHtml(comA || 'Santiago')}</strong>, República de Chile, a <strong>${new Date().toLocaleDateString('es-CL')}</strong>, comparecen:</p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>POR UNA PARTE:</strong> La entidad o persona acreedora <span class="highlight-var">${escapeHtml(nomA)}</span>, RUT N° <span class="highlight-var">${escapeHtml(rutA)}</span>, Actividad / Giro: <span class="highlight-var">${escapeHtml(civilA)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, debidamente representada por <span class="highlight-var">${escapeHtml(profA)}</span>, en adelante el <strong>«Acreedor»</strong>; y
+                        </p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>POR LA OTRA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomB)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutB)}</span>, antecedentes: <span class="highlight-var">${escapeHtml(civilB)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profB)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domB)}</span>, comuna de <span class="highlight-var">${escapeHtml(comB)}</span>, en adelante el <strong>«Deudor»</strong>.
+                        </p>
                     `;
+
+                    if (modDeuda === 'opcion_b') {
+                        // Opción B: Con Codeudor Solidario / Fiador y Aval (8 Cláusulas)
+                        const avalNom = document.getElementById('f_deuda_aval_nombre')?.value || 'Fiador y Aval';
+                        const avalRut = document.getElementById('f_deuda_aval_rut')?.value || '11.222.333-4';
+                        const avalDom = document.getElementById('f_deuda_aval_domicilio')?.value || 'Santiago';
+                        const avalProf = document.getElementById('f_deuda_aval_prof')?.value || 'Empresario';
+
+                        html += `
+                            <p style="margin-top:0.6rem;">
+                                <strong>Y EN CALIDAD DE TERCERO GARANTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(avalNom)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(avalRut)}</span>, de profesión y estado civil <span class="highlight-var">${escapeHtml(avalProf)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(avalDom)}</span>, en adelante el <strong>«Fiador, Aval y Codeudor Solidario»</strong>.
+                            </p>
+                            <p style="margin-top:0.6rem;">Los comparecientes convienen en celebrar el presente instrumento conforme a las siguientes 8 estipulaciones:</p>
+
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: RECONOCIMIENTO EXPRESO Y LÍQUIDO DE LA DEUDA</div>
+                            <p>El Deudor reconoce expresa, pura, simple y categóricamente adeudar al Acreedor la suma líquida de <span class="highlight-var" style="font-weight:700; color:#0F2A4A;">$${deudaFmt} CLP</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: CAUSA U ORIGEN LÍCITO DE LA OBLIGACIÓN</div>
+                            <p>La deuda reconocida emana de: <span class="highlight-var">${escapeHtml(causa)}</span>, declarando el Deudor haber recibido conforme las contraprestaciones que dieron origen a este crédito.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: CALENDARIO DE PAGO EN CUOTAS MENSUALES</div>
+                            <p>La obligación se solucionará en <span class="highlight-var">${escapeHtml(cuotas)} cuotas mensuales, iguales y sucesivas</span> de <span class="highlight-var">$${cuotaFmt} CLP</span> cada una, pagaderas a más tardar el día <span class="highlight-var">${escapeHtml(diaPago)}</span> de cada mes calendario.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: INTERÉS PENAL MORATORIO (LEY N° 18.010)</div>
+                            <p>En caso de simple retardo o mora en el pago íntegro y oportuno de cualquiera de las cuotas, la suma adeudada devengará de pleno derecho: <span class="highlight-var">${escapeHtml(interes)}</span> hasta su pago efectivo.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: CLÁUSULA DE ACELERACIÓN Y CADUCIDAD DE PLAZOS</div>
+                            <p>El no pago íntegro de cualquiera de las cuotas a su respectivo vencimiento facultará al Acreedor a hacer exigible de inmediato y sin necesidad de requerimiento judicial previo el total del saldo insoluto de la deuda, considerándose la obligación como de plazo vencido (Cláusula de Aceleración ipso facto).</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEXTA: COMPARECENCIA DE FIADOR, AVAL Y CODEUDOR SOLIDARIO</div>
+                            <p>Presente en este acto Don/Doña <span class="highlight-var">${escapeHtml(avalNom)}</span>, expone que se constituye en fiador, aval y codeudor solidario de todas y cada una de las obligaciones, cuotas, intereses y costas asumidas por el Deudor en este instrumento, renunciando formalmente a los beneficios de orden y excusión.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SÉPTIMA: PAGARÉ EN GARANTÍA Y TÍTULO EJECUTIVO</div>
+                            <p>En resguardo del crédito, se estipula: <span class="highlight-var">${escapeHtml(pagare)}</span>, sin que su otorgamiento constituya novación de la obligación civil subyacente.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA OCTAVA: DOMICILIO Y JURISDICCIÓN</div>
+                            <p>Para todos los efectos legales, las partes y el codeudor solidario fijan domicilio en la ciudad de Santiago y prorrogan competencia ante sus Tribunales Ordinarios de Justicia.</p>
+                        `;
+                    } else if (modDeuda === 'opcion_c') {
+                        // Opción C: Transaccional Judicial / Pre-Demanda con Confesión de Deuda Art. 434 CPC (7 Cláusulas)
+                        const pactoProc = document.getElementById('f_deuda_cpc_tribunal')?.value || 'Sometimiento a gestión preparatoria de la vía ejecutiva Art. 434 N° 5 CPC';
+
+                        html += `
+                            <p style="margin-top:0.6rem;">Las partes mayores de edad convienen en celebrar la presente Transacción Extrajudicial con valor de cosa juzgada conforme a las siguientes estipulaciones:</p>
+
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: NATURALEZA TRANSACCIONAL EXTRAJUDICIAL (ART. 2446 CÓDIGO CIVIL)</div>
+                            <p>Las partes celebran el presente instrumento con el carácter de transacción extrajudicial para precaver un litigio judicial inminente, produciendo entre ellas el efecto de cosa juzgada en última instancia (Art. 2460 Código Civil).</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: CONFESIÓN EXPRESA DE DEUDA LÍQUIDA Y DETERMINADA</div>
+                            <p>El Deudor confiesa y reconoce pura y simplemente adeudar en favor del Acreedor la suma líquida, vencida y actualmente exigible de <span class="highlight-var" style="font-weight:700; color:#0F2A4A;">$${deudaFmt} CLP</span>, por concepto de <span class="highlight-var">${escapeHtml(causa)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: PLAN DE PAGO TRANSACCIONAL</div>
+                            <p>El Acreedor concede gracia de pago al Deudor, quien se compromete a solucionar el total adeudado en <span class="highlight-var">${escapeHtml(cuotas)} cuotas mensuales</span> de <span class="highlight-var">$${cuotaFmt} CLP</span> pagaderas hasta el día <span class="highlight-var">${escapeHtml(diaPago)}</span> de cada mes.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: INTERESES MORATORIOS Y CLÁUSULA PENAL COMPENSATORIA</div>
+                            <p>La mora devengará el interés penal máximo convencional legal (Ley N° 18.010). Asimismo, ante simple retardo, caducarán de inmediato todos los plazos otorgados, haciéndose exigible el total insoluto.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: PACTO PROCESAL PREPARATORIO DE VÍA EJECUTIVA (ART. 434 N° 5 CPC)</div>
+                            <p>Para efectos de su cobro compulsivo en caso de incumplimiento, las partes pactan expresamente: <span class="highlight-var">${escapeHtml(pactoProc)}</span>, confiriendo mérito ejecutivo directo con habilitación de embargo inmediato de bienes.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEXTA: NOTIFICACIÓN ELECTRÓNICA Y DOMICILIO PROCESAL</div>
+                            <p>El Deudor designa como domicilio procesal válido para toda notificación judicial el indicado en la comparecencia y autoriza expresamente su notificación por correo electrónico conforme a la Ley N° 20.886 sobre Tramitación Electrónica.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SÉPTIMA: GASTOS Y COSTAS JUDICIALES</div>
+                            <p>Todas las costas procesales y personales originadas por el cobro judicial de las cuotas impagas serán de cargo exclusivo del Deudor moroso.</p>
+                        `;
+                    } else {
+                        // Opción A: Notarial Bancario con Cláusula de Aceleración y Pagaré (6 Cláusulas - Recomendado)
+                        html += `
+                            <p style="margin-top:0.6rem;">Las partes mayores de edad acuerdan celebrar el presente Reconocimiento de Deuda sujeto a las siguientes 6 estipulaciones:</p>
+
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: RECONOCIMIENTO DE DEUDA LÍQUIDA Y EXIGIBLE</div>
+                            <p>Don/Doña <span class="highlight-var">${escapeHtml(nomB)}</span> reconoce expresa, libre y espontáneamente adeudar a <span class="highlight-var">${escapeHtml(nomA)}</span> la suma total de <span class="highlight-var" style="font-weight:700; color:#0F2A4A;">$${deudaFmt} CLP</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: CAUSA Y ORIGEN DE LA OBLIGACIÓN</div>
+                            <p>Se deja constancia de que la deuda proviene de: <span class="highlight-var">${escapeHtml(causa)}</span>, que el Deudor declara conocer, aceptar y liquidar a su total conformidad.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: FORMA Y CALENDARIO DE PAGO</div>
+                            <p>La deuda reconocida se pagará en <span class="highlight-var">${escapeHtml(cuotas)} cuotas mensuales y consecutivas</span> de <span class="highlight-var">$${cuotaFmt} CLP</span> pagaderas hasta el día <span class="highlight-var">${escapeHtml(diaPago)}</span> de cada mes calendario mediante transferencia bancaria o vale vista.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: INTERESES PENALES MORATORIOS (LEY N° 18.010)</div>
+                            <p>En caso de mora o retraso en el pago de cualquiera de las cuotas, se devengará de pleno derecho: <span class="highlight-var">${escapeHtml(interes)}</span>, computado diariamente sobre el saldo en mora.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: CLÁUSULA DE ACELERACIÓN Y RENUNCIA A REQUERIMIENTO</div>
+                            <p>El no pago oportuno de una cualquiera de las cuotas convenidas facultará al Acreedor para considerar vencida y exigible la totalidad de la deuda no pagada, pudiendo demandar de inmediato el cobro total del saldo insoluto más intereses y costas (Cláusula de Aceleración ipso facto), renunciando el Deudor a todo requerimiento previo de pago o interpelación judicial.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEXTA: PAGARÉ EN GARANTÍA, DOMICILIO Y JURISDICCIÓN</div>
+                            <p>Régimen de títulos ejecutivos: <span class="highlight-var">${escapeHtml(pagare)}</span>. Para todos los efectos legales, las partes fijan domicilio especial y único en la comuna y ciudad de Santiago, prorrogando expresamente jurisdicción y competencia ante sus Tribunales Ordinarios de Justicia.</p>
+                        `;
+                    }
                 } else if (CURRENT_TEMPLATE.slug === 'poder-especial-privado') {
                     const fac = document.getElementById('f_poder_facultades')?.value || 'Gestiones administrativas';
                     const vig = document.getElementById('f_poder_vigencia')?.value || '6 meses';

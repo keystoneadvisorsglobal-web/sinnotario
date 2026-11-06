@@ -1,5 +1,27 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-06 15:26 UTC-3] - SOL-0032
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0032`
+- **Alcance de los Cambios:**
+  - **Reconocimiento de Deuda y Compromiso de Pago (Ley N° 18.010):**
+    1. **Paso 1 y 2 Personalizados:**
+       - Paso 1 adaptado para "Acreedor / Beneficiario" (Razón Social o Nombre, RUT, Giro, Domicilio y Representante Legal).
+       - Paso 2 adaptado para "Deudor Principal" (Nombre, RUT, Profesión y Domicilio).
+    2. **Paso 3 con Selector Dinámico de las 3 Opciones:**
+       - *Opción A: Notarial Bancario con Cláusula de Aceleración y Pagaré (6 Cláusulas - Recomendado).* Reconocimiento líquido de deuda, origen lícito, calendario de cuotas, interés penal al máximo convencional CMF (Ley 18.010), Cláusula de Aceleración ipso facto ante simple retardo con renuncia expresa a requerimiento judicial previo y pagaré notarial paralelo.
+       - *Opción B: Con Codeudor Solidario / Fiador y Aval (8 Cláusulas).* Incorpora la comparecencia de un tercero garante como fiador, aval y codeudor solidario de todas las obligaciones, intereses y costas, con renuncia formal a los beneficios de orden y excusión.
+       - *Opción C: Transaccional Judicial / Pre-Demanda con Confesión de Deuda (7 Cláusulas).* Formato de transacción extrajudicial conforme al Art. 2446 del Código Civil con valor de cosa juzgada en última instancia (Art. 2460 CC) y sometimiento procesal expreso a la gestión preparatoria de la vía ejecutiva de reconocimiento de firma y confesión de deuda (Art. 434 N° 5 del Código de Procedimiento Civil) con habilitación de embargo inmediato y notificación electrónica (Ley 20.886).
+    3. **Motor PDF Criptográfico (`DocumentPdfService.php`):**
+       - Actualización de `renderClauses()` para emitir las cláusulas contractuales y procesales de cada variante con QR dinámico y Hash SHA-256 en Cloudflare R2.
+    4. **Cache-Busting:** Bump a `?v=20261106_10`.
+- **Pruebas Validadas:**
+  - PHP Lint remoto en Hostinger: 0 errores de sintaxis en `redactar.php` y `DocumentPdfService.php`.
+  - Smoke test HTTP: `curl -I "https://sinnotario.cl/redactar.php?slug=reconocimiento-deuda-pagare-privado"` -> `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
 ### [2026-11-06 15:22 UTC-3] - SOL-0031
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
