@@ -976,11 +976,19 @@ El backend administrativo implementa control de acceso basado en roles (**RBAC**
   * Estado del contenedor de WhatsApp en `http://5.183.9.148:8080`.
   * Configuración de plantillas de mensajes interactivos con botones (ej: *"Presiona aquí para firmar tu contrato"*).
 
-##### E. Consola de Clientes B2B / Empresas (`/admin/companies`)
-* Administración de cuentas corporativas de empresas (RRHH y Corredoras):
-  * Asignación de bolsas de firmas prepagadas o contratos post-pago mensual.
-  * Monitor del estado de conexión de la instancia de WhatsApp dedicada de cada cliente.
-  * Reportes consolidados de contratos de trabajo para la Dirección del Trabajo (DT).
+##### E. Consola de Clientes B2B, Instancias de WhatsApp y Parámetros Operativos (`/admin/companies` y `/admin/operations`)
+* **Gestión de Instancias de WhatsApp por Empresa Cliente:**
+  * Monitor de estado de conexión en tiempo real (`CONNECTED`, `CONNECTING`, `DISCONNECTED`) contra el gateway Evolution API (`http://5.183.9.148:8080`).
+  * Generador de Código QR dinámico en pantalla para vincular o reconectar el chip prepago / línea de RRHH de cada cliente.
+  * Selector de instancia fallback: si la línea de la empresa se desconecta por falta de batería o señal, el sistema conmuta automáticamente a la instancia de respaldo de SinNotario.cl para evitar frenar la operación.
+  * Personalizador de mensajes de salida por empresa: saludo corporativo, nombre del remitente, logo en avatar y disparador de recordatorios automáticos (a las 24 hrs, 48 hrs y 72 hrs).
+* **Gestor de Variables Operativas de la Plataforma (`/admin/system-variables`):**
+  * **Tiempos de Caducidad y Expiración:** Plazo máximo de vigencia de enlaces de firma (ej: 72 horas por defecto) antes de archivar el trámite.
+  * **Límites de Reintentos OTP / SMS:** Número máximo de envíos de códigos de seguridad por usuario para mitigar costos de SMS y ataques de fuerza bruta.
+  * **Políticas de Retención en Bóveda R2:** Definición de periodos de custodia legal (mínimo 5 años para contratos civiles, 10 años para finiquitos y contratos laborales).
+  * **Modo Mantenimiento y Pasarela de Acceso:** Interruptor global para activar/desactivar la pantalla de mantenimiento o limitar el acceso a IPs autorizadas durante actualizaciones en caliente.
+  * **Parámetros de Correos Transaccionales (SMTP):** Configuración de servidor de correo saliente, remitente oficial (`notificaciones@sinnotario.cl`) y plantillas HTML con marca blanca.
+  * **Tarifario Dinámico B2B:** Configuración de escalones de descuento por volumen (Tier 1: 1 a 50 firmas; Tier 2: 51 a 200 firmas; Tier 3: 201+ firmas).
 
 ##### F. Registro Forense de Auditoría (`/admin/audit-logs`)
 * Bitácora inalterable de todos los eventos del sistema:
