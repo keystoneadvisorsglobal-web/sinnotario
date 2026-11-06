@@ -2,6 +2,79 @@
  * SinNotario.cl - Motor de Aplicación y Frontend Interactivo
  */
 
+// Utilidad Oficial: Validación y Formato de RUT Chileno (Módulo 11)
+const RutHelper = {
+    clean(rut) {
+        return typeof rut === 'string' ? rut.replace(/[^0-9kK]/g, '').toUpperCase() : '';
+    },
+    format(rut) {
+        const clean = this.clean(rut);
+        if (clean.length < 2) return clean;
+        const cuerpo = clean.slice(0, -1);
+        const dv = clean.slice(-1);
+        let cuerpoFormateado = '';
+        let count = 0;
+        for (let i = cuerpo.length - 1; i >= 0; i--) {
+            cuerpoFormateado = cuerpo[i] + cuerpoFormateado;
+            count++;
+            if (count === 3 && i !== 0) {
+                cuerpoFormateado = '.' + cuerpoFormateado;
+                count = 0;
+            }
+        }
+        return `${cuerpoFormateado}-${dv}`;
+    },
+    validate(rut) {
+        const clean = this.clean(rut);
+        if (clean.length < 8 || clean.length > 9) return false;
+        const cuerpo = clean.slice(0, -1);
+        const dv = clean.slice(-1);
+        
+        let suma = 0;
+        let multiplo = 2;
+        for (let i = cuerpo.length - 1; i >= 0; i--) {
+            suma += parseInt(cuerpo[i], 10) * multiplo;
+            multiplo = multiplo < 7 ? multiplo + 1 : 2;
+        }
+        
+        const dvEsperadoCalculado = 11 - (suma % 11);
+        let dvEsperado = '';
+        if (dvEsperadoCalculado === 11) dvEsperado = '0';
+        else if (dvEsperadoCalculado === 10) dvEsperado = 'K';
+        else dvEsperado = dvEsperadoCalculado.toString();
+        
+        return dv === dvEsperado;
+    },
+    attachToInput(inputElement, errorElement) {
+        if (!inputElement) return;
+        inputElement.addEventListener('input', (e) => {
+            const raw = e.target.value;
+            const formatted = this.format(raw);
+            e.target.value = formatted;
+            
+            const clean = this.clean(formatted);
+            if (clean.length >= 8) {
+                const isValid = this.validate(clean);
+                if (isValid) {
+                    inputElement.classList.remove('rut-invalid');
+                    inputElement.classList.add('rut-valid');
+                    if (errorElement) errorElement.style.display = 'none';
+                } else {
+                    inputElement.classList.remove('rut-valid');
+                    inputElement.classList.add('rut-invalid');
+                    if (errorElement) {
+                        errorElement.innerText = 'RUT inválido (dígito verificador no coincide)';
+                        errorElement.style.display = 'block';
+                    }
+                }
+            } else {
+                inputElement.classList.remove('rut-valid', 'rut-invalid');
+                if (errorElement) errorElement.style.display = 'none';
+            }
+        });
+    }
+};
+
 // Catálogo de trámites prohibidos / exclusivos de Notaría (Detector Negativo)
 const NOTARY_EXCLUSIVE_KEYWORDS = [
     {
@@ -31,6 +104,9 @@ const NOTARY_EXCLUSIVE_KEYWORDS = [
 ];
 
 let allTemplates = [];
+let currentFilteredTemplates = [];
+let visibleCount = 3; // Mostrar inicialmente 3 y permitir "Cargar más"
+const PAGE_SIZE = 3;
 
 document.addEventListener('DOMContentLoaded', () => {
     initSearch();
@@ -53,7 +129,9 @@ async function loadTemplates(categoria = '') {
 
         if (json.success && json.data) {
             allTemplates = json.data;
-            renderTemplates(allTemplates);
+            currentFilteredTemplates = allTemplates;
+            visibleCount = 3;
+            renderTemplates();
         } else {
             grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color: #EF4444;">Error al cargar las plantillas.</div>';
         }
@@ -63,17 +141,21 @@ async function loadTemplates(categoria = '') {
     }
 }
 
-// 2. Renderizar tarjetas de plantillas
-function renderTemplates(templates) {
+// 2. Renderizar tarjetas de plantillas con botón "Cargar Más"
+function renderTemplates() {
     const grid = document.getElementById('templateGrid');
+    const loadMoreContainer = document.getElementById('loadMoreContainer');
     if (!grid) return;
 
-    if (templates.length === 0) {
+    if (currentFilteredTemplates.length === 0) {
         grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 2.5rem; color: #64748B;">No se encontraron trámites en esta categoría.</div>';
+        if (loadMoreContainer) loadMoreContainer.style.display = 'none';
         return;
     }
 
-    grid.innerHTML = templates.map(t => {
+    const itemsToDisplay = currentFilteredTemplates.slice(0, visibleCount);
+
+    grid.innerHTML = itemsToDisplay.map(t => {
         const precioFormatted = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(t.precio_base);
         return `
             <div class="template-card" data-slug="${t.slug}">
@@ -90,13 +172,30 @@ function renderTemplates(templates) {
                         ${precioFormatted}
                         <span>Firma Electrónica Incluida</span>
                     </div>
-                    <button class="btn-cta" onclick="openWizard('${t.slug}')">
+                    <button class="btn-card-create" onclick="openWizard('${t.slug}')">
                         Crear <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
         `;
     }).join('');
+
+    // Control de visibilidad del botón "Cargar Más"
+    if (loadMoreContainer) {
+        if (visibleCount < currentFilteredTemplates.length) {
+            loadMoreContainer.style.display = 'block';
+            const remaining = currentFilteredTemplates.length - visibleCount;
+            const btn = document.getElementById('btnLoadMore');
+            if (btn) btn.innerHTML = `Ver más trámites (${remaining} restantes) <i class="fas fa-chevron-down"></i>`;
+        } else {
+            loadMoreContainer.style.display = 'none';
+        }
+    }
+}
+
+function loadMoreTemplates() {
+    visibleCount += PAGE_SIZE;
+    renderTemplates();
 }
 
 // 3. Buscador inteligente con Detector Negativo
@@ -110,7 +209,9 @@ function initSearch() {
 
         if (query.length === 0) {
             if (alertBox) alertBox.style.display = 'none';
-            renderTemplates(allTemplates);
+            currentFilteredTemplates = allTemplates;
+            visibleCount = 3;
+            renderTemplates();
             return;
         }
 
@@ -140,12 +241,13 @@ function initSearch() {
         }
 
         // Filtrar plantillas disponibles
-        const filtered = allTemplates.filter(t => 
+        currentFilteredTemplates = allTemplates.filter(t => 
             t.nombre.toLowerCase().includes(query) ||
             t.descripcion.toLowerCase().includes(query) ||
             t.categoria.toLowerCase().includes(query)
         );
-        renderTemplates(filtered);
+        visibleCount = 3;
+        renderTemplates();
     });
 }
 
@@ -233,7 +335,7 @@ function initVerifyForm() {
     });
 }
 
-// 6. Asistente / Wizard modal
+// 6. Asistente / Wizard modal con formateo y validación de RUT
 function openWizard(slug) {
     const tpl = allTemplates.find(t => t.slug === slug);
     if (!tpl) return;
@@ -245,51 +347,56 @@ function openWizard(slug) {
     modalBody.innerHTML = `
         <div style="text-align: center; margin-bottom: 1.5rem;">
             <span class="card-category ${tpl.categoria}">${escapeHtml(tpl.categoria)}</span>
-            <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--primary); margin-top: 0.5rem;">${escapeHtml(tpl.nombre)}</h2>
-            <p style="font-size: 0.9rem; color: #64748B;">Configura los datos del documento y los firmantes en menos de 5 minutos</p>
+            <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--primary); margin-top: 0.5rem;">${escapeHtml(tpl.nombre)}</h2>
+            <p style="font-size: 0.88rem; color: #64748B;">Completa tus datos para emitir y firmar tu documento</p>
         </div>
 
-        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.88rem;">
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.85rem;">
             <p><strong><i class="fas fa-shield-alt" style="color:var(--accent);"></i> Validez Legal:</strong> ${escapeHtml(tpl.alerta_legal)}</p>
-            <p style="margin-top:0.35rem;"><strong><i class="fas fa-lock" style="color:var(--primary);"></i> Custodia:</strong> Bóveda Cloudflare R2 con sellado de tiempo y código de verificación QR.</p>
         </div>
 
         <form id="wizardQuickForm" onsubmit="submitWizard(event, '${tpl.slug}')">
-            <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--primary);">1. Datos del Titular / Solicitante</h4>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--primary);">1. Datos del Solicitante</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.85rem;">
                 <div>
                     <label style="font-size: 0.8rem; font-weight: 600; color: #475569;">Tu Nombre Completo *</label>
-                    <input type="text" id="w_nombre" required class="search-input" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:0.5rem;" placeholder="Ej: Juan Pérez González">
+                    <input type="text" id="w_nombre" required class="search-input" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:0.55rem; font-size:0.9rem;" placeholder="Ej: Juan Pérez">
                 </div>
                 <div>
-                    <label style="font-size: 0.8rem; font-weight: 600; color: #475569;">Tu RUT *</label>
-                    <input type="text" id="w_rut" required class="search-input" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:0.5rem;" placeholder="Ej: 15.345.678-9">
+                    <label style="font-size: 0.8rem; font-weight: 600; color: #475569;">Tu RUT (Módulo 11) *</label>
+                    <input type="text" id="w_rut" required class="search-input" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:0.55rem; font-size:0.9rem;" placeholder="12.345.678-K" maxlength="12">
+                    <span id="rutErrorSpan" class="rut-error-text">RUT inválido</span>
                 </div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
                 <div>
                     <label style="font-size: 0.8rem; font-weight: 600; color: #475569;">Correo Electrónico *</label>
-                    <input type="email" id="w_email" required class="search-input" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:0.5rem;" placeholder="juan@ejemplo.cl">
+                    <input type="email" id="w_email" required class="search-input" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:0.55rem; font-size:0.9rem;" placeholder="juan@ejemplo.cl">
                 </div>
                 <div>
                     <label style="font-size: 0.8rem; font-weight: 600; color: #475569;">Teléfono WhatsApp *</label>
-                    <input type="tel" id="w_tel" required class="search-input" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:0.5rem;" placeholder="+56 9 8765 4321">
+                    <input type="tel" id="w_tel" required class="search-input" style="width:100%; border:1px solid #CBD5E1; border-radius:6px; padding:0.55rem; font-size:0.9rem;" placeholder="+56 9 8765 4321">
                 </div>
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #E2E8F0; padding-top: 1.25rem;">
                 <div>
-                    <span style="font-size: 0.8rem; color: #64748B;">Total a Pagar</span>
+                    <span style="font-size: 0.78rem; color: #64748B;">Total a Pagar</span>
                     <h3 style="font-size: 1.3rem; color: var(--primary); font-weight: 800;">${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(tpl.precio_base)}</h3>
                 </div>
                 <button type="submit" class="btn-cta btn-gold">
-                    Continuar al Contrato <i class="fas fa-arrow-right"></i>
+                    Continuar al Trámite <i class="fas fa-arrow-right"></i>
                 </button>
             </div>
         </form>
     `;
 
     modal.style.display = 'flex';
+
+    // Vincular validador y formateador de RUT en tiempo real
+    const rutInput = document.getElementById('w_rut');
+    const rutError = document.getElementById('rutErrorSpan');
+    RutHelper.attachToInput(rutInput, rutError);
 }
 
 function closeWizard() {
@@ -299,10 +406,17 @@ function closeWizard() {
 
 async function submitWizard(e, slug) {
     e.preventDefault();
-    const nombre = document.getElementById('w_nombre').value;
-    const rut = document.getElementById('w_rut').value;
-    const email = document.getElementById('w_email').value;
-    const tel = document.getElementById('w_tel').value;
+    const nombre = document.getElementById('w_nombre').value.trim();
+    const rut = document.getElementById('w_rut').value.trim();
+    const email = document.getElementById('w_email').value.trim();
+    const tel = document.getElementById('w_tel').value.trim();
+
+    // Validar RUT antes de enviar
+    if (!RutHelper.validate(rut)) {
+        alert('Por favor ingresa un RUT válido con dígito verificador correcto.');
+        document.getElementById('w_rut').focus();
+        return;
+    }
 
     const payload = {
         template_slug: slug,
@@ -325,7 +439,7 @@ async function submitWizard(e, slug) {
         });
         const json = await res.json();
         if (json.success && json.data) {
-            alert(`¡Borrador creado exitosamente!\nCódigo de Verificación: ${json.data.codigo_verificacion}\nListo para proceder al firmado.`);
+            alert(`¡Borrador creado exitosamente!\nCódigo de Verificación: ${json.data.codigo_verificacion}\nListo para proceder.`);
             closeWizard();
         } else {
             alert('Error al crear el documento: ' + (json.error || 'Error desconocido'));

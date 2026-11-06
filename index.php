@@ -12,16 +12,13 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SinNotario.cl | Contratos Legales y Firma Digital sin Filas ni Esperas</title>
+    <title>SinNotario.cl | Contratos Legales y Firma Digital sin Notaría</title>
     <meta name="description" content="Genera, firma y valida contratos de arriendo Ley 21.461, promesas, finiquitos laborales y declaraciones juradas 100% online con plena validez legal (Ley 19.799).">
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     
-    <!-- Google Fonts & FontAwesome -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Estilos Principales -->
@@ -29,23 +26,18 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 </head>
 <body>
 
-    <!-- Header / Navbar -->
+    <!-- Header / Navbar Limpio -->
     <header class="site-header">
         <div class="nav-container">
             <a href="index.php" class="brand-logo">
                 <img src="assets/logos/sinnotario-logo.png" alt="SinNotario.cl Logo">
-                <div class="brand-text">
-                    <h1>SinNotario<span style="color:var(--accent);">.cl</span></h1>
-                    <span>Plataforma LegalTech Digital</span>
-                </div>
             </a>
 
             <ul class="nav-links">
                 <li><a href="index.php" class="<?= $page === 'home' ? 'active' : '' ?>">Trámites</a></li>
                 <li><a href="#verificar" onclick="scrollToVerify()">Verificar Documento</a></li>
                 <li><a href="#empresas">Solución Empresas</a></li>
-                <li><a href="#sucursales">Sucursales Físicas <span class="nav-badge-pill">Cabinas</span></a></li>
-                <li><a href="https://wa.me/56984180479?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" style="color: #25D366;"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
+                <li><a href="https://wa.me/56984180479?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
             </ul>
 
             <div>
@@ -86,7 +78,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
             </div>
         </section>
 
-        <!-- Catálogo de Plantillas -->
+        <!-- Catálogo de Plantillas con Carga Progresiva -->
         <section id="tramites" class="catalog-section">
             <div class="filter-pills">
                 <button class="filter-btn active" data-cat="todos">Todos los Trámites</button>
@@ -97,7 +89,14 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
             </div>
 
             <div id="templateGrid" class="template-grid">
-                <!-- Inyectado dinámicamente vía API -->
+                <!-- Inyectado dinámicamente vía API (3 iniciales) -->
+            </div>
+
+            <!-- Botón Cargar Más Trámites -->
+            <div id="loadMoreContainer" class="load-more-wrap" style="display: none;">
+                <button id="btnLoadMore" class="btn-load-more" onclick="loadMoreTemplates()">
+                    Ver más trámites <i class="fas fa-chevron-down"></i>
+                </button>
             </div>
         </section>
 
@@ -105,12 +104,12 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
         <section id="verificar" style="background: #FFFFFF; border-top: 1px solid var(--border); padding: 4rem 1.5rem;">
             <div style="max-width: 800px; margin: 0 auto; text-align: center;">
                 <span class="card-category" style="background: #ECFDF5; color: #047857;">Módulo Oficial de Autenticidad</span>
-                <h2 style="font-size: 2.2rem; font-weight: 800; color: var(--primary); margin: 0.6rem 0 0.8rem;">Verificador de Integridad y Firma</h2>
-                <p style="color: #64748B; font-size: 1.05rem; margin-bottom: 2rem;">
+                <h2 style="font-size: 2.1rem; font-weight: 800; color: var(--primary); margin: 0.6rem 0 0.8rem; letter-spacing: -0.02em;">Verificador de Integridad y Firma</h2>
+                <p style="color: #64748B; font-size: 1rem; margin-bottom: 2rem; line-height: 1.6;">
                     Ingresa el código único alfanumérico impreso al pie de página de cualquier documento emitido por SinNotario.cl para consultar su firma digital y bóveda de custodia en Cloudflare R2.
                 </p>
 
-                <div class="search-input-wrap" style="border: 2px solid var(--primary); box-shadow: var(--shadow-md);">
+                <div class="search-input-wrap" style="border: 1.5px solid var(--primary); box-shadow: var(--shadow-sm); max-width: 600px; margin: 0 auto;">
                     <i class="fas fa-qrcode"></i>
                     <input type="text" id="verifyCodeInput" class="search-input" placeholder="Ej: SN-4A9B-81CD" style="text-transform: uppercase;">
                     <button id="btnSubmitVerify" class="search-btn">
@@ -118,59 +117,22 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
                     </button>
                 </div>
 
-                <div id="verifyResultDiv" style="margin-top: 1.5rem; text-align: left; display: none;"></div>
-            </div>
-        </section>
-
-        <!-- Propuesta de Valor Híbrida (Online + Sucursales) -->
-        <section id="sucursales" style="background: #F1F5F9; padding: 4.5rem 1.5rem;">
-            <div style="max-width: 1280px; margin: 0 auto;">
-                <div style="text-align: center; margin-bottom: 3rem;">
-                    <span class="card-category">Modelo Híbrido Keystone</span>
-                    <h2 style="font-size: 2.2rem; font-weight: 800; color: var(--primary); margin-top: 0.5rem;">Tu tranquilidad legal, como prefieras</h2>
-                    <p style="color: #64748B; font-size: 1.05rem;">100% autoservicio desde tu hogar o en nuestras cabinas privadas de firma asistida.</p>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;">
-                    <div style="background: white; border-radius: 12px; padding: 2rem; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
-                        <div style="width: 50px; height: 50px; border-radius: 10px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.25rem;">
-                            <i class="fas fa-mobile-alt"></i>
-                        </div>
-                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">100% Online en 3 Pasos</h3>
-                        <p style="color: #64748B; font-size: 0.92rem; line-height: 1.6;">Completa los datos en el formulario asistido, firma con ClaveÚnica o SMS y recibe el PDF sellado en tu correo y WhatsApp en minutos.</p>
-                    </div>
-
-                    <div style="background: white; border-radius: 12px; padding: 2rem; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
-                        <div style="width: 50px; height: 50px; border-radius: 10px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.25rem;">
-                            <i class="fas fa-store"></i>
-                        </div>
-                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">Cabinas de Firma Asistida</h3>
-                        <p style="color: #64748B; font-size: 0.92rem; line-height: 1.6;">Sucursales físicas con módulos privados para firmar en pantalla táctil con validación biométrica y asesoría legal personalizada.</p>
-                    </div>
-
-                    <div style="background: white; border-radius: 12px; padding: 2rem; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
-                        <div style="width: 50px; height: 50px; border-radius: 10px; background: #DCFCE7; color: #16A34A; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.25rem;">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">Bóveda Segura Cloudflare R2</h3>
-                        <p style="color: #64748B; font-size: 0.92rem; line-height: 1.6;">Tus contratos quedan custodiados con cifrado en reposo y estampillado cronológico inalterable durante más de 5 años.</p>
-                    </div>
-                </div>
+                <div id="verifyResultDiv" style="margin-top: 1.5rem; text-align: left; display: none; max-width: 600px; margin-left: auto; margin-right: auto;"></div>
             </div>
         </section>
 
         <!-- Solución Empresas B2B -->
         <section id="empresas" style="background: #0F2A4A; color: white; padding: 4.5rem 1.5rem;">
-            <div style="max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem;">
+            <div style="max-width: 1240px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem;">
                 <div style="max-width: 700px;">
                     <span class="card-category" style="background: rgba(212, 175, 55, 0.2); color: var(--accent);">Para Departamentos de RRHH y Corredores</span>
-                    <h2 style="font-size: 2.2rem; font-weight: 800; margin: 0.5rem 0 1rem; color: #FFFFFF;">¿Necesitas firmar decenas de contratos al mes?</h2>
-                    <p style="color: #CBD5E1; font-size: 1.05rem; line-height: 1.6;">
+                    <h2 style="font-size: 2.1rem; font-weight: 800; margin: 0.5rem 0 0.85rem; color: #FFFFFF; letter-spacing: -0.02em;">¿Necesitas firmar decenas de contratos al mes?</h2>
+                    <p style="color: #CBD5E1; font-size: 1rem; line-height: 1.6;">
                         Disponemos de firma masiva por lotes, WhatsApp oficial dedicado por empresa vía Evolution API y panel corporativo multiusuario con tarifas preferenciales por volumen.
                     </p>
                 </div>
                 <div>
-                    <a href="https://wa.me/56984180479?text=Hola,%20me%20interesa%20la%20solución%20empresas%20de%20SinNotario.cl" target="_blank" class="btn-cta btn-gold" style="padding: 1rem 2rem; font-size: 1.05rem;">
+                    <a href="https://wa.me/56984180479?text=Hola,%20me%20interesa%20la%20solución%20empresas%20de%20SinNotario.cl" target="_blank" class="btn-cta btn-gold" style="padding: 0.85rem 1.8rem; font-size: 0.95rem;">
                         <i class="fab fa-whatsapp"></i> Contactar a Ventas B2B
                     </a>
                 </div>
@@ -178,7 +140,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
         </section>
     </main>
 
-    <!-- Modal Wizard -->
+    <!-- Modal Wizard con Validación Módulo 11 -->
     <div id="wizardModal" class="modal-overlay">
         <div class="modal-content">
             <button class="modal-close" onclick="closeWizard()">&times;</button>
@@ -193,10 +155,10 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
                 <h3 style="display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fas fa-balance-scale" style="color: var(--accent);"></i> SinNotario.cl
                 </h3>
-                <p style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 1rem;">
+                <p style="font-size: 0.88rem; line-height: 1.6; margin-bottom: 1rem;">
                     Plataforma LegalTech desarrollada por <strong>Keystone Advisors</strong>. Democratizamos el acceso a instrumentos legales y firma electrónica avanzada en todo Chile, reduciendo tiempos de espera y costos innecesarios.
                 </p>
-                <p style="font-size: 0.85rem; color: #64748B;">
+                <p style="font-size: 0.82rem; color: #64748B;">
                     © <?= date('Y') ?> Keystone Advisors SpA. Todos los derechos reservados.
                 </p>
             </div>
@@ -228,7 +190,6 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
                 <ul>
                     <li><a href="https://wa.me/56984180479" target="_blank"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
                     <li><a href="mailto:soporte@sinnotario.cl"><i class="far fa-envelope"></i> soporte@sinnotario.cl</a></li>
-                    <li><a href="#sucursales"><i class="fas fa-map-marker-alt"></i> Red de Sucursales Chile</a></li>
                     <li><a href="#verificar"><i class="fas fa-shield-alt"></i> Validador de Firmas</a></li>
                 </ul>
             </div>
