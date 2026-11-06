@@ -5,14 +5,14 @@
  */
 
 class StorageR2Adapter {
-    private string $accountId;
-    private string $apiToken;
-    private string $bucketName;
+    public string $accountId;
+    public string $apiToken;
+    public string $bucketName;
 
     public function __construct() {
-        $this->accountId = getenv('R2_ACCOUNT_ID') ?: 'cf9641882a84e35bbf80ae7681d7ee71';
-        $this->apiToken  = getenv('R2_API_TOKEN')  ?: 'cfat_i4KtjnZZ8GjFRttA23uEQC5hQvS6eI5Czcthy1g571fbf3a3';
-        $this->bucketName= getenv('R2_BUCKET_NAME')?: 'sinnotario-vault-prod';
+        $this->accountId = getenv('CLOUDFLARE_ACCOUNT_ID') ?: (getenv('R2_ACCOUNT_ID') ?: 'cf9641882a84e35bbf80ae7681d7ee71');
+        $this->apiToken  = getenv('CLOUDFLARE_API_TOKEN')  ?: (getenv('R2_API_TOKEN')  ?: 'cfat_i4KtjnZZ8GjFRttA23uEQC5hQvS6eI5Czcthy1g571fbf3a3');
+        $this->bucketName= getenv('CLOUDFLARE_R2_BUCKET')  ?: (getenv('R2_BUCKET_NAME')?: 'sinnotario-vault-prod');
     }
 
     /**
