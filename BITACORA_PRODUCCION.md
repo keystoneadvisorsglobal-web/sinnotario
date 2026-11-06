@@ -166,3 +166,18 @@
     - Smoke test del portal home: HTTP 200 OK (`https://sinnotario.cl/`).
     - Verificación de renderizado de selectores `.brand-logo img` y `.nav-links a`.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
+
+---
+
+### Entrada: 2026-11-06 10:08:00 UTC-3
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0021`
+- **Resumen de la Ejecución:**
+  - **Detección y Causa Raíz:** Se detectó un error sintáctico (`Unexpected token '}'`) en `assets/js/app.js` originado por código residual de un modal modal legado tras la migración al Wizard universal Split View 60/40 (`redactar.php`). Esto causaba que el navegador abortara el análisis de JavaScript, impidiendo que `DOMContentLoaded` ejecutara `loadTemplates()` y dejando los botones de filtro inoperativos.
+  - **Corrección Aplicada:** Se limpió la función `openWizard(slug)` eliminando el bloque huérfano, se validó la sintaxis completa con Node.js (`node -c assets/js/app.js` -> 0 errores) y se agregó control de versionado (*cache-busting*) `?v=20261106_2` en los enlaces de `app.js` y `style.css` dentro de `index.php`.
+  - **Pruebas Validadas:**
+    - Carga de API `api/index.php?action=get_templates`: HTTP 200 OK con el catálogo completo de 13 plantillas.
+    - Carga de `app.js?v=20261106_2`: HTTP 200 OK y sintaxis validada.
+    - Smoke test funcional: HTTP 200 OK en `https://sinnotario.cl/`.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.

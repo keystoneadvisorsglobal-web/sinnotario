@@ -22,7 +22,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Estilos Principales -->
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=20261106_2">
 </head>
 <body>
 
@@ -263,7 +263,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
     </footer>
 
     <!-- Scripts -->
-    <script src="assets/js/app.js"></script>
+    <script src="assets/js/app.js?v=20261106_2"></script>
     <script>
         function scrollToVerify() {
             const el = document.getElementById('verificar');
