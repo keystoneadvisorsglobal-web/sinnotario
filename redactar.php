@@ -1,17 +1,35 @@
 <?php
 /**
- * SinNotario.cl - Wizard Interactivo de Redacción (Layout 60/40)
- * Contrato de Arriendo Residencial Ley N° 21.461 ("Devuélveme Mi Casa")
+ * SinNotario.cl - Wizard Universal de Redacción y Live Preview (Split View 60/40)
+ * Cubre el 100% de las 13 plantillas legales de la plataforma:
+ * Inmobiliario, Laboral, Comercial y Declaraciones Juradas
  */
 require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/database/Database.php';
+
 $slug = isset($_GET['slug']) ? trim($_GET['slug']) : 'contrato-arriendo-ley-21461';
+$pdo = Database::getInstance();
+
+$stmt = $pdo->prepare("SELECT * FROM templates WHERE slug = ?");
+$stmt->execute([$slug]);
+$tpl = $stmt->fetch();
+
+if (!$tpl) {
+    // Si no existe, fallback a contrato de arriendo
+    $stmt = $pdo->prepare("SELECT * FROM templates WHERE slug = 'contrato-arriendo-ley-21461'");
+    $stmt->execute();
+    $tpl = $stmt->fetch();
+    $slug = 'contrato-arriendo-ley-21461';
+}
+
+$precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redactar Contrato de Arriendo Ley 21.461 | SinNotario.cl</title>
+    <title><?= htmlspecialchars($tpl['nombre']) ?> | SinNotario.cl</title>
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
@@ -21,12 +39,11 @@ $slug = isset($_GET['slug']) ? trim($_GET['slug']) : 'contrato-arriendo-ley-2146
             grid-template-columns: 58% 42%;
             gap: 2rem;
             max-width: 1400px;
-            margin: 1.5rem auto 3rem;
+            margin: 1.5rem auto 3.5rem;
             padding: 0 1.5rem;
             align-items: start;
         }
 
-        /* Formulario Izquierda (60%) */
         .form-pane {
             background: #FFFFFF;
             border-radius: 12px;
@@ -78,9 +95,9 @@ $slug = isset($_GET['slug']) ? trim($_GET['slug']) : 'contrato-arriendo-ley-2146
         }
 
         .step-item.active .step-bubble {
-            background: var(--primary);
-            color: #FFFFFF;
-            border-color: var(--primary);
+            background: var(--accent);
+            color: #0A1C33;
+            border-color: var(--accent);
         }
 
         .step-item.completed .step-bubble {
@@ -197,7 +214,6 @@ $slug = isset($_GET['slug']) ? trim($_GET['slug']) : 'contrato-arriendo-ley-2146
             position: relative;
         }
 
-        /* Marca de agua Borrador */
         .watermark {
             position: absolute;
             top: 50%;
@@ -263,313 +279,209 @@ $slug = isset($_GET['slug']) ? trim($_GET['slug']) : 'contrato-arriendo-ley-2146
                 <img src="assets/logos/sinnotario-logo.png" alt="SinNotario.cl Logo">
             </a>
             <div style="font-size: 0.9rem; color: #64748B;">
-                <span class="card-category inmobiliario">Inmobiliario</span> Contrato de Arriendo Residencial Ley N° 21.461
+                <span class="card-category <?= htmlspecialchars($tpl['categoria']) ?>"><?= ucfirst(htmlspecialchars($tpl['categoria'])) ?></span> 
+                <?= htmlspecialchars($tpl['nombre']) ?>
             </div>
             <div>
                 <a href="index.php" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;">
-                    <i class="fas fa-times"></i> Cancelar
+                    <i class="fas fa-times"></i> Salir
                 </a>
             </div>
         </div>
     </header>
 
-    <!-- Wizard 60/40 -->
+    <!-- Wizard Universal Split View 60/40 -->
     <main class="wizard-container">
         
-        <!-- Columna Izquierda: Formulario Guiado (60%) -->
+        <!-- Formulario Izquierda (60%) -->
         <div class="form-pane">
             <div class="step-progress-bar">
                 <div id="pStep1" class="step-item active">
                     <div class="step-bubble">1</div>
-                    <div class="step-label">Arrendador</div>
+                    <div class="step-label" id="lblStep1">Titular / Parte A</div>
                 </div>
                 <div id="pStep2" class="step-item">
                     <div class="step-bubble">2</div>
-                    <div class="step-label">Arrendatario</div>
+                    <div class="step-label" id="lblStep2">Contraparte B</div>
                 </div>
                 <div id="pStep3" class="step-item">
                     <div class="step-bubble">3</div>
-                    <div class="step-label">Inmueble</div>
+                    <div class="step-label" id="lblStep3">Detalles</div>
                 </div>
                 <div id="pStep4" class="step-item">
                     <div class="step-bubble">4</div>
-                    <div class="step-label">Renta y Plazos</div>
-                </div>
-                <div id="pStep5" class="step-item">
-                    <div class="step-bubble">5</div>
-                    <div class="step-label">Finalizar</div>
+                    <div class="step-label" id="lblStep4">Revisión & Pago</div>
                 </div>
             </div>
 
-            <form id="arriendoWizardForm" onsubmit="event.preventDefault();">
+            <form id="universalWizardForm" onsubmit="event.preventDefault();">
                 
-                <!-- PASO 1: ARRENDADOR -->
+                <!-- PASO 1: PARTE A / TITULAR -->
                 <div id="step1" class="wizard-step active">
-                    <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 0.5rem;">
-                        Paso 1: Datos del Propietario / Arrendador
+                    <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 0.5rem;" id="step1Title">
+                        Paso 1: Datos del Titular / Primer Compareciente
                     </h2>
-                    <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.5rem;">
-                        Identifica a quien da en arriendo el inmueble. Sus datos quedarán asociados a la firma con ClaveÚnica.
+                    <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.5rem;" id="step1Desc">
+                        Ingresa los datos de identificación oficial. Se validará con RUT Módulo 11 para la firma electrónica.
                     </p>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Nombre Completo del Arrendador *</label>
-                            <input type="text" id="f_arrendador_nombre" class="form-control" placeholder="Ej: Carlos Eduardo Morales Tapia" value="Carlos Eduardo Morales Tapia">
+                            <label id="lbl_parte_a_nombre">Nombre Completo *</label>
+                            <input type="text" id="f_parte_a_nombre" class="form-control" placeholder="Ej: Juan Andrés Pérez González" value="Juan Andrés Pérez González">
                         </div>
                         <div class="form-group">
-                            <label>RUT Arrendador (Módulo 11) *</label>
-                            <input type="text" id="f_arrendador_rut" class="form-control" placeholder="11.222.333-4" value="11.222.333-4" maxlength="12">
-                            <span id="err_arrendador_rut" class="rut-error-text">RUT inválido</span>
+                            <label>RUT (Módulo 11) *</label>
+                            <input type="text" id="f_parte_a_rut" class="form-control" placeholder="12.345.678-5" value="12.345.678-5" maxlength="12">
+                            <span id="err_parte_a_rut" class="rut-error-text">RUT inválido</span>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label>Correo Electrónico (Para recibir enlace de firma) *</label>
-                            <input type="email" id="f_arrendador_email" class="form-control" placeholder="carlos.morales@gmail.com" value="carlos.morales@gmail.com">
+                            <input type="email" id="f_parte_a_email" class="form-control" placeholder="juan.perez@ejemplo.cl" value="juan.perez@ejemplo.cl">
                         </div>
                         <div class="form-group">
-                            <label>WhatsApp del Arrendador *</label>
-                            <input type="tel" id="f_arrendador_tel" class="form-control" placeholder="+56 9 9123 4567" value="+56 9 9123 4567">
+                            <label>Teléfono WhatsApp *</label>
+                            <input type="tel" id="f_parte_a_tel" class="form-control" placeholder="+56 9 9123 4567" value="+56 9 9123 4567">
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label>Domicilio Particular *</label>
-                            <input type="text" id="f_arrendador_domicilio" class="form-control" placeholder="Av. Providencia 1234, Depto 402" value="Av. Providencia 1234, Depto 402">
+                            <input type="text" id="f_parte_a_domicilio" class="form-control" placeholder="Av. Providencia 1234, Depto 402" value="Av. Providencia 1234, Depto 402">
                         </div>
                         <div class="form-group">
                             <label>Comuna y Ciudad *</label>
-                            <input type="text" id="f_arrendador_comuna" class="form-control" placeholder="Providencia, Santiago" value="Providencia, Santiago">
+                            <input type="text" id="f_parte_a_comuna" class="form-control" placeholder="Providencia, Santiago" value="Providencia, Santiago">
                         </div>
                     </div>
 
                     <div class="wizard-actions">
                         <div></div>
-                        <button type="button" class="btn-cta" onclick="nextStep(2)">
-                            Siguiente: Arrendatario <i class="fas fa-arrow-right"></i>
+                        <button type="button" class="btn-cta" onclick="nextUniversalStep(2)">
+                            Siguiente Paso <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- PASO 2: ARRENDATARIO -->
+                <!-- PASO 2: PARTE B / CONTRAPARTE (Omitible en declaraciones unipersonales) -->
                 <div id="step2" class="wizard-step">
-                    <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 0.5rem;">
-                        Paso 2: Datos del Arrendatario (Inquilino)
+                    <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 0.5rem;" id="step2Title">
+                        Paso 2: Datos de la Contraparte
                     </h2>
-                    <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.5rem;">
-                        A esta persona se le despachará el enlace seguro para suscribir el contrato desde su celular o computador.
+                    <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.5rem;" id="step2Desc">
+                        Ingresa los datos de la segunda parte compareciente para el despacho de su enlace de firma.
                     </p>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Nombre Completo del Arrendatario *</label>
-                            <input type="text" id="f_arrendatario_nombre" class="form-control" placeholder="Ej: María José Valenzuela Castro" value="María José Valenzuela Castro">
-                        </div>
-                        <div class="form-group">
-                            <label>RUT Arrendatario (Módulo 11) *</label>
-                            <input type="text" id="f_arrendatario_rut" class="form-control" placeholder="15.444.555-6" value="15.444.555-6" maxlength="12">
-                            <span id="err_arrendatario_rut" class="rut-error-text">RUT inválido</span>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Correo Electrónico Arrendatario *</label>
-                            <input type="email" id="f_arrendatario_email" class="form-control" placeholder="mj.valenzuela@gmail.com" value="mj.valenzuela@gmail.com">
-                        </div>
-                        <div class="form-group">
-                            <label>WhatsApp del Arrendatario *</label>
-                            <input type="tel" id="f_arrendatario_tel" class="form-control" placeholder="+56 9 8765 4321" value="+56 9 8765 4321">
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 1rem;">
-                        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
-                            <input type="checkbox" id="chk_tiene_aval" onchange="toggleAvalFields()">
-                            <span><strong>¿Agregar Codeudor Solidario (Aval)?</strong> (Opcional para mayor respaldo)</span>
-                        </label>
-                    </div>
-
-                    <div id="avalFieldsWrap" style="display:none; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:1rem; margin-top:1rem;">
-                        <h4 style="font-size:0.9rem; font-weight:700; color:var(--primary); margin-bottom:0.75rem;">Datos del Codeudor Solidario / Aval</h4>
+                    <div id="parteBFieldsWrap">
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Nombre del Aval</label>
-                                <input type="text" id="f_aval_nombre" class="form-control" placeholder="Nombre completo">
+                                <label id="lbl_parte_b_nombre">Nombre Completo de la Contraparte *</label>
+                                <input type="text" id="f_parte_b_nombre" class="form-control" placeholder="Ej: María José Valenzuela" value="María José Valenzuela">
                             </div>
                             <div class="form-group">
-                                <label>RUT del Aval</label>
-                                <input type="text" id="f_aval_rut" class="form-control" placeholder="RUT" maxlength="12">
-                                <span id="err_aval_rut" class="rut-error-text">RUT inválido</span>
+                                <label>RUT de la Contraparte (Módulo 11) *</label>
+                                <input type="text" id="f_parte_b_rut" class="form-control" placeholder="15.444.555-6" value="15.444.555-6" maxlength="12">
+                                <span id="err_parte_b_rut" class="rut-error-text">RUT inválido</span>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Correo Electrónico de la Contraparte *</label>
+                                <input type="email" id="f_parte_b_email" class="form-control" placeholder="mj.valenzuela@ejemplo.cl" value="mj.valenzuela@ejemplo.cl">
+                            </div>
+                            <div class="form-group">
+                                <label>WhatsApp de la Contraparte *</label>
+                                <input type="tel" id="f_parte_b_tel" class="form-control" placeholder="+56 9 8765 4321" value="+56 9 8765 4321">
                             </div>
                         </div>
                     </div>
 
+                    <!-- Mensaje para declaraciones juradas unipersonales -->
+                    <div id="unipersonalNotice" style="display:none; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:1.25rem; text-align:center;">
+                        <i class="fas fa-user-check fa-2x" style="color:var(--success); margin-bottom:0.5rem;"></i>
+                        <h4 style="font-size:0.95rem; font-weight:700; color:var(--primary);">Trámite Unipersonal</h4>
+                        <p style="font-size:0.85rem; color:#64748B;">Este documento solo requiere la comparecencia y firma del titular declarante (no intervienen contrapartes adicionales).</p>
+                    </div>
+
                     <div class="wizard-actions">
-                        <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="prevStep(1)">
+                        <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="prevUniversalStep(1)">
                             <i class="fas fa-arrow-left"></i> Volver
                         </button>
-                        <button type="button" class="btn-cta" onclick="nextStep(3)">
-                            Siguiente: Inmueble <i class="fas fa-arrow-right"></i>
+                        <button type="button" class="btn-cta" onclick="nextUniversalStep(3)">
+                            Siguiente: Condiciones <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- PASO 3: INMUEBLE -->
+                <!-- PASO 3: DETALLES, CONDICIONES Y VARIABLES ESPECÍFICAS -->
                 <div id="step3" class="wizard-step">
                     <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 0.5rem;">
-                        Paso 3: Identificación del Inmueble
+                        Paso 3: Condiciones Específicas del Documento
                     </h2>
                     <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.5rem;">
-                        Especifica la dirección exacta de la propiedad objeto del arriendo.
+                        Configura las cláusulas, montos, fechas y destinos particulares de este instrumento.
                     </p>
 
-                    <div class="form-group">
-                        <label>Dirección de la Propiedad (Calle y Número) *</label>
-                        <input type="text" id="f_propiedad_direccion" class="form-control" placeholder="Ej: Los Leones 2500" value="Los Leones 2500">
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Depto / Casa / Oficina N°</label>
-                            <input type="text" id="f_propiedad_depto" class="form-control" placeholder="Ej: Depto 504" value="Depto 504">
-                        </div>
-                        <div class="form-group">
-                            <label>Comuna y Ciudad *</label>
-                            <input type="text" id="f_propiedad_comuna" class="form-control" placeholder="Ej: Providencia, Santiago" value="Providencia, Santiago">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Bodega N° (Opcional)</label>
-                            <input type="text" id="f_propiedad_bodega" class="form-control" placeholder="Ej: B-12" value="B-12">
-                        </div>
-                        <div class="form-group">
-                            <label>Estacionamiento N° (Opcional)</label>
-                            <input type="text" id="f_propiedad_estacionamiento" class="form-control" placeholder="Ej: E-45" value="E-45">
-                        </div>
+                    <div id="dynamicSpecificFields">
+                        <!-- Campos inyectados según plantilla -->
                     </div>
 
                     <div class="wizard-actions">
-                        <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="prevStep(2)">
+                        <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="prevUniversalStep(2)">
                             <i class="fas fa-arrow-left"></i> Volver
                         </button>
-                        <button type="button" class="btn-cta" onclick="nextStep(4)">
-                            Siguiente: Renta y Plazos <i class="fas fa-arrow-right"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- PASO 4: RENTA Y PLAZOS -->
-                <div id="step4" class="wizard-step">
-                    <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 0.5rem;">
-                        Paso 4: Renta Mensual, Garantía y Plazos
-                    </h2>
-                    <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.5rem;">
-                        Parámetros económicos y blindaje de la Ley N° 21.461 ("Devuélveme Mi Casa").
-                    </p>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Renta Mensual de Arriendo ($ CLP) *</label>
-                            <input type="number" id="f_renta_clp" class="form-control" placeholder="Ej: 550000" value="550000">
-                        </div>
-                        <div class="form-group">
-                            <label>Día Límite de Pago de Cada Mes *</label>
-                            <input type="number" id="f_dia_pago" class="form-control" placeholder="5" value="5" min="1" max="28">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Monto de Garantía ($ CLP) *</label>
-                            <input type="number" id="f_garantia_clp" class="form-control" placeholder="550000" value="550000">
-                        </div>
-                        <div class="form-group">
-                            <label>Reajuste IPC *</label>
-                            <select id="f_reajuste" class="form-control">
-                                <option value="semestral">Semestral según variación IPC</option>
-                                <option value="anual" selected>Anual según variación IPC</option>
-                                <option value="trimestral">Trimestral según variación IPC</option>
-                                <option value="sin reajuste">Sin reajuste</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Fecha de Inicio del Contrato *</label>
-                            <input type="date" id="f_fecha_inicio" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>Duración del Contrato *</label>
-                            <select id="f_duracion_meses" class="form-control">
-                                <option value="12" selected>12 Meses (Renovable)</option>
-                                <option value="6">6 Meses</option>
-                                <option value="24">24 Meses</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:1rem; margin-top:1rem; font-size:0.85rem; color:#1E3A8A;">
-                        <i class="fas fa-balance-scale" style="color:var(--primary);"></i> <strong>Cláusula Ley N° 21.461:</strong> El contrato incorpora de forma irrevocable la sumisión al procedimiento monitorio con restitución anticipada de la propiedad y lanzamiento en 10 días corridos ante no pago de rentas.
-                    </div>
-
-                    <div class="wizard-actions">
-                        <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="prevStep(3)">
-                            <i class="fas fa-arrow-left"></i> Volver
-                        </button>
-                        <button type="button" class="btn-cta" onclick="nextStep(5)">
+                        <button type="button" class="btn-cta" onclick="nextUniversalStep(4)">
                             Siguiente: Revisar y Finalizar <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- PASO 5: RESUMEN Y CHECKOUT -->
-                <div id="step5" class="wizard-step">
+                <!-- PASO 4: REVISIÓN Y DESPACHO -->
+                <div id="step4" class="wizard-step">
                     <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 0.5rem;">
-                        Paso 5: Resumen de la Orden y Despacho
+                        Paso 4: Resumen de la Orden y Emisión
                     </h2>
                     <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.5rem;">
-                        Verifica el resumen. Al confirmar, se generará el borrador criptográfico y el código QR de verificación.
+                        Al confirmar, se emitirá el borrador protegido con sellado criptográfico y código único QR.
                     </p>
 
                     <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:10px; padding:1.25rem; margin-bottom:1.5rem; font-size:0.88rem;">
                         <div style="display:flex; justify-content:space-between; margin-bottom:0.6rem;">
-                            <span>Contrato de Arriendo Residencial Ley N° 21.461</span>
-                            <strong>$9.990 CLP</strong>
+                            <span><strong>Trámite:</strong> <?= htmlspecialchars($tpl['nombre']) ?></span>
+                            <strong>$<?= number_format($tpl['precio_base'], 0, ',', '.') ?> CLP</strong>
                         </div>
                         <div style="display:flex; justify-content:space-between; margin-bottom:0.6rem; color:#64748B;">
-                            <span>2 Firmas Electrónicas Avanzadas (ClaveÚnica)</span>
-                            <strong style="color:#059669;">INCLUIDAS</strong>
+                            <span>Firma Electrónica Avanzada / Simple (Ley 19.799)</span>
+                            <strong style="color:#059669;">INCLUIDA</strong>
                         </div>
                         <div style="display:flex; justify-content:space-between; margin-bottom:0.6rem; color:#64748B;">
-                            <span>Custodia Cifrada en Cloudflare R2 (5 años)</span>
+                            <span>Custodia Cifrada en Bóveda Cloudflare R2</span>
                             <strong style="color:#059669;">INCLUIDA</strong>
                         </div>
                         <div style="border-top:1px solid #CBD5E1; padding-top:0.75rem; display:flex; justify-content:space-between; font-size:1.15rem; font-weight:800; color:var(--primary);">
                             <span>Total a Pagar:</span>
-                            <span>$9.990 CLP</span>
+                            <span>$<?= number_format($tpl['precio_base'], 0, ',', '.') ?> CLP</span>
                         </div>
                     </div>
 
                     <div style="margin-bottom:1.5rem;">
                         <label style="display:flex; align-items:flex-start; gap:0.5rem; font-size:0.85rem; color:#475569; cursor:pointer;">
                             <input type="checkbox" id="chk_terminos" checked style="margin-top:2px;">
-                            <span>Acepto los Términos y Condiciones y declaro que los datos ingresados son fidedignos para la celebración del instrumento privado bajo la Ley N° 19.799.</span>
+                            <span>Declaro que los antecedentes proporcionados son fidedignos y acepto celebrar este instrumento privado con validez jurídica según la Ley N° 19.799.</span>
                         </label>
                     </div>
 
                     <div class="wizard-actions">
-                        <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="prevStep(4)">
+                        <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="prevUniversalStep(3)">
                             <i class="fas fa-arrow-left"></i> Volver
                         </button>
-                        <button type="button" id="btnEmitirContrato" class="btn-cta btn-gold" onclick="emitirContratoFinal()">
-                            <i class="fas fa-shield-alt"></i> Emitir Contrato y Despachar <i class="fas fa-arrow-right"></i>
+                        <button type="button" id="btnEmitirUniversal" class="btn-cta btn-gold" onclick="emitirUniversalFinal()">
+                            <i class="fas fa-shield-alt"></i> Emitir Documento y Despachar <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
                 </div>
@@ -577,7 +489,7 @@ $slug = isset($_GET['slug']) ? trim($_GET['slug']) : 'contrato-arriendo-ley-2146
             </form>
         </div>
 
-        <!-- Columna Derecha: Live Document Preview (40%) -->
+        <!-- Previsualizador Derecha (40%) -->
         <div class="preview-pane">
             <div class="preview-header">
                 <h3><i class="far fa-file-alt"></i> Vista Previa en Vivo</h3>
@@ -586,61 +498,24 @@ $slug = isset($_GET['slug']) ? trim($_GET['slug']) : 'contrato-arriendo-ley-2146
                 </span>
             </div>
             
-            <div class="preview-body" id="docPreviewContainer">
+            <div class="preview-body" id="universalDocPreview">
                 <div class="watermark">BORRADOR</div>
 
-                <div class="preview-doc-title">Contrato de Arrendamiento de Inmueble</div>
-                <div class="preview-doc-subtitle">Conforme a la Ley N° 18.101 y Ley N° 21.461 ("Devuélveme Mi Casa")</div>
+                <div class="preview-doc-title" id="pv_titulo_documento"><?= htmlspecialchars($tpl['nombre']) ?></div>
+                <div class="preview-doc-subtitle" id="pv_subtitulo_legal"><?= htmlspecialchars($tpl['alerta_legal']) ?></div>
 
-                <p>
-                    En la ciudad de <span id="pv_ciudad" class="highlight-var">Santiago</span>, República de Chile, a <span id="pv_fecha_hoy" class="highlight-var"><?= date('d/m/Y') ?></span>, comparecen:
-                </p>
-
-                <p style="margin-top: 0.75rem;">
-                    <strong>DE UNA PARTE:</strong> Don/Doña <span id="pv_arrendador_nombre" class="highlight-var">Carlos Eduardo Morales Tapia</span>, cédula nacional de identidad N° <span id="pv_arrendador_rut" class="highlight-var">11.222.333-4</span>, domiciliado en <span id="pv_arrendador_domicilio" class="highlight-var">Av. Providencia 1234, Depto 402</span>, comuna de <span id="pv_arrendador_comuna" class="highlight-var">Providencia, Santiago</span>, correo <span id="pv_arrendador_email" class="highlight-var">carlos.morales@gmail.com</span>, en adelante el <strong>"Arrendador"</strong>;
-                </p>
-
-                <p style="margin-top: 0.75rem;">
-                    <strong>DE OTRA PARTE:</strong> Don/Doña <span id="pv_arrendatario_nombre" class="highlight-var">María José Valenzuela Castro</span>, cédula nacional de identidad N° <span id="pv_arrendatario_rut" class="highlight-var">15.444.555-6</span>, correo <span id="pv_arrendatario_email" class="highlight-var">mj.valenzuela@gmail.com</span>, en adelante el <strong>"Arrendatario"</strong>;
-                </p>
-
-                <div id="pv_aval_clause" style="display:none; margin-top:0.75rem;">
-                    <strong>Y COMO CODEUDOR SOLIDARIO:</strong> Don/Doña <span id="pv_aval_nombre" class="highlight-var">[Nombre Aval]</span>, cédula de identidad N° <span id="pv_aval_rut" class="highlight-var">[RUT Aval]</span>.
+                <div id="pv_dynamic_body_content">
+                    <!-- Contenido dinámico del contrato renderizado letra por letra -->
                 </div>
 
-                <div class="preview-clause-title">PRIMERO: Inmueble y Destino</div>
-                <p>
-                    El Arrendador da en arrendamiento al Arrendatario el inmueble ubicado en <span id="pv_propiedad_direccion" class="highlight-var">Los Leones 2500</span>, <span id="pv_propiedad_depto" class="highlight-var">Depto 504</span>, Bodega <span id="pv_propiedad_bodega" class="highlight-var">B-12</span>, Estacionamiento <span id="pv_propiedad_estacionamiento" class="highlight-var">E-45</span>, de la comuna de <span id="pv_propiedad_comuna" class="highlight-var">Providencia, Santiago</span>. El inmueble se destinará exclusivamente a fines habitacionales.
-                </p>
-
-                <div class="preview-clause-title">SEGUNDO: Renta de Arrendamiento y Reajuste</div>
-                <p>
-                    La renta mensual de arrendamiento será la suma de <strong>$<span id="pv_renta_clp" class="highlight-var">550.000</span> CLP</strong>, pagadera por mesadas anticipadas dentro de los primeros <span id="pv_dia_pago" class="highlight-var">5</span> días de cada mes calendario. La renta se reajustará de forma <span id="pv_reajuste" class="highlight-var">anual</span> según variación IPC.
-                </p>
-
-                <div class="preview-clause-title">TERCERO: Plazo de Vigencia</div>
-                <p>
-                    El contrato comenzará a regir el <span id="pv_fecha_inicio" class="highlight-var"><?= date('d/m/Y') ?></span> y tendrá una duración de <span id="pv_duracion_meses" class="highlight-var">12</span> meses, renovable automáticamente.
-                </p>
-
-                <div class="preview-clause-title">CUARTO: Sometimiento a la Ley N° 21.461 ("Devuélveme Mi Casa")</div>
-                <p>
-                    Las partes declaran someterse al procedimiento judicial monitorio consagrado en el Título III bis de la Ley N° 18.101 incorporado por la Ley N° 21.461, facultando el lanzamiento en el plazo de 10 días corridos ante mora no desvirtuada.
-                </p>
-
-                <div class="preview-clause-title">QUINTO: Firma Electrónica Avanzada y Notificaciones</div>
-                <p>
-                    Las partes suscriben este contrato digitalmente mediante Firma Electrónica Avanzada bajo la Ley N° 19.799, reconociéndole plena validez y mérito ejecutivo.
-                </p>
-
-                <div style="margin-top: 2rem; border-top: 1px dashed #CBD5E1; padding-top: 1rem; display: flex; justify-content: space-around; text-align: center; font-size: 0.75rem; color: #64748B;">
+                <div id="pv_signers_block" style="margin-top: 2rem; border-top: 1px dashed #CBD5E1; padding-top: 1rem; display: flex; justify-content: space-around; text-align: center; font-size: 0.75rem; color: #64748B;">
                     <div>
-                        <div style="border: 1px solid #CBD5E1; border-radius: 4px; padding: 0.5rem 1rem; background: #F8FAFC;">[Pendiente Firma Arrendador]</div>
-                        <div style="margin-top: 0.25rem; font-weight: 600;" id="pv_sign_arr">Carlos Eduardo Morales Tapia</div>
+                        <div style="border: 1px solid #CBD5E1; border-radius: 4px; padding: 0.5rem 1rem; background: #F8FAFC;">[Firma Digital Pendiente]</div>
+                        <div style="margin-top: 0.25rem; font-weight: 600;" id="pv_sign_parte_a">Juan Andrés Pérez González</div>
                     </div>
-                    <div>
-                        <div style="border: 1px solid #CBD5E1; border-radius: 4px; padding: 0.5rem 1rem; background: #F8FAFC;">[Pendiente Firma Arrendatario]</div>
-                        <div style="margin-top: 0.25rem; font-weight: 600;" id="pv_sign_arrat">María José Valenzuela Castro</div>
+                    <div id="pv_sign_parte_b_wrap">
+                        <div style="border: 1px solid #CBD5E1; border-radius: 4px; padding: 0.5rem 1rem; background: #F8FAFC;">[Firma Digital Pendiente]</div>
+                        <div style="margin-top: 0.25rem; font-weight: 600;" id="pv_sign_parte_b">María José Valenzuela</div>
                     </div>
                 </div>
             </div>
@@ -648,68 +523,355 @@ $slug = isset($_GET['slug']) ? trim($_GET['slug']) : 'contrato-arriendo-ley-2146
 
     </main>
 
-    <!-- Scripts del Wizard -->
+    <!-- Scripts Universal Wizard -->
     <script src="assets/js/app.js"></script>
     <script>
-        // Inicializar fechas por defecto
+        const CURRENT_TEMPLATE = <?= json_encode($tpl, JSON_UNESCAPED_UNICODE) ?>;
+        let currentStep = 1;
+        const isUnipersonal = ['declaracion-jurada-residencia', 'declaracion-jurada-ingresos-informales', 'salvoconducto-mudanza', 'autorizacion-domicilio-tributario-sii'].includes(CURRENT_TEMPLATE.slug);
+
         document.addEventListener('DOMContentLoaded', () => {
-            const today = new Date().toISOString().split('T')[0];
-            const dateInput = document.getElementById('f_fecha_inicio');
-            if (dateInput) dateInput.value = today;
+            setupTemplateFields();
 
-            // Formatear RUTs iniciales
-            const arrRut = document.getElementById('f_arrendador_rut');
-            const arrRutErr = document.getElementById('err_arrendador_rut');
-            RutHelper.attachToInput(arrRut, arrRutErr);
+            // Rut validation setup
+            const rutA = document.getElementById('f_parte_a_rut');
+            const errA = document.getElementById('err_parte_a_rut');
+            RutHelper.attachToInput(rutA, errA);
 
-            const arratRut = document.getElementById('f_arrendatario_rut');
-            const arratRutErr = document.getElementById('err_arrendatario_rut');
-            RutHelper.attachToInput(arratRut, arratRutErr);
+            const rutB = document.getElementById('f_parte_b_rut');
+            const errB = document.getElementById('err_parte_b_rut');
+            if (rutB) RutHelper.attachToInput(rutB, errB);
 
-            const avalRut = document.getElementById('f_aval_rut');
-            const avalRutErr = document.getElementById('err_aval_rut');
-            RutHelper.attachToInput(avalRut, avalRutErr);
-
-            // Escuchar cambios en todos los inputs para actualizar la vista previa en tiempo real
-            bindPreviewSync();
-            updateLivePreview();
+            bindUniversalPreviewSync();
+            updateUniversalPreview();
         });
 
-        let currentStep = 1;
+        function setupTemplateFields() {
+            const specificWrap = document.getElementById('dynamicSpecificFields');
+            const parteBWrap = document.getElementById('parteBFieldsWrap');
+            const unipersonalNotice = document.getElementById('unipersonalNotice');
+            const signBWrap = document.getElementById('pv_sign_parte_b_wrap');
 
-        function nextStep(step) {
-            // Validar RUTs del paso previo
+            // Ajustar si es unipersonal
+            if (isUnipersonal) {
+                if (parteBWrap) parteBWrap.style.display = 'none';
+                if (unipersonalNotice) unipersonalNotice.style.display = 'block';
+                if (signBWrap) signBWrap.style.display = 'none';
+                document.getElementById('lblStep1').innerText = 'Declarante';
+                document.getElementById('lblStep2').innerText = 'Tipo Trámite';
+                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Declarante';
+            }
+
+            // Campos específicos según slug
+            let fieldsHtml = '';
+
+            switch (CURRENT_TEMPLATE.slug) {
+                case 'promesa-compraventa-inmueble':
+                    fieldsHtml = `
+                        <div class="form-group">
+                            <label>Dirección del Inmueble Objeto de la Promesa *</label>
+                            <input type="text" id="f_propiedad_dir" class="form-control" value="Av. Las Condes 8900, Depto 1204, Las Condes">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Precio Total Acordado (en UF o CLP) *</label>
+                                <input type="text" id="f_precio_total" class="form-control" value="4.500 UF">
+                            </div>
+                            <div class="form-group">
+                                <label>Monto de Arras / Garantía de la Promesa *</label>
+                                <input type="text" id="f_arras" class="form-control" value="450 UF">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Plazo Máximo para Escriturar *</label>
+                                <input type="date" id="f_fecha_limite" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Multa por Desistimiento (Cláusula Penal) *</label>
+                                <input type="text" id="f_multa_penal" class="form-control" value="10% del precio total">
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'finiquito-laboral-mutuo-acuerdo':
+                    fieldsHtml = `
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Cargo Desempeñado por el Trabajador *</label>
+                                <input type="text" id="f_cargo" class="form-control" value="Analista de Operaciones">
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha de Término de Relación Laboral *</label>
+                                <input type="date" id="f_fecha_termino" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Causal Legal de Término *</label>
+                                <select id="f_causal" class="form-control">
+                                    <option value="Art. 159 N° 1 Mutuo acuerdo de las partes" selected>Art. 159 N° 1 Mutuo acuerdo de las partes</option>
+                                    <option value="Art. 161 Necesidades de la empresa">Art. 161 Necesidades de la empresa</option>
+                                    <option value="Art. 159 N° 4 Vencimiento del plazo">Art. 159 N° 4 Vencimiento del plazo</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Monto Total Líquido a Pagar ($ CLP) *</label>
+                                <input type="number" id="f_monto_finiquito" class="form-control" value="1450000">
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'acuerdo-confidencialidad-nda':
+                    fieldsHtml = `
+                        <div class="form-group">
+                            <label>Propósito del Acuerdo / Proyecto en Evaluación *</label>
+                            <input type="text" id="f_proyecto_nda" class="form-control" value="Desarrollo conjunto de plataforma fintech y arquitectura cloud">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Vigencia de la Confidencialidad *</label>
+                                <select id="f_vigencia_nda" class="form-control">
+                                    <option value="2 años" selected>2 años a partir de la firma</option>
+                                    <option value="3 años">3 años a partir de la firma</option>
+                                    <option value="5 años">5 años a partir de la firma</option>
+                                    <option value="Indefinida para secretos industriales">Indefinida para secretos industriales</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Cláusula Penal por Infracción ($ CLP) *</label>
+                                <input type="text" id="f_multa_nda" class="form-control" value="500 UF">
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'prestacion-servicios-honorarios':
+                    fieldsHtml = `
+                        <div class="form-group">
+                            <label>Descripción del Servicio Profesional *</label>
+                            <input type="text" id="f_servicio_desc" class="form-control" value="Asesoría tributaria, financiera y control de gestión contable">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Honorario Mensual Bruto ($ CLP) *</label>
+                                <input type="number" id="f_honorario_monto" class="form-control" value="850000">
+                            </div>
+                            <div class="form-group">
+                                <label>Retención de Boleta de Honorarios *</label>
+                                <select id="f_retencion" class="form-control">
+                                    <option value="Con retención legal efectuada por el mandante" selected>Con retención efectuada por mandante</option>
+                                    <option value="Con pago provisional directo del profesional">Pago provisional directo del profesional</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'declaracion-jurada-residencia':
+                    fieldsHtml = `
+                        <div class="form-group">
+                            <label>Dirección Exacta del Domicilio Declarado *</label>
+                            <input type="text" id="f_decl_domicilio" class="form-control" value="Pasaje Los Copihues 456, Maipú, Santiago">
+                        </div>
+                        <div class="form-group">
+                            <label>Institución o Fin para el cual se Presenta *</label>
+                            <input type="text" id="f_decl_destino" class="form-control" value="Acreditación de residencia para trámites bancarios y escolares">
+                        </div>
+                    `;
+                    break;
+
+                case 'salvoconducto-mudanza':
+                    fieldsHtml = `
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Dirección de Origen (Desde donde se traslada) *</label>
+                                <input type="text" id="f_mud_origen" class="form-control" value="Av. Grecia 1234, Ñuñoa">
+                            </div>
+                            <div class="form-group">
+                                <label>Dirección de Destino (Hacia donde se traslada) *</label>
+                                <input type="text" id="f_mud_destino" class="form-control" value="Av. El Bosque 567, Viña del Mar">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Fecha Programada del Traslado *</label>
+                                <input type="date" id="f_mud_fecha" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Datos del Vehículo o Empresa de Flete *</label>
+                                <input type="text" id="f_mud_vehiculo" class="form-control" value="Camión Hyundai HD78 patente XX-YY-12">
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                default:
+                    // Genérico para reconocimiento de deuda, poderes, contrato trabajo, etc.
+                    fieldsHtml = `
+                        <div class="form-group">
+                            <label>Materia u Objeto Principal del Instrumento *</label>
+                            <input type="text" id="f_gen_objeto" class="form-control" value="Celebración de acuerdo y compromiso voluntario entre las partes">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Monto o Compromiso ($ CLP o UF)</label>
+                                <input type="text" id="f_gen_monto" class="form-control" value="$1.000.000 CLP">
+                            </div>
+                            <div class="form-group">
+                                <label>Plazo de Cumplimiento / Vigencia</label>
+                                <input type="text" id="f_gen_plazo" class="form-control" value="12 Meses">
+                            </div>
+                        </div>
+                    `;
+                    break;
+            }
+
+            specificWrap.innerHTML = fieldsHtml;
+
+            // Fecha por defecto hoy
+            const today = new Date().toISOString().split('T')[0];
+            const dateInputs = specificWrap.querySelectorAll('input[type="date"]');
+            dateInputs.forEach(d => { if (!d.value) d.value = today; });
+        }
+
+        function bindUniversalPreviewSync() {
+            const form = document.getElementById('universalWizardForm');
+            if (form) {
+                form.addEventListener('input', updateUniversalPreview);
+                form.addEventListener('change', updateUniversalPreview);
+            }
+        }
+
+        function updateUniversalPreview() {
+            const nomA = document.getElementById('f_parte_a_nombre')?.value || 'Juan Andrés Pérez González';
+            const rutA = document.getElementById('f_parte_a_rut')?.value || '12.345.678-5';
+            const domA = document.getElementById('f_parte_a_domicilio')?.value || 'Av. Providencia 1234';
+            const comA = document.getElementById('f_parte_a_comuna')?.value || 'Providencia, Santiago';
+
+            const nomB = document.getElementById('f_parte_b_nombre')?.value || 'María José Valenzuela';
+            const rutB = document.getElementById('f_parte_b_rut')?.value || '15.444.555-6';
+
+            // Actualizar firmas visuales
+            const pvSignA = document.getElementById('pv_sign_parte_a');
+            if (pvSignA) pvSignA.innerText = nomA;
+            const pvSignB = document.getElementById('pv_sign_parte_b');
+            if (pvSignB) pvSignB.innerText = nomB;
+
+            const bodyContainer = document.getElementById('pv_dynamic_body_content');
+            if (!bodyContainer) return;
+
+            let html = '';
+
+            if (isUnipersonal) {
+                html = `
+                    <p>En la ciudad de Santiago, República de Chile, a ${new Date().toLocaleDateString('es-CL')}, comparece Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutA)}</span>, domiciliado en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, quien en pleno ejercicio de sus facultades viene en declarar libre y solemnemente lo siguiente:</p>
+                    <div class="preview-clause-title">DECLARACIÓN PRIMERA</div>
+                    <p>Que de conformidad a la legislación vigente y bajo juramento de veracidad, declara su voluntad y antecedentes para todo efecto legal ante quien corresponda.</p>
+                `;
+                if (CURRENT_TEMPLATE.slug === 'declaracion-jurada-residencia') {
+                    const declDom = document.getElementById('f_decl_domicilio')?.value || domA;
+                    const declFin = document.getElementById('f_decl_destino')?.value || 'fines pertinentes';
+                    html += `
+                        <div class="preview-clause-title">ACREDITACIÓN DE DOMICILIO</div>
+                        <p>Que su residencia fija y morada habitual corresponde a la ubicada en <span class="highlight-var">${escapeHtml(declDom)}</span>, presentada para <span class="highlight-var">${escapeHtml(declFin)}</span>.</p>
+                    `;
+                } else if (CURRENT_TEMPLATE.slug === 'salvoconducto-mudanza') {
+                    const origen = document.getElementById('f_mud_origen')?.value || 'Origen declarado';
+                    const destino = document.getElementById('f_mud_destino')?.value || 'Destino declarado';
+                    const vehiculo = document.getElementById('f_mud_vehiculo')?.value || 'Vehículo flete';
+                    html += `
+                        <div class="preview-clause-title">TRASLADO DE ENSERES (LEY N° 20.227)</div>
+                        <p>Que trasladará sus muebles y enseres domésticos desde <span class="highlight-var">${escapeHtml(origen)}</span> con destino a <span class="highlight-var">${escapeHtml(destino)}</span>, mediante el vehículo <span class="highlight-var">${escapeHtml(vehiculo)}</span>, no existiendo impedimento legal ni contractual para dicha mudanza.</p>
+                    `;
+                }
+            } else {
+                html = `
+                    <p>En la ciudad de Santiago, a ${new Date().toLocaleDateString('es-CL')}, comparecen:</p>
+                    <p style="margin-top:0.5rem;"><strong>DE UNA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, RUT <span class="highlight-var">${escapeHtml(rutA)}</span>, domiciliado en <span class="highlight-var">${escapeHtml(domA)}</span>, ${escapeHtml(comA)};</p>
+                    <p style="margin-top:0.5rem;"><strong>DE OTRA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomB)}</span>, RUT <span class="highlight-var">${escapeHtml(rutB)}</span>.</p>
+                    <div class="preview-clause-title">CLÁUSULA PRIMERA: Objeto y Acuerdo</div>
+                    <p>Las partes mayores de edad acuerdan celebrar el presente instrumento privado bajo amparo de la Ley N° 19.799 con Firma Electrónica Avanzada.</p>
+                `;
+
+                if (CURRENT_TEMPLATE.slug === 'promesa-compraventa-inmueble') {
+                    const prop = document.getElementById('f_propiedad_dir')?.value || 'Inmueble prometido';
+                    const precio = document.getElementById('f_precio_total')?.value || 'Precio convenido';
+                    const arras = document.getElementById('f_arras')?.value || 'Monto arras';
+                    html += `
+                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Inmueble y Precio</div>
+                        <p>El Promitente Vendedor se compromete a transferir el inmueble de <span class="highlight-var">${escapeHtml(prop)}</span> en el precio de <span class="highlight-var">${escapeHtml(precio)}</span>, garantizado con arras de <span class="highlight-var">${escapeHtml(arras)}</span>.</p>
+                    `;
+                } else if (CURRENT_TEMPLATE.slug === 'finiquito-laboral-mutuo-acuerdo') {
+                    const cargo = document.getElementById('f_cargo')?.value || 'Cargo';
+                    const causal = document.getElementById('f_causal')?.value || 'Mutuo acuerdo';
+                    const monto = document.getElementById('f_monto_finiquito')?.value || '0';
+                    const montoFmt = new Intl.NumberFormat('es-CL').format(monto);
+                    html += `
+                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Término de la Relación Laboral</div>
+                        <p>Las partes ponen término a la relación laboral correspondiente al cargo de <span class="highlight-var">${escapeHtml(cargo)}</span> por la causal de <span class="highlight-var">${escapeHtml(causal)}</span>, acordando un pago total y liquidación de <span class="highlight-var">$${montoFmt} CLP</span> con amplio finiquito.</p>
+                    `;
+                } else if (CURRENT_TEMPLATE.slug === 'acuerdo-confidencialidad-nda') {
+                    const proy = document.getElementById('f_proyecto_nda')?.value || 'Proyecto confidencial';
+                    const vig = document.getElementById('f_vigencia_nda')?.value || '2 años';
+                    html += `
+                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Secreto Profesional y Deber de Reserva</div>
+                        <p>Las partes se comprometen a resguardar bajo estricta reserva toda información técnica, comercial y sensible vinculada al proyecto <span class="highlight-var">${escapeHtml(proy)}</span>, por una vigencia de <span class="highlight-var">${escapeHtml(vig)}</span>.</p>
+                    `;
+                } else if (CURRENT_TEMPLATE.slug === 'prestacion-servicios-honorarios') {
+                    const serv = document.getElementById('f_servicio_desc')?.value || 'Servicio';
+                    const honor = document.getElementById('f_honorario_monto')?.value || '0';
+                    const honorFmt = new Intl.NumberFormat('es-CL').format(honor);
+                    html += `
+                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Prestación y Honorarios</div>
+                        <p>El Profesional prestará los servicios de <span class="highlight-var">${escapeHtml(serv)}</span>, fijándose un honorario de <span class="highlight-var">$${honorFmt} CLP</span> brutos.</p>
+                    `;
+                }
+            }
+
+            html += `
+                <div class="preview-clause-title">VALIDEZ LEGAL Y JURISDICCIÓN</div>
+                <p>El presente documento produce plena fe probatoria conforme a la Ley N° 19.799 de Firma Electrónica, quedando custodiado en la bóveda criptográfica de SinNotario.cl.</p>
+            `;
+
+            bodyContainer.innerHTML = html;
+        }
+
+        function nextUniversalStep(step) {
+            // Validar RUT parte A
             if (currentStep === 1) {
-                const rut = document.getElementById('f_arrendador_rut').value;
+                const rut = document.getElementById('f_parte_a_rut').value;
                 if (!RutHelper.validate(rut)) {
-                    alert('Por favor ingresa un RUT de Arrendador válido con dígito verificador correcto.');
-                    document.getElementById('f_arrendador_rut').focus();
+                    alert('Por favor ingresa un RUT válido con dígito verificador correcto.');
+                    document.getElementById('f_parte_a_rut').focus();
                     return;
                 }
-            } else if (currentStep === 2) {
-                const rut = document.getElementById('f_arrendatario_rut').value;
+            } else if (currentStep === 2 && !isUnipersonal) {
+                const rut = document.getElementById('f_parte_b_rut').value;
                 if (!RutHelper.validate(rut)) {
-                    alert('Por favor ingresa un RUT de Arrendatario válido con dígito verificador correcto.');
-                    document.getElementById('f_arrendatario_rut').focus();
+                    alert('Por favor ingresa un RUT de Contraparte válido con dígito verificador correcto.');
+                    document.getElementById('f_parte_b_rut').focus();
                     return;
                 }
             }
 
-            goToStep(step);
+            goToUniversalStep(step);
         }
 
-        function prevStep(step) {
-            goToStep(step);
+        function prevUniversalStep(step) {
+            goToUniversalStep(step);
         }
 
-        function goToStep(step) {
+        function goToUniversalStep(step) {
             document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.step-item').forEach(el => el.classList.remove('active'));
 
             const targetStep = document.getElementById('step' + step);
             if (targetStep) targetStep.classList.add('active');
 
-            for (let i = 1; i <= 5; i++) {
+            for (let i = 1; i <= 4; i++) {
                 const pItem = document.getElementById('pStep' + i);
                 if (!pItem) continue;
                 if (i < step) {
@@ -724,141 +886,50 @@ $slug = isset($_GET['slug']) ? trim($_GET['slug']) : 'contrato-arriendo-ley-2146
             }
 
             currentStep = step;
-            window.scrollTo({ top: 100, behavior: 'smooth' });
+            window.scrollTo({ top: 80, behavior: 'smooth' });
         }
 
-        function toggleAvalFields() {
-            const chk = document.getElementById('chk_tiene_aval');
-            const wrap = document.getElementById('avalFieldsWrap');
-            const pvClause = document.getElementById('pv_aval_clause');
-            if (chk.checked) {
-                wrap.style.display = 'block';
-                pvClause.style.display = 'block';
-            } else {
-                wrap.style.display = 'none';
-                pvClause.style.display = 'none';
-            }
-            updateLivePreview();
-        }
-
-        function bindPreviewSync() {
-            const inputs = [
-                'f_arrendador_nombre', 'f_arrendador_rut', 'f_arrendador_email', 'f_arrendador_domicilio', 'f_arrendador_comuna',
-                'f_arrendatario_nombre', 'f_arrendatario_rut', 'f_arrendatario_email',
-                'f_aval_nombre', 'f_aval_rut',
-                'f_propiedad_direccion', 'f_propiedad_depto', 'f_propiedad_comuna', 'f_propiedad_bodega', 'f_propiedad_estacionamiento',
-                'f_renta_clp', 'f_dia_pago', 'f_reajuste', 'f_fecha_inicio', 'f_duracion_meses'
-            ];
-
-            inputs.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.addEventListener('input', updateLivePreview);
-                    el.addEventListener('change', updateLivePreview);
-                }
-            });
-        }
-
-        function updateLivePreview() {
-            setVal('pv_arrendador_nombre', 'f_arrendador_nombre', 'Carlos Eduardo Morales Tapia');
-            setVal('pv_arrendador_rut', 'f_arrendador_rut', '11.222.333-4');
-            setVal('pv_arrendador_domicilio', 'f_arrendador_domicilio', 'Av. Providencia 1234, Depto 402');
-            setVal('pv_arrendador_comuna', 'f_arrendador_comuna', 'Providencia, Santiago');
-            setVal('pv_arrendador_email', 'f_arrendador_email', 'carlos.morales@gmail.com');
-            setVal('pv_sign_arr', 'f_arrendador_nombre', 'Carlos Eduardo Morales Tapia');
-
-            setVal('pv_arrendatario_nombre', 'f_arrendatario_nombre', 'María José Valenzuela Castro');
-            setVal('pv_arrendatario_rut', 'f_arrendatario_rut', '15.444.555-6');
-            setVal('pv_arrendatario_email', 'f_arrendatario_email', 'mj.valenzuela@gmail.com');
-            setVal('pv_sign_arrat', 'f_arrendatario_nombre', 'María José Valenzuela Castro');
-
-            setVal('pv_aval_nombre', 'f_aval_nombre', '[Nombre Aval]');
-            setVal('pv_aval_rut', 'f_aval_rut', '[RUT Aval]');
-
-            setVal('pv_propiedad_direccion', 'f_propiedad_direccion', 'Los Leones 2500');
-            setVal('pv_propiedad_depto', 'f_propiedad_depto', 'Depto 504');
-            setVal('pv_propiedad_comuna', 'f_propiedad_comuna', 'Providencia, Santiago');
-            setVal('pv_propiedad_bodega', 'f_propiedad_bodega', 'B-12');
-            setVal('pv_propiedad_estacionamiento', 'f_propiedad_estacionamiento', 'E-45');
-
-            const rentaRaw = document.getElementById('f_renta_clp')?.value || '550000';
-            const rentaFmt = new Intl.NumberFormat('es-CL').format(rentaRaw);
-            const pvRenta = document.getElementById('pv_renta_clp');
-            if (pvRenta) pvRenta.innerText = rentaFmt;
-
-            setVal('pv_dia_pago', 'f_dia_pago', '5');
-            setVal('pv_reajuste', 'f_reajuste', 'anual');
-            setVal('pv_duracion_meses', 'f_duracion_meses', '12');
-
-            const dateVal = document.getElementById('f_fecha_inicio')?.value;
-            if (dateVal) {
-                const parts = dateVal.split('-');
-                if (parts.length === 3) {
-                    const pvFecha = document.getElementById('pv_fecha_inicio');
-                    if (pvFecha) pvFecha.innerText = `${parts[2]}/${parts[1]}/${parts[0]}`;
-                }
-            }
-        }
-
-        function setVal(targetId, sourceId, fallback) {
-            const target = document.getElementById(targetId);
-            const source = document.getElementById(sourceId);
-            if (target && source) {
-                target.innerText = source.value.trim() || fallback;
-            }
-        }
-
-        async function emitirContratoFinal() {
+        async function emitirUniversalFinal() {
             const chkTerminos = document.getElementById('chk_terminos');
             if (!chkTerminos || !chkTerminos.checked) {
-                alert('Debes aceptar los Términos y Condiciones para emitir el contrato.');
+                alert('Debes aceptar los Términos y Condiciones para emitir el trámite.');
                 return;
             }
 
-            const btn = document.getElementById('btnEmitirContrato');
+            const btn = document.getElementById('btnEmitirUniversal');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando borrador criptográfico...';
 
+            const signers = [
+                {
+                    rol: isUnipersonal ? 'DECLARANTE' : 'PARTE_A',
+                    nombre: document.getElementById('f_parte_a_nombre').value,
+                    rut: document.getElementById('f_parte_a_rut').value,
+                    email: document.getElementById('f_parte_a_email').value,
+                    telefono: document.getElementById('f_parte_a_tel').value
+                }
+            ];
+
+            if (!isUnipersonal) {
+                signers.push({
+                    rol: 'PARTE_B',
+                    nombre: document.getElementById('f_parte_b_nombre').value,
+                    rut: document.getElementById('f_parte_b_rut').value,
+                    email: document.getElementById('f_parte_b_email').value,
+                    telefono: document.getElementById('f_parte_b_tel').value
+                });
+            }
+
             const payload = {
-                template_slug: 'contrato-arriendo-ley-21461',
-                signers: [
-                    {
-                        rol: 'ARRENDADOR',
-                        nombre: document.getElementById('f_arrendador_nombre').value,
-                        rut: document.getElementById('f_arrendador_rut').value,
-                        email: document.getElementById('f_arrendador_email').value,
-                        telefono: document.getElementById('f_arrendador_tel').value
-                    },
-                    {
-                        rol: 'ARRENDATARIO',
-                        nombre: document.getElementById('f_arrendatario_nombre').value,
-                        rut: document.getElementById('f_arrendatario_rut').value,
-                        email: document.getElementById('f_arrendatario_email').value,
-                        telefono: document.getElementById('f_arrendatario_tel').value
-                    }
-                ],
+                template_slug: CURRENT_TEMPLATE.slug,
+                signers: signers,
                 form_data: {
-                    arrendador_nombre: document.getElementById('f_arrendador_nombre').value,
-                    arrendador_rut: document.getElementById('f_arrendador_rut').value,
-                    arrendador_email: document.getElementById('f_arrendador_email').value,
-                    arrendador_tel: document.getElementById('f_arrendador_tel').value,
-                    arrendador_domicilio: document.getElementById('f_arrendador_domicilio').value,
-                    arrendador_comuna: document.getElementById('f_arrendador_comuna').value,
-                    arrendatario_nombre: document.getElementById('f_arrendatario_nombre').value,
-                    arrendatario_rut: document.getElementById('f_arrendatario_rut').value,
-                    arrendatario_email: document.getElementById('f_arrendatario_email').value,
-                    arrendatario_tel: document.getElementById('f_arrendatario_tel').value,
-                    propiedad_direccion: document.getElementById('f_propiedad_direccion').value,
-                    propiedad_depto: document.getElementById('f_propiedad_depto').value,
-                    propiedad_comuna: document.getElementById('f_propiedad_comuna').value,
-                    propiedad_bodega: document.getElementById('f_propiedad_bodega').value,
-                    propiedad_estacionamiento: document.getElementById('f_propiedad_estacionamiento').value,
-                    renta_clp: document.getElementById('f_renta_clp').value,
-                    dia_pago: document.getElementById('f_dia_pago').value,
-                    garantia_clp: document.getElementById('f_garantia_clp').value,
-                    reajuste: document.getElementById('f_reajuste').value,
-                    fecha_inicio: document.getElementById('f_fecha_inicio').value,
-                    duracion_meses: document.getElementById('f_duracion_meses').value
+                    parte_a_nombre: document.getElementById('f_parte_a_nombre').value,
+                    parte_a_rut: document.getElementById('f_parte_a_rut').value,
+                    parte_a_email: document.getElementById('f_parte_a_email').value,
+                    parte_a_tel: document.getElementById('f_parte_a_tel').value,
+                    parte_a_domicilio: document.getElementById('f_parte_a_domicilio').value,
+                    parte_a_comuna: document.getElementById('f_parte_a_comuna').value
                 }
             };
 
@@ -871,17 +942,17 @@ $slug = isset($_GET['slug']) ? trim($_GET['slug']) : 'contrato-arriendo-ley-2146
                 const json = await res.json();
 
                 if (json.success && json.data) {
-                    alert(`¡Borrador Creado con Éxito!\n\nCódigo Único de Verificación: ${json.data.codigo_verificacion}\nEstado: BORRADOR EN CUSTODIA\n\nPróximo paso: Pasarela de pago Webpay/Flow para activar las firmas.`);
+                    alert(`¡Borrador Creado con Éxito!\n\nDocumento: ${CURRENT_TEMPLATE.nombre}\nCódigo Único: ${json.data.codigo_verificacion}\n\nPróximo paso: Activación del circuito de firma digital y pasarela de pago.`);
                     window.location.href = `index.php#verificar`;
                 } else {
-                    alert('Error al generar contrato: ' + (json.error || 'Error en servidor'));
+                    alert('Error al generar borrador: ' + (json.error || 'Error en servidor'));
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-shield-alt"></i> Emitir Contrato y Despachar <i class="fas fa-arrow-right"></i>';
+                    btn.innerHTML = '<i class="fas fa-shield-alt"></i> Emitir Documento y Despachar <i class="fas fa-arrow-right"></i>';
                 }
             } catch (err) {
-                alert('Error de conexión al emitir el contrato.');
+                alert('Error de conexión al emitir el documento.');
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-shield-alt"></i> Emitir Contrato y Despachar <i class="fas fa-arrow-right"></i>';
+                btn.innerHTML = '<i class="fas fa-shield-alt"></i> Emitir Documento y Despachar <i class="fas fa-arrow-right"></i>';
             }
         }
     </script>

@@ -335,15 +335,10 @@ function initVerifyForm() {
     });
 }
 
-// 6. Asistente / Wizard modal con redirección directa al Wizard 60/40 para contratos complejos
+// 6. Asistente / Wizard modal con redirección universal al Wizard Split View 60/40 para todos los documentos
 function openWizard(slug) {
-    if (slug === 'contrato-arriendo-ley-21461') {
-        window.location.href = `redactar.php?slug=${encodeURIComponent(slug)}`;
-        return;
-    }
-
-    const tpl = allTemplates.find(t => t.slug === slug);
-    if (!tpl) return;
+    window.location.href = `redactar.php?slug=${encodeURIComponent(slug)}`;
+}
 
     const modal = document.getElementById('wizardModal');
     const modalBody = document.getElementById('wizardModalBody');
