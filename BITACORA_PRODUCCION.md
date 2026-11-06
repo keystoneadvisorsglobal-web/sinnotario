@@ -292,3 +292,33 @@
     - Verificación sintáctica remota (`php -l redactar.php` y `php -l DocumentPdfService.php` -> 0 errores).
     - Carga directa con HTTP/2 200 OK en wizards de `contrato-individual-trabajo`, `reconocimiento-deuda-pagare-privado` y `autorizacion-domicilio-tributario-sii`.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
+
+---
+
+### Entrada: 2026-11-06 14:30:00 UTC-3
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0028`
+- **Resumen de la Ejecución:**
+  - **Rediseño Exhaustivo de Promesa de Compraventa bajo Estándar Notarial Chileno:**
+    1. Se analizó el documento notarial de referencia de 6 páginas provisto por el usuario (`corredordepropiedades.cl/wp-content/uploads/2020/09/PROMESA-DE-COMPRAVENTA.pdf`).
+    2. Se contrastó contra el formulario y previsualizador previo (el cual solo contenía dos cláusulas breves) para dotarlo de la profundidad y rigor dogmático requerido por el Artículo 1554 del Código Civil.
+    3. **Formulario Enriquecido (Pasos 1, 2 y 3):**
+       - **Comparecencia Notarial Completa:** Incorporación de nacionalidad, estado civil y profesión u oficio tanto para la Parte Promitente Vendedora como para la Parte Promitente Compradora.
+       - **Títulos y Singularización Registral:** Fojas, Número, Año y Conservador de Bienes Raíces respectivo, más Rol de Avalúo Fiscal del SII.
+       - **Condiciones Financieras y Operativas:** Desglose de arras penitenciales (Art. 1803 CC), forma de pago del saldo (contado con fondos propios vs crédito hipotecario), fecha límite perentoria, oportunidad de entrega material (contra inscripción CBR o firma de escritura), distribución de gastos notariales/CBR y honorarios de corretaje.
+    4. **Previsualizador en Vivo y Generador (9 Cláusulas Notariales Formales):**
+       - CLÁUSULA PRIMERA: Individualización del Inmueble y Títulos de Dominio.
+       - CLÁUSULA SEGUNDA: Promesa Recíproca de Compraventa (Art. 1554 CC).
+       - CLÁUSULA TERCERA: Estado de Conservación ad corpus, Libre de Gravámenes y Saneamiento de Evicción.
+       - CLÁUSULA CUARTA: Precio Definitivo, Arras y Forma de Pago con Instrucciones Notariales.
+       - CLÁUSULA QUINTA: Plazo, Condiciones Suspensivas y Mora Automática (Art. 1552 CC).
+       - CLÁUSULA SEXTA: Oportunidad de Entrega Material.
+       - CLÁUSULA SÉPTIMA: Cláusula Penal Tasada y Perjuicios Convencionales por Desistimiento.
+       - CLÁUSULA OCTAVA: Gastos de Escrituración e Inscripciones en el CBR.
+       - CLÁUSULA NOVENA: Honorarios de Intermediación y Corretaje de Propiedades.
+    5. Inyección de cache-busting `?v=20261106_6` en scripts y estilos.
+  - **Pruebas Validadas:**
+    - Verificación sintáctica remota (`php -l redactar.php` -> 0 errores).
+    - Carga directa con HTTP/2 200 OK en `https://sinnotario.cl/redactar.php?slug=promesa-compraventa-inmueble`.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.

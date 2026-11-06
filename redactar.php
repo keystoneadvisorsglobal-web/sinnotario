@@ -32,7 +32,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     <title><?= htmlspecialchars($tpl['nombre']) ?> | SinNotario.cl</title>
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/style.css?v=20261106_5">
+    <link rel="stylesheet" href="assets/css/style.css?v=20261106_6">
     <style>
         .wizard-container {
             display: grid;
@@ -339,6 +339,17 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                     <div class="form-row">
                         <div class="form-group">
+                            <label>Nacionalidad y Estado Civil *</label>
+                            <input type="text" id="f_parte_a_civil" class="form-control" placeholder="Ej: chileno, soltero" value="chileno, soltero">
+                        </div>
+                        <div class="form-group">
+                            <label>Profesión u Oficio *</label>
+                            <input type="text" id="f_parte_a_profesion" class="form-control" placeholder="Ej: Ingeniero Comercial" value="Ingeniero Comercial">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
                             <label>Correo Electrónico (Para recibir enlace de firma) *</label>
                             <input type="email" id="f_parte_a_email" class="form-control" placeholder="juan.perez@ejemplo.cl" value="juan.perez@ejemplo.cl">
                         </div>
@@ -386,6 +397,28 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                                 <label>RUT de la Contraparte (Módulo 11) *</label>
                                 <input type="text" id="f_parte_b_rut" class="form-control" placeholder="15.444.555-6" value="15.444.555-6" maxlength="12">
                                 <span id="err_parte_b_rut" class="rut-error-text">RUT inválido</span>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nacionalidad y Estado Civil *</label>
+                                <input type="text" id="f_parte_b_civil" class="form-control" placeholder="Ej: chilena, casada" value="chilena, soltera">
+                            </div>
+                            <div class="form-group">
+                                <label>Profesión u Oficio *</label>
+                                <input type="text" id="f_parte_b_profesion" class="form-control" placeholder="Ej: Médico Cirujano" value="Abogada">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Domicilio Particular de la Contraparte *</label>
+                                <input type="text" id="f_parte_b_domicilio" class="form-control" placeholder="Ej: Av. Apoquindo 4500, Las Condes" value="Av. Apoquindo 4500, Depto 801, Las Condes">
+                            </div>
+                            <div class="form-group">
+                                <label>Comuna y Ciudad *</label>
+                                <input type="text" id="f_parte_b_comuna" class="form-control" placeholder="Las Condes, Santiago" value="Las Condes, Santiago">
                             </div>
                         </div>
 
@@ -524,7 +557,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js?v=20261106_5"></script>
+    <script src="assets/js/app.js?v=20261106_6"></script>
     <script>
         // Funciones auxiliares seguras locales
         function escapeHtml(text) {
@@ -625,7 +658,17 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     fieldsHtml = `
                         <div class="form-group">
                             <label>Dirección del Inmueble Objeto de la Promesa *</label>
-                            <input type="text" id="f_propiedad_dir" class="form-control" value="Av. Las Condes 8900, Depto 1204, Las Condes">
+                            <input type="text" id="f_propiedad_dir" class="form-control" value="Av. Las Condes 8900, Depto 1204, Las Condes, Santiago">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Inscripción CBR (Fojas, Número y Año) *</label>
+                                <input type="text" id="f_prop_cbr" class="form-control" value="Fojas 12.345 N° 18.920 del año 2018 del CBR de Santiago">
+                            </div>
+                            <div class="form-group">
+                                <label>Rol de Avalúo Fiscal (SII) *</label>
+                                <input type="text" id="f_prop_rol" class="form-control" value="3456-78 de Las Condes">
+                            </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
@@ -634,17 +677,49 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                             </div>
                             <div class="form-group">
                                 <label>Monto de Arras / Garantía de la Promesa *</label>
-                                <input type="text" id="f_arras" class="form-control" value="450 UF">
+                                <input type="text" id="f_arras" class="form-control" value="450 UF (10% del precio total)">
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Plazo Máximo para Escriturar *</label>
-                                <input type="date" id="f_fecha_limite" class="form-control">
+                                <label>Forma de Pago del Saldo de Precio *</label>
+                                <select id="f_forma_pago" class="form-control">
+                                    <option value="Contado con fondos propios mediante vale vista bancario" selected>Contado (Vale Vista / Transferencia)</option>
+                                    <option value="Crédito hipotecario aprobado en banco o institución financiera">Crédito Hipotecario Bancario</option>
+                                    <option value="Mixto (Pie con fondos propios + Saldo con crédito hipotecario)">Mixto (Pie + Crédito Hipotecario)</option>
+                                </select>
                             </div>
                             <div class="form-group">
+                                <label>Plazo Máximo para Escriturar Compraventa Definitiva *</label>
+                                <input type="date" id="f_fecha_limite" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
                                 <label>Multa por Desistimiento (Cláusula Penal) *</label>
-                                <input type="text" id="f_multa_penal" class="form-control" value="10% del precio total">
+                                <input type="text" id="f_multa_penal" class="form-control" value="10% del precio total convenido">
+                            </div>
+                            <div class="form-group">
+                                <label>Oportunidad de Entrega Material del Inmueble *</label>
+                                <select id="f_entrega_inmueble" class="form-control">
+                                    <option value="Contra inscripción de dominio a nombre del comprador en el CBR" selected>Al quedar inscrito en el Conservador (CBR)</option>
+                                    <option value="Al momento de la suscripción de la escritura pública definitiva">Al firmar escritura pública definitiva</option>
+                                    <option value="Entrega anticipada a la firma de la presente promesa">Entrega material anticipada</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Gastos de Notaría, Conservador e Impuestos *</label>
+                                <select id="f_gastos_cbr" class="form-control">
+                                    <option value="Ambas partes por mitades en Notaría; Comprador íntegro en inscripción CBR" selected>Notaría por mitades / CBR Comprador (Estándar)</option>
+                                    <option value="100% de cargo exclusivo del Promitente Comprador">100% Cargo del Comprador</option>
+                                    <option value="100% de los gastos divididos en partes iguales">50% y 50% entre ambas partes</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Comisión de Corretaje de Propiedades (Opcional)</label>
+                                <input type="text" id="f_corretaje" class="form-control" placeholder="Ej: 2% más IVA pagadero por cada parte" value="2% más IVA pagadero a la firma de escritura">
                             </div>
                         </div>
                     `;
@@ -983,11 +1058,17 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
         function updateUniversalPreview() {
             const nomA = document.getElementById('f_parte_a_nombre')?.value || 'Juan Andrés Pérez González';
             const rutA = document.getElementById('f_parte_a_rut')?.value || '12.345.678-5';
-            const domA = document.getElementById('f_parte_a_domicilio')?.value || 'Av. Providencia 1234';
+            const civilA = document.getElementById('f_parte_a_civil')?.value || 'chileno, soltero';
+            const profA = document.getElementById('f_parte_a_profesion')?.value || 'Ingeniero Comercial';
+            const domA = document.getElementById('f_parte_a_domicilio')?.value || 'Av. Providencia 1234, Depto 402';
             const comA = document.getElementById('f_parte_a_comuna')?.value || 'Providencia, Santiago';
 
             const nomB = document.getElementById('f_parte_b_nombre')?.value || 'María José Valenzuela';
             const rutB = document.getElementById('f_parte_b_rut')?.value || '15.444.555-6';
+            const civilB = document.getElementById('f_parte_b_civil')?.value || 'chilena, soltera';
+            const profB = document.getElementById('f_parte_b_profesion')?.value || 'Abogada';
+            const domB = document.getElementById('f_parte_b_domicilio')?.value || 'Av. Apoquindo 4500, Depto 801, Las Condes';
+            const comB = document.getElementById('f_parte_b_comuna')?.value || 'Las Condes, Santiago';
 
             // Actualizar firmas visuales
             const pvSignA = document.getElementById('pv_sign_parte_a');
@@ -1002,7 +1083,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
             if (isUnipersonal) {
                 html = `
-                    <p>En la ciudad de Santiago, República de Chile, a ${new Date().toLocaleDateString('es-CL')}, comparece Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutA)}</span>, domiciliado en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, quien en pleno ejercicio de sus facultades viene en declarar libre y solemnemente lo siguiente:</p>
+                    <p>En la ciudad de Santiago, República de Chile, a ${new Date().toLocaleDateString('es-CL')}, comparece Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, de nacionalidad y estado civil <span class="highlight-var">${escapeHtml(civilA)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profA)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutA)}</span>, domiciliado en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, quien en pleno ejercicio de sus derechos civiles y facultades viene en declarar libre y solemnemente lo siguiente:</p>
                     <div class="preview-clause-title">DECLARACIÓN PRIMERA</div>
                     <p>Que de conformidad a la legislación vigente y bajo juramento de veracidad, declara su voluntad y antecedentes para todo efecto legal ante quien corresponda.</p>
                 `;
@@ -1046,11 +1127,10 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                 }
             } else {
                 html = `
-                    <p>En la ciudad de Santiago, a ${new Date().toLocaleDateString('es-CL')}, comparecen:</p>
-                    <p style="margin-top:0.5rem;"><strong>DE UNA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, RUT <span class="highlight-var">${escapeHtml(rutA)}</span>, domiciliado en <span class="highlight-var">${escapeHtml(domA)}</span>, ${escapeHtml(comA)};</p>
-                    <p style="margin-top:0.5rem;"><strong>DE OTRA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomB)}</span>, RUT <span class="highlight-var">${escapeHtml(rutB)}</span>.</p>
-                    <div class="preview-clause-title">CLÁUSULA PRIMERA: Objeto y Acuerdo</div>
-                    <p>Las partes mayores de edad acuerdan celebrar el presente instrumento privado bajo amparo de la Ley N° 19.799 con Firma Electrónica Avanzada.</p>
+                    <p>En la ciudad de Santiago, República de Chile, a ${new Date().toLocaleDateString('es-CL')}, comparecen:</p>
+                    <p style="margin-top:0.6rem;"><strong>POR UNA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, de nacionalidad y estado civil <span class="highlight-var">${escapeHtml(civilA)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profA)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutA)}</span>, domiciliado en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, en adelante indistintamente como la "Parte Promitente Vendedora" o "Primer Compareciente";</p>
+                    <p style="margin-top:0.6rem;"><strong>Y POR LA OTRA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomB)}</span>, de nacionalidad y estado civil <span class="highlight-var">${escapeHtml(civilB)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profB)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutB)}</span>, domiciliado en <span class="highlight-var">${escapeHtml(domB)}</span>, comuna de <span class="highlight-var">${escapeHtml(comB)}</span>, en adelante indistintamente como la "Parte Promitente Compradora" o "Segunda Compareciente";</p>
+                    <p style="margin-top:0.6rem;">Ambos comparecientes mayores de edad, quienes acreditan su identidad con sus respectivas cédulas de identidad y declaran convenir en el otorgamiento del presente instrumento bajo las siguientes estipulaciones:</p>
                 `;
 
                 if (CURRENT_TEMPLATE.slug === 'contrato-arriendo-ley-21461') {
@@ -1074,13 +1154,51 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         `;
                     }
                 } else if (CURRENT_TEMPLATE.slug === 'promesa-compraventa-inmueble') {
-                    const prop = document.getElementById('f_propiedad_dir')?.value || 'Inmueble prometido';
-                    const precio = document.getElementById('f_precio_total')?.value || 'Precio convenido';
-                    const arras = document.getElementById('f_arras')?.value || 'Monto arras';
+                    const prop = document.getElementById('f_propiedad_dir')?.value || 'Av. Las Condes 8900, Depto 1204, Las Condes';
+                    const cbr = document.getElementById('f_prop_cbr')?.value || 'Fojas 12.345 N° 18.920 del año 2018 del CBR de Santiago';
+                    const rol = document.getElementById('f_prop_rol')?.value || '3456-78';
+                    const precio = document.getElementById('f_precio_total')?.value || '4.500 UF';
+                    const arras = document.getElementById('f_arras')?.value || '450 UF (10% del precio total)';
+                    const formaPago = document.getElementById('f_forma_pago')?.value || 'Contado mediante vale vista bancario';
+                    const fechaLim = document.getElementById('f_fecha_limite')?.value || 'Plazo máximo según condiciones';
+                    const multa = document.getElementById('f_multa_penal')?.value || '10% del precio total';
+                    const entrega = document.getElementById('f_entrega_inmueble')?.value || 'Contra inscripción de dominio a nombre del comprador en el CBR';
+                    const gastos = document.getElementById('f_gastos_cbr')?.value || 'Ambas partes por mitades en Notaría; Comprador íntegro en inscripción CBR';
+                    const corretaje = document.getElementById('f_corretaje')?.value || '';
+
                     html += `
-                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Inmueble y Precio</div>
-                        <p>El Promitente Vendedor se compromete a transferir el inmueble de <span class="highlight-var">${escapeHtml(prop)}</span> en el precio de <span class="highlight-var">${escapeHtml(precio)}</span>, garantizado con arras de <span class="highlight-var">${escapeHtml(arras)}</span>.</p>
+                        <div class="preview-clause-title">CLÁUSULA PRIMERA: Individualización del Inmueble y Títulos de Dominio</div>
+                        <p>El Promitente Vendedor declara ser único y exclusivo dueño del inmueble ubicado en <span class="highlight-var">${escapeHtml(prop)}</span>, inscrito a su nombre a <span class="highlight-var">${escapeHtml(cbr)}</span>, Rol de Avalúo Fiscal N° <span class="highlight-var">${escapeHtml(rol)}</span>.</p>
+                        
+                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Promesa Recíproca de Compraventa (Art. 1554 Código Civil)</div>
+                        <p>Por el presente instrumento, el Promitente Vendedor promete, conviene y se obliga a vender, ceder y transferir, y el Promitente Comprador promete y se obliga a comprar, aceptar y adquirir para sí, el cien por ciento (100%) del inmueble singularizado en la cláusula precedente.</p>
+                        
+                        <div class="preview-clause-title">CLÁUSULA TERCERA: Estado de Conservación, Gravámenes y Saneamiento</div>
+                        <p>La compraventa se celebrará ad corpus, en el estado en que actualmente se encuentra la propiedad y que es plenamente conocida del Promitente Comprador, con todos sus derechos, usos, costumbres y servidumbres activas y pasivas, completamente libre de hipotecas, gravámenes, embargos, litigios, medidas precautorias, prohibiciones y derechos preferentes de terceros, con sus cuentas de servicios básicos, gastos comunes y contribuciones territoriales al día. El Promitente Vendedor quedará legalmente obligado al saneamiento de la evicción conforme a la ley.</p>
+                        
+                        <div class="preview-clause-title">CLÁUSULA CUARTA: Precio Definitivo, Arras y Forma de Pago</div>
+                        <p>El precio total y definitivo de la compraventa prometida asciende a la suma de <span class="highlight-var">${escapeHtml(precio)}</span>, el cual se solucionará en la siguiente forma: 
+                        a) En garantía de seriedad y fiel cumplimiento de la promesa, el Promitente Comprador entrega en este acto la suma de <span class="highlight-var">${escapeHtml(arras)}</span> por concepto de arras penitenciales (Art. 1803 Código Civil); 
+                        b) El saldo restante de precio se solucionará mediante <span class="highlight-var">${escapeHtml(formaPago)}</span>, quedando las instrucciones de pago resguardadas hasta que la propiedad se encuentre debidamente inscrita a nombre del comprador en el Conservador de Bienes Raíces respectivo libre de todo gravamen.</p>
+                        
+                        <div class="preview-clause-title">CLÁUSULA QUINTA: Plazo, Condiciones Suspensivas y Fecha Límite de Escrituración</div>
+                        <p>Serán condiciones suspensivas y copulativas para la suscripción de la compraventa definitiva: que los títulos de dominio se encuentren conformes a derecho y que el inmueble se encuentre apto para su libre enajenación. Cumplidas dichas condiciones, la escritura pública definitiva de compraventa se otorgará a más tardar el día <span class="highlight-var">${escapeHtml(fechaLim)}</span> en la Notaría que las partes designen. Para efectos del Artículo 1552 del Código Civil, el deudor quedará constituido en mora desde el vencimiento del plazo pactado sin necesidad de requerimiento judicial ni interpelación previa.</p>
+                        
+                        <div class="preview-clause-title">CLÁUSULA SEXTA: Oportunidad de Entrega Material</div>
+                        <p>La entrega material y física de la propiedad, desocupada de moradores y bienes, se verificará: <span class="highlight-var">${escapeHtml(entrega)}</span>.</p>
+                        
+                        <div class="preview-clause-title">CLÁUSULA SÉPTIMA: Cláusula Penal Tasada y Perjuicios Convencionales</div>
+                        <p>Si cualquiera de las partes se negare injustificadamente a concurrir a la suscripción de la escritura pública de compraventa definitiva dentro del plazo convenido, o incurriere en incumplimiento de las obligaciones estipuladas, la parte diligente y cumplidora podrá, a su exclusivo arbitrio: a) Exigir el cumplimiento forzado de la promesa con indemnización de perjuicios; o b) Resolver y tener por desistido el contrato, cobrando ipso facto a título de indemnización de perjuicios compensatoria tasada anticipadamente la cantidad equivalente a <span class="highlight-var">${escapeHtml(multa)}</span>.</p>
+                        
+                        <div class="preview-clause-title">CLÁUSULA OCTAVA: Gastos de Escrituración e Inscripciones</div>
+                        <p>Las partes acuerdan que los gastos notariales, derechos arancelarios y derechos de inscripción registral se distribuirán en la siguiente forma: <span class="highlight-var">${escapeHtml(gastos)}</span>.</p>
                     `;
+                    if (corretaje.trim()) {
+                        html += `
+                            <div class="preview-clause-title">CLÁUSULA NOVENA: Honorarios de Intermediación y Corretaje</div>
+                            <p>Las partes dejan constancia que la presente operación fue intermediada por corredores profesionales, pactándose una comisión de <span class="highlight-var">${escapeHtml(corretaje)}</span>.</p>
+                        `;
+                    }
                 } else if (CURRENT_TEMPLATE.slug === 'finiquito-laboral-mutuo-acuerdo') {
                     const cargo = document.getElementById('f_cargo')?.value || 'Cargo';
                     const causal = document.getElementById('f_causal')?.value || 'Mutuo acuerdo';
