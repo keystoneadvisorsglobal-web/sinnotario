@@ -248,3 +248,24 @@
     - Carga directa con HTTP/2 200 OK en `https://sinnotario.cl/redactar.php?slug=promesa-compraventa-inmueble` y `https://sinnotario.cl/redactar.php?slug=contrato-arriendo-ley-21461`.
     - Validación de flujo dinámico en consola JS simulada sin excepciones.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
+
+---
+
+### Entrada: 2026-11-06 11:00:00 UTC-3
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0026`
+- **Resumen de la Ejecución:**
+  - **Reestructuración Modular de la Consola de Administración (`admin.php`):**
+    1. Se implementó una arquitectura de navegación multipestaña interactiva (SPA) que permite alternar instantáneamente entre todas las opciones del menú lateral sin recargar la pantalla:
+       - **Dashboard General (`#dashboard`):** KPIs consolidados de emisión, catálogo de plantillas, estado de Cloudflare R2 y WhatsApp Gateway, junto con tabla resumen de trámites recientes.
+       - **Monitor y Auditoría de Contratos (`#documentos`):** Trazabilidad exhaustiva de todos los documentos en base de datos con desglose de firmantes y roles (RUT, teléfono, email, estado de firma), cálculo de montos y visor de hash criptográfico SHA-256 inalterable, incorporando buscador interactivo en vivo.
+       - **Instancias WhatsApp (`#whatsapp`):** Panel de control de la pasarela Evolution API v2 (`keystone-general` en `5.183.9.148:8080`), parámetros de notificación de enlaces de firma y pruebas de conexión.
+       - **Bóveda Cloudflare R2 (`#vault`):** Monitor de objetos custodiados en `sinnotario-vault-prod`, claves de objeto, hash forense y enlace de validación pública.
+       - **Telemetría UX (`#ux`):** Embudo de conversión paso a paso del Wizard, trámites más demandados y registro del detector negativo de consultas notariales exclusivas.
+    2. Se enlazó la reactividad al historial y hash de la URL (`#dashboard`, `#documentos`, `#whatsapp`, `#vault`, `#ux`) para que la recarga de página o enlaces directos abran exactamente la pestaña deseada.
+  - **Pruebas Validadas:**
+    - Sintaxis remota verificada con `php -l admin.php` arrojando cero errores.
+    - Carga directa con HTTP/2 200 OK en `https://sinnotario.cl/admin.php`.
+    - Conmutación fluida entre pestañas validada.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
