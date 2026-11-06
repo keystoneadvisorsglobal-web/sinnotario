@@ -32,7 +32,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     <title><?= htmlspecialchars($tpl['nombre']) ?> | SinNotario.cl</title>
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/style.css?v=20261106_4">
+    <link rel="stylesheet" href="assets/css/style.css?v=20261106_5">
     <style>
         .wizard-container {
             display: grid;
@@ -524,7 +524,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js?v=20261106_4"></script>
+    <script src="assets/js/app.js?v=20261106_5"></script>
     <script>
         // Funciones auxiliares seguras locales
         function escapeHtml(text) {
@@ -763,6 +763,186 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     `;
                     break;
 
+                case 'acta-entrega-llaves-e-inventario':
+                    fieldsHtml = `
+                        <div class="form-group">
+                            <label>Dirección del Inmueble Entregado *</label>
+                            <input type="text" id="f_acta_direccion" class="form-control" value="Av. Providencia 1234, Depto 402, Providencia">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Cantidad de Juegos de Llaves Entregados *</label>
+                                <input type="number" id="f_acta_llaves" class="form-control" value="3" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Lectura Medidor Eléctrico (kWh) *</label>
+                                <input type="text" id="f_acta_luz" class="form-control" value="14.850 kWh">
+                            </div>
+                            <div class="form-group">
+                                <label>Lectura Medidor Agua (m³) *</label>
+                                <input type="text" id="f_acta_agua" class="form-control" value="1.230 m³">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Estado de Pintura, Muros e Instalaciones *</label>
+                            <input type="text" id="f_acta_estado" class="form-control" value="Pintura en buen estado general, sin daños estructurales, grifería y artefactos operativos">
+                        </div>
+                        <div class="form-group">
+                            <label>Inventario de Bienes Muebles y Artefactos Incluidos</label>
+                            <textarea id="f_acta_inventario" class="form-control" rows="2">Cocina encimera 4 platos, horno eléctrico empotrado, campana extractora, cortinas roller en living y dormitorios.</textarea>
+                        </div>
+                    `;
+                    break;
+
+                case 'contrato-individual-trabajo':
+                    fieldsHtml = `
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Cargo o Función a Desempeñar *</label>
+                                <input type="text" id="f_trab_cargo" class="form-control" value="Desarrollador Full Stack / Consultor TI">
+                            </div>
+                            <div class="form-group">
+                                <label>Jornada Semanal (Ley 40 Horas - Ley 21.561) *</label>
+                                <select id="f_trab_jornada" class="form-control">
+                                    <option value="40 horas semanales distribuidas de lunes a viernes" selected>40 Horas Semanales (Lunes a Viernes)</option>
+                                    <option value="42 horas semanales en régimen de transición">42 Horas Semanales (Transición 2026)</option>
+                                    <option value="Artículo 22 inciso 2° sin fiscalización superior">Artículo 22 inc. 2° (Excluido de fiscalización)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Sueldo Base Mensual Bruto ($ CLP) *</label>
+                                <input type="number" id="f_trab_sueldo" class="form-control" value="1200000">
+                            </div>
+                            <div class="form-group">
+                                <label>Gratificación Legal *</label>
+                                <select id="f_trab_gratificacion" class="form-control">
+                                    <option value="25% según Art. 47 y 50 del Código del Trabajo (tope 4.75 IMM)" selected>Art. 50 (25% con tope 4,75 IMM)</option>
+                                    <option value="Prorrateada según utilidades líquidas del ejercicio">Según utilidades anuales Art. 47</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Comuna y Lugar de Prestación de Servicios *</label>
+                                <input type="text" id="f_trab_lugar" class="form-control" value="Las Condes, Santiago (modalidad híbrida / teletrabajo)">
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo de Contrato *</label>
+                                <select id="f_trab_tipo" class="form-control">
+                                    <option value="Indefinido" selected>Plazo Indefinido</option>
+                                    <option value="Plazo Fijo de 3 meses">Plazo Fijo (3 meses)</option>
+                                    <option value="Plazo Fijo de 1 año">Plazo Fijo (1 año)</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'reconocimiento-deuda-pagare-privado':
+                    fieldsHtml = `
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Monto Total de la Deuda Reconocida ($ CLP) *</label>
+                                <input type="number" id="f_deuda_total" class="form-control" value="3500000">
+                            </div>
+                            <div class="form-group">
+                                <label>Número de Cuotas Mensuales Convenidas *</label>
+                                <input type="number" id="f_deuda_cuotas" class="form-control" value="10" min="1">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Causa u Origen de la Deuda *</label>
+                                <input type="text" id="f_deuda_causa" class="form-control" value="Saldo insoluto por compraventa de mercaderías y servicios comerciales">
+                            </div>
+                            <div class="form-group">
+                                <label>Día de Vencimiento de Cada Cuota (1 al 31) *</label>
+                                <input type="number" id="f_deuda_dia_pago" class="form-control" value="10" min="1" max="31">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Cláusula de Aceleración y Pagaré en Garantía *</label>
+                            <select id="f_deuda_pagare" class="form-control">
+                                <option value="Con Cláusula de Aceleración ipso facto e interés penal máximo convencional" selected>Con Cláusula de Aceleración + Interés Máximo Convencional (Ley 18.010)</option>
+                                <option value="Sin intereses penales adicionales">Sin interés moratorio adicional</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+
+                case 'declaracion-jurada-ingresos-informales':
+                    fieldsHtml = `
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Actividad u Oficio Generador de Ingresos *</label>
+                                <input type="text" id="f_ingr_actividad" class="form-control" value="Comercio independiente, venta de productos y servicios autónomos">
+                            </div>
+                            <div class="form-group">
+                                <label>Ingreso Promedio Mensual Declarado ($ CLP) *</label>
+                                <input type="number" id="f_ingr_monto" class="form-control" value="950000">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Institución o Finalidad para la cual se Declara *</label>
+                            <input type="text" id="f_ingr_destino" class="form-control" value="Acreditación de solvencia económica para postulación a arriendo y créditos">
+                        </div>
+                    `;
+                    break;
+
+                case 'poder-especial-privado':
+                    fieldsHtml = `
+                        <div class="form-group">
+                            <label>Facultades y Gestiones Específicas Delegadas *</label>
+                            <textarea id="f_poder_facultades" class="form-control" rows="2">Representar al mandante ante empresas de telecomunicaciones, bancos para trámites de mesón, retiro de encomiendas en Chilexpress y Correos de Chile, y trámites municipales.</textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Vigencia del Poder Especial *</label>
+                                <select id="f_poder_vigencia" class="form-control">
+                                    <option value="6 meses contados desde la firma" selected>6 Meses a contar de la firma</option>
+                                    <option value="1 año contados desde la firma">1 Año a contar de la firma</option>
+                                    <option value="Válido exclusivamente para una única gestión">Para una única gestión específica</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Facultad de Sustituir / Delegar *</label>
+                                <select id="f_poder_delegar" class="form-control">
+                                    <option value="Sin facultad de delegación ni sustitución" selected>No permite delegar en terceros</option>
+                                    <option value="Con facultad expresa de delegar en terceros">Permite delegar en terceros</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'autorizacion-domicilio-tributario-sii':
+                    fieldsHtml = `
+                        <div class="form-group">
+                            <label>Dirección del Inmueble Cedido como Domicilio Tributario *</label>
+                            <input type="text" id="f_sii_direccion" class="form-control" value="Av. Andrés Bello 2711, Piso 8, Las Condes, Santiago">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Rol de Avalúo Fiscal del Inmueble (SII) *</label>
+                                <input type="text" id="f_sii_rol" class="form-control" value="1234-56 de Las Condes">
+                            </div>
+                            <div class="form-group">
+                                <label>Razón Social y RUT de la Empresa Autorizada *</label>
+                                <input type="text" id="f_sii_empresa" class="form-control" value="Inversiones & Consultorías SpA - RUT 77.888.999-0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Modalidad de Autorización ante el SII *</label>
+                            <select id="f_sii_modalidad" class="form-control">
+                                <option value="Comodato de uso gratuito de inmueble (Art. 2174 Código Civil)" selected>Comodato Gratuito (Préstamo de uso sin renta - Art. 2174 CC)</option>
+                                <option value="Autorización expresa del arrendador para subarriendo o cesión de oficina">Autorización del Arrendador para Domicilio Tributario</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+
                 default:
                     // Genérico para reconocimiento de deuda, poderes, contrato trabajo, etc.
                     fieldsHtml = `
@@ -841,6 +1021,28 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         <div class="preview-clause-title">TRASLADO DE ENSERES (LEY N° 20.227)</div>
                         <p>Que trasladará sus muebles y enseres domésticos desde <span class="highlight-var">${escapeHtml(origen)}</span> con destino a <span class="highlight-var">${escapeHtml(destino)}</span>, mediante el vehículo <span class="highlight-var">${escapeHtml(vehiculo)}</span>, no existiendo impedimento legal ni contractual para dicha mudanza.</p>
                     `;
+                } else if (CURRENT_TEMPLATE.slug === 'declaracion-jurada-ingresos-informales') {
+                    const activ = document.getElementById('f_ingr_actividad')?.value || 'Actividades comerciales independientes';
+                    const montIng = document.getElementById('f_ingr_monto')?.value || '950000';
+                    const destIng = document.getElementById('f_ingr_destino')?.value || 'fines pertinentes';
+                    const ingFmt = new Intl.NumberFormat('es-CL').format(montIng);
+                    html += `
+                        <div class="preview-clause-title">DECLARACIÓN DE ACTIVIDADES E INGRESOS PERCIBIDOS</div>
+                        <p>Que percibe legítimamente ingresos de carácter independiente derivados de <span class="highlight-var">${escapeHtml(activ)}</span> por un promedio mensual de <span class="highlight-var">$${ingFmt} CLP</span>, careciendo de relación de dependencia laboral subordinada.</p>
+                        <div class="preview-clause-title">DESTINO Y RESPONSABILIDAD PENAL</div>
+                        <p>La presente declaración se extiende para <span class="highlight-var">${escapeHtml(destIng)}</span>, asumiendo el declarante la responsabilidad civil y penal derivada del Art. 210 del Código Penal en caso de falsedad.</p>
+                    `;
+                } else if (CURRENT_TEMPLATE.slug === 'autorizacion-domicilio-tributario-sii') {
+                    const siiDir = document.getElementById('f_sii_direccion')?.value || domA;
+                    const siiRol = document.getElementById('f_sii_rol')?.value || 'Rol de Avalúo SII';
+                    const siiEmp = document.getElementById('f_sii_empresa')?.value || 'Empresa autorizada';
+                    const siiMod = document.getElementById('f_sii_modalidad')?.value || 'Comodato de uso gratuito';
+                    html += `
+                        <div class="preview-clause-title">CLÁUSULA PRIMERA: Inmueble y Rol de Avalúo Fiscal</div>
+                        <p>El Compareciente declara ser legítimo poseedor del inmueble de <span class="highlight-var">${escapeHtml(siiDir)}</span>, Rol de Avalúo SII N° <span class="highlight-var">${escapeHtml(siiRol)}</span>.</p>
+                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Autorización Expresa de Domicilio Tributario</div>
+                        <p>En este acto otorga expresa y suficiente autorización para que <span class="highlight-var">${escapeHtml(siiEmp)}</span> fije y acredite su domicilio tributario, comercial y postal ante el Servicio de Impuestos Internos (SII) bajo la modalidad de <span class="highlight-var">${escapeHtml(siiMod)}</span>.</p>
+                    `;
                 }
             } else {
                 html = `
@@ -894,6 +1096,59 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     html += `
                         <div class="preview-clause-title">CLÁUSULA SEGUNDA: Secreto Profesional y Deber de Reserva</div>
                         <p>Las partes se comprometen a resguardar bajo estricta reserva toda información técnica, comercial y sensible vinculada al proyecto <span class="highlight-var">${escapeHtml(proy)}</span>, por una vigencia de <span class="highlight-var">${escapeHtml(vig)}</span>.</p>
+                    `;
+                } else if (CURRENT_TEMPLATE.slug === 'acta-entrega-llaves-e-inventario') {
+                    const dirActa = document.getElementById('f_acta_direccion')?.value || domA;
+                    const llaves = document.getElementById('f_acta_llaves')?.value || '3';
+                    const luz = document.getElementById('f_acta_luz')?.value || '14.850 kWh';
+                    const agua = document.getElementById('f_acta_agua')?.value || '1.230 m³';
+                    const estado = document.getElementById('f_acta_estado')?.value || 'Buen estado';
+                    const inv = document.getElementById('f_acta_inventario')?.value || 'Sin muebles';
+                    html += `
+                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Entrega Material y Llaves</div>
+                        <p>Las partes formalizan la entrega y recepción material del inmueble de <span class="highlight-var">${escapeHtml(dirActa)}</span>, haciendo entrega de <span class="highlight-var">${escapeHtml(llaves)} juegos de llaves</span> completos.</p>
+                        <div class="preview-clause-title">CLÁUSULA TERCERA: Estado de Conservación e Inventario</div>
+                        <p>Se deja constancia del estado: <span class="highlight-var">${escapeHtml(estado)}</span>. Lecturas de servicios: Electricidad: <span class="highlight-var">${escapeHtml(luz)}</span> | Agua: <span class="highlight-var">${escapeHtml(agua)}</span>. Bienes incorporados: <span class="highlight-var">${escapeHtml(inv)}</span>.</p>
+                    `;
+                } else if (CURRENT_TEMPLATE.slug === 'contrato-individual-trabajo') {
+                    const cargo = document.getElementById('f_trab_cargo')?.value || 'Cargo';
+                    const jornada = document.getElementById('f_trab_jornada')?.value || '40 horas semanales';
+                    const sueldo = document.getElementById('f_trab_sueldo')?.value || '1200000';
+                    const grat = document.getElementById('f_trab_gratificacion')?.value || 'Art. 50';
+                    const lugar = document.getElementById('f_trab_lugar')?.value || 'Santiago';
+                    const tipo = document.getElementById('f_trab_tipo')?.value || 'Indefinido';
+                    const sueldoFmt = new Intl.NumberFormat('es-CL').format(sueldo);
+                    html += `
+                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Servicios y Lugar de Desempeño</div>
+                        <p>El Trabajador se compromete a prestar servicios en el cargo de <span class="highlight-var">${escapeHtml(cargo)}</span> en <span class="highlight-var">${escapeHtml(lugar)}</span> bajo contrato de duración <span class="highlight-var">${escapeHtml(tipo)}</span>.</p>
+                        <div class="preview-clause-title">CLÁUSULA TERCERA: Jornada de Trabajo (Ley 40 Horas - Ley 21.561)</div>
+                        <p>La jornada ordinaria será de <span class="highlight-var">${escapeHtml(jornada)}</span> con debido descanso para colación y registro de asistencia conforme a la DT.</p>
+                        <div class="preview-clause-title">CLÁUSULA CUARTA: Remuneraciones y Gratificación</div>
+                        <p>El Empleador pagará un sueldo base de <span class="highlight-var">$${sueldoFmt} CLP</span> mensuales brutos, más gratificación legal según modalidad de <span class="highlight-var">${escapeHtml(grat)}</span>.</p>
+                    `;
+                } else if (CURRENT_TEMPLATE.slug === 'reconocimiento-deuda-pagare-privado') {
+                    const deuda = document.getElementById('f_deuda_total')?.value || '3500000';
+                    const cuotas = document.getElementById('f_deuda_cuotas')?.value || '10';
+                    const causa = document.getElementById('f_deuda_causa')?.value || 'Causa comercial';
+                    const diaPago = document.getElementById('f_deuda_dia_pago')?.value || '10';
+                    const pagare = document.getElementById('f_deuda_pagare')?.value || 'Con Cláusula de Aceleración';
+                    const deudaFmt = new Intl.NumberFormat('es-CL').format(deuda);
+                    const cuotaFmt = new Intl.NumberFormat('es-CL').format(Math.round(deuda / (cuotas || 1)));
+                    html += `
+                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Reconocimiento Expreso de Deuda</div>
+                        <p>El Deudor reconoce expresa, líquida e irrevocablemente adeudar al Acreedor la suma de <span class="highlight-var">$${deudaFmt} CLP</span> por concepto de <span class="highlight-var">${escapeHtml(causa)}</span>.</p>
+                        <div class="preview-clause-title">CLÁUSULA TERCERA: Calendario de Pago y Cláusula de Aceleración</div>
+                        <p>La deuda se cancelará en <span class="highlight-var">${escapeHtml(cuotas)} cuotas mensuales</span> de <span class="highlight-var">$${cuotaFmt} CLP</span> pagaderas hasta el día <span class="highlight-var">${escapeHtml(diaPago)}</span> de cada mes. Régimen de garantías: <span class="highlight-var">${escapeHtml(pagare)}</span> facultando la exigibilidad total inmediata ante simple retardo.</p>
+                    `;
+                } else if (CURRENT_TEMPLATE.slug === 'poder-especial-privado') {
+                    const fac = document.getElementById('f_poder_facultades')?.value || 'Gestiones administrativas';
+                    const vig = document.getElementById('f_poder_vigencia')?.value || '6 meses';
+                    const del = document.getElementById('f_poder_delegar')?.value || 'Sin facultad de delegar';
+                    html += `
+                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Mandato y Facultades Especiales</div>
+                        <p>El Mandante confiere poder especial suficiente al Mandatario para que en su nombre y representación realice: <span class="highlight-var">${escapeHtml(fac)}</span>.</p>
+                        <div class="preview-clause-title">CLÁUSULA TERCERA: Vigencia y Delegación</div>
+                        <p>El presente poder tendrá una vigencia de <span class="highlight-var">${escapeHtml(vig)}</span>, estipulándose expresamente que actúa <span class="highlight-var">${escapeHtml(del)}</span>.</p>
                     `;
                 } else if (CURRENT_TEMPLATE.slug === 'prestacion-servicios-honorarios') {
                     const serv = document.getElementById('f_servicio_desc')?.value || 'Servicio';

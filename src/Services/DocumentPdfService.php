@@ -95,7 +95,7 @@ class DocumentPdfService {
         $pdo = Database::getInstance();
 
         // 1. Obtener documento y firmantes
-        $stmt = $pdo->prepare("SELECT d.*, t.nombre as template_nombre, t.categoria FROM documents d LEFT JOIN templates t ON d.template_id = t.id WHERE d.id = ?");
+        $stmt = $pdo->prepare("SELECT d.*, t.nombre as template_nombre, t.slug as template_slug, t.categoria FROM documents d LEFT JOIN templates t ON d.template_id = t.id WHERE d.id = ?");
         $stmt->execute([$documentId]);
         $doc = $stmt->fetch();
 
@@ -122,15 +122,15 @@ class DocumentPdfService {
 
         $pdf->SetFont('Arial', 'I', 8.5);
         $pdf->SetTextColor(100, 116, 139);
-        $pdf->Cell(0, 5, utf8_decode('Instrumento Privado con Firma Electrónica Avanzada conforme a la Ley N° 19.799'), 0, 1, 'C');
+        $pdf->Cell(0, 5, utf8_decode('Instrumento Privado con Firma Electrónica conforme a la Ley N° 19.799'), 0, 1, 'C');
         $pdf->Ln(5);
 
         // Texto de Comparecencia
         $pdf->SetFont('Arial', '', 9.5);
         $pdf->SetTextColor(30, 41, 59);
 
-        $ciudad = $formData['arrendador_comuna'] ?? ($formData['parte_a_comuna'] ?? 'Santiago');
-        $introText = "En la ciudad de {$ciudad}, República de Chile, a " . date('d') . " de " . self::mesEnEspanol(date('m')) . " de " . date('Y') . ", comparecen ante el presente instrumento privado las siguientes personas:";
+        $ciudad = $formData['parte_a_comuna'] ?? ($formData['arrendador_comuna'] ?? 'Santiago');
+        $introText = "En la ciudad de {$ciudad}, República de Chile, a " . date('d') . " de " . self::mesEnEspanol(date('m')) . " de " . date('Y') . ", comparecen ante el presente instrumento privado las siguientes partes:";
         $pdf->MultiCell(0, 5, utf8_decode($introText));
         $pdf->Ln(3);
 
@@ -154,7 +154,7 @@ class DocumentPdfService {
         $pdf->SetFont('Arial', 'B', 9.5);
         $pdf->Cell(0, 5, utf8_decode('VALIDEZ JURÍDICA Y SUMISIÓN A LA LEY N° 19.799:'), 0, 1, 'L');
         $pdf->SetFont('Arial', '', 9);
-        $validezText = "Las partes acuerdan y consienten libremente otorgar el presente contrato en formato de documento electrónico, conviniendo suscribirlo mediante Firma Electrónica conforme a los Artículos 4 y 5 de la Ley N° 19.799. Las partes reconocen que este instrumento produce plena fe probatoria, obligándose en los mismos términos que si lo hubiesen otorgado por escrito en papel, fijando su domicilio convencional en la comuna señalada en la comparecencia y declarando como auténticos sus correos electrónicos para toda notificación formal.";
+        $validezText = "Las partes acuerdan y consienten libremente otorgar el presente instrumento en formato electrónico, conviniendo suscribirlo mediante Firma Electrónica conforme a los Artículos 4 y 5 de la Ley N° 19.799 sobre Documentos Electrónicos, Firma Electrónica y Servicios de Certificación. Las partes reconocen que este instrumento produce plena fe probatoria, obligándose en los mismos términos que si lo hubiesen otorgado por escrito en papel, fijando su domicilio convencional en la comuna señalada en la comparecencia y declarando como auténticos sus correos electrónicos para toda notificación formal.";
         $pdf->MultiCell(0, 4.5, utf8_decode($validezText));
         $pdf->Ln(6);
 
@@ -214,38 +214,87 @@ class DocumentPdfService {
     }
 
     private static function renderClauses($pdf, $doc, $formData) {
-        $pdf->SetFont('Arial', 'B', 9.5);
-        $pdf->Cell(0, 5, utf8_decode('PRIMERO: OBJETO DEL INSTRUMENTO'), 0, 1, 'L');
-        $pdf->SetFont('Arial', '', 9);
+        $slug = $doc['template_slug'] ?? '';
 
-        if ($doc['template_id'] == 1 || strpos($doc['titulo'], 'Arriendo') !== false) {
-            $dir = $formData['propiedad_direccion'] ?? 'Dirección no especificada';
-            $depto = !empty($formData['propiedad_depto']) ? ", Depto " . $formData['propiedad_depto'] : '';
-            $comuna = $formData['propiedad_comuna'] ?? 'Santiago';
-            $renta = !empty($formData['renta_clp']) ? '$' . number_format($formData['renta_clp'], 0, ',', '.') . ' CLP' : '$550.000 CLP';
+        switch ($slug) {
+            case 'contrato-arriendo-ley-21461':
+                $dir = $formData['parte_a_domicilio'] ?? ($formData['propiedad_direccion'] ?? 'Av. Providencia 1234, Depto 402, Providencia');
+                $renta = !empty($formData['renta_clp']) ? '$' . number_format($formData['renta_clp'], 0, ',', '.') . ' CLP' : '$650.000 CLP';
+                
+                self::printClause($pdf, 'PRIMERO: OBJETO Y DESTINO EXCLUSIVO', "El Arrendador cede y da en arrendamiento al Arrendatario el inmueble ubicado en {$dir}, el cual se destina única y exclusivamente a habitación familiar del Arrendatario, quedando estrictamente prohibido su subarrendamiento o cesión a cualquier título.");
+                self::printClause($pdf, 'SEGUNDO: RENTA, FORMA DE PAGO Y REAJUSTABILIDAD', "La renta mensual será la suma de {$renta}, pagadera por mesadas anticipadas dentro de los primeros 5 días corridos de cada mes mediante transferencia bancaria. Dicha suma se reajustará de acuerdo a la variación acumulada del IPC semestral o anualmente.");
+                self::printClause($pdf, 'TERCERO: PROCEDIMIENTO MONITORIO LEY N° 21.461 ("DEVUÉLVEME MI CASA")', "Las partes se someten en forma expresa e irrevocable al procedimiento monitorio de cobro de rentas y restitución consagrado en la Ley N° 21.461 y Ley N° 18.101, autorizando al tribunal competente a decretar el lanzamiento anticipado y desalojo dentro del décimo día corrido si la mora no fuere enervada.");
+                self::printClause($pdf, 'CUARTO: GARANTÍA Y CONSERVACIÓN', "El Arrendatario entrega en garantía la suma equivalente a un mes de renta para responder del buen uso, conservación y pago de servicios básicos, no pudiendo imputarse al pago de rentas y debiendo restituirse dentro de 30 días posteriores a la entrega material del bien.");
+                break;
 
-            $t1 = "El Arrendador da en arrendamiento al Arrendatario el inmueble ubicado en {$dir}{$depto}, comuna de {$comuna}, el cual se destina exclusivamente a fines habitacionales.";
-            $pdf->MultiCell(0, 4.5, utf8_decode($t1));
-            $pdf->Ln(2);
+            case 'promesa-compraventa-inmueble':
+                self::printClause($pdf, 'PRIMERO: DEL INMUEBLE OBJETO DEL CONTRATO', "El Promitente Vendedor declara ser titular exclusivo del dominio del inmueble singularizado en los antecedentes, el cual se compromete a vender libre de todo gravamen, hipoteca o prohibición al momento de escriturar.");
+                self::printClause($pdf, 'SEGUNDO: PROMESA Y PRECIO DEFINITIVO', "El Promitente Vendedor promete y se obliga a vender, y el Promitente Comprador promete y se obliga a comprar la propiedad por el precio convenido, garantizado mediante la entrega previa de arras o señal de garantía.");
+                self::printClause($pdf, 'TERCERO: PLAZO DE ESCRITURACIÓN Y CONDICIÓN', "La escritura pública definitiva de compraventa se otorgará en el plazo máximo estipulado o una vez concluidas satisfactoriamente las aprobaciones del estudio de títulos e hipotecas.");
+                self::printClause($pdf, 'CUARTO: CLÁUSULA PENAL Y RESGUARDO', "Si cualquiera de las partes se desistiera injustificadamente o no compareciere a otorgar la escritura definitiva, pagará a título de indemnización de perjuicios tasada y convencional la multa pactada en las condiciones del trámite.");
+                break;
 
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(0, 5, utf8_decode('SEGUNDO: RENTA Y REAJUSTABILIDAD'), 0, 1, 'L');
-            $pdf->SetFont('Arial', '', 9);
-            $t2 = "La renta mensual convenida es la suma de {$renta}, pagadera por mesadas anticipadas dentro de los primeros 5 días de cada mes calendario. La renta se reajustará según la variación del Índice de Precios al Consumidor (IPC).";
-            $pdf->MultiCell(0, 4.5, utf8_decode($t2));
-            $pdf->Ln(2);
+            case 'finiquito-laboral-mutuo-acuerdo':
+                self::printClause($pdf, 'PRIMERO: TÉRMINO DE LA RELACIÓN LABORAL', "Las partes declaran de mutuo y común acuerdo poner término definitivo a la relación laboral que las unía, en conformidad a la causal del Artículo 159 N° 1 y con las formalidades del Artículo 177 del Código del Trabajo.");
+                self::printClause($pdf, 'SEGUNDO: LIQUIDACIÓN DE PRESTACIONES Y HABERES', "El Empleador hace entrega al Trabajador de la liquidación final por concepto de remuneraciones pendientes, feriado proporcional y demás haberes legales, que el Trabajador declara recibir conforme.");
+                self::printClause($pdf, 'TERCERO: AMPLIO, MUTUO Y COMPLETO FINIQUITO', "Las partes declaran que nada se adeudan por concepto de remuneraciones, horas extraordinarias ni cotizaciones previsionales, otorgándose el más amplio y completo finiquito con valor de transacción extrajudicial.");
+                break;
 
-            $pdf->SetFont('Arial', 'B', 9.5);
-            $pdf->Cell(0, 5, utf8_decode('TERCERO: SUMISIÓN EXPRESA A LA LEY N° 21.461 ("DEVUÉLVEME MI CASA")'), 0, 1, 'L');
-            $pdf->SetFont('Arial', '', 9);
-            $t3 = "Las partes declaran someterse de forma expresa e irrevocable al procedimiento monitorio de cobro de rentas y restitución consagrado en el Título III bis de la Ley N° 18.101 incorporado por la Ley N° 21.461, facultando al tribunal para ordenar el desalojo y lanzamiento en el plazo de 10 días corridos ante mora no desvirtuada.";
-            $pdf->MultiCell(0, 4.5, utf8_decode($t3));
-            $pdf->Ln(2);
-        } else {
-            $genText = "Las partes convienen en formalizar el presente acuerdo correspondiente a " . $doc['titulo'] . ", reconociéndole plena fuerza legal y obligatoriedad en todas sus partes, regulándose bajo las normas comunes del Código Civil y Comercial de la República de Chile.";
-            $pdf->MultiCell(0, 4.5, utf8_decode($genText));
-            $pdf->Ln(2);
+            case 'acuerdo-confidencialidad-nda':
+                self::printClause($pdf, 'PRIMERO: INFORMACIÓN CONFIDENCIAL Y PROPÓSITO', "Toda información técnica, financiera, comercial, código fuente, algoritmos, bases de datos o secretos industriales revelados entre las partes se califica como Información Confidencial protegida.");
+                self::printClause($pdf, 'SEGUNDO: DEBER DE RESERVA Y NO DIVULGACIÓN', "La parte receptora se obliga a custodiar la información confidencial con la mayor diligencia, no pudiendo reproducirla, transferirla ni divulgarla a terceros no autorizados sin consentimiento expreso por escrito.");
+                self::printClause($pdf, 'TERCERO: VIGENCIA Y SANCIONES POR INFRACCIÓN', "El deber de confidencialidad subsistirá por el plazo acordado e indefinidamente respecto de secretos comerciales, facultando a la parte afectada a perseguir la indemnización civil y penal correspondiente.");
+                break;
+
+            case 'prestacion-servicios-honorarios':
+                self::printClause($pdf, 'PRIMERO: NATURALEZA CIVIL DEL CONTRATO', "El Profesional prestará servicios independientes con plena autonomía técnica y funcional bajo las reglas del Artículo 2006 y siguientes del Código Civil, sin subordinación ni dependencia laboral.");
+                self::printClause($pdf, 'SEGUNDO: HONORARIOS Y FORMA DE PAGO', "Por la prestación de los servicios profesionales convenidos, el Mandante pagará los honorarios acordados contra entrega de la boleta de honorarios electrónica respectiva con la retención tributaria legal.");
+                self::printClause($pdf, 'TERCERO: PROPIEDAD INTELECTUAL Y CONFIDENCIALIDAD', "Los entregables, informes o creaciones técnicas confeccionadas pertenecerán al mandante una vez pagados los honorarios, resguardando ambas partes la reserva de los antecedentes.");
+                break;
+
+            case 'contrato-individual-trabajo':
+                self::printClause($pdf, 'PRIMERO: SERVICIOS Y JORNADA (LEY 21.561 40 HORAS)', "El Trabajador se obliga a desempeñar las funciones convenidas, sujetándose a una jornada ordinaria conforme a la Ley N° 21.561, con descanso diario de colación y registro oficial en el Libro Digital de la DT.");
+                self::printClause($pdf, 'SEGUNDO: REMUNERACIONES Y BENEFICIOS', "El Empleador pagará la remuneración base convenida por mesadas vencidas, más las asignaciones y gratificación legal correspondiente según los Artículos 47 y 50 del Código del Trabajo.");
+                self::printClause($pdf, 'TERCERO: OBLIGACIONES Y REGISTRO DT', "El contrato se rige íntegramente por el Código del Trabajo y el Reglamento Interno, obligándose el Empleador a registrarlo oportunamente en el portal digital de la Dirección del Trabajo (REL).");
+                break;
+
+            case 'reconocimiento-deuda-pagare-privado':
+                self::printClause($pdf, 'PRIMERO: RECONOCIMIENTO EXPRESO Y LÍQUIDO', "El Deudor reconoce expresa, pura y simplemente adeudar al Acreedor la suma líquida indicada, derivada de obligaciones civiles y mercantiles pendientes entre ambas partes.");
+                self::printClause($pdf, 'SEGUNDO: PLAN DE PAGO Y CLÁUSULA DE ACELERACIÓN', "La deuda se solucionará en las cuotas pactadas. El no pago íntegro y oportuno de cualquiera de ellas facultará al Acreedor a hacer exigible de inmediato el total del saldo insoluto como si fuere de plazo vencido.");
+                self::printClause($pdf, 'TERCERO: PAGARÉ EN GARANTÍA E INTERESES PENALES', "En caso de mora o simple retardo, la obligación devengará el interés penal máximo convencional permitido por la Ley N° 18.010, facultando la acción ejecutiva ante tribunales ordinarios.");
+                break;
+
+            case 'salvoconducto-mudanza':
+                self::printClause($pdf, 'PRIMERO: DECLARACIÓN BAJO JURAMENTO (LEY N° 20.227)', "El Declarante expone bajo juramento que trasladará sus muebles y enseres domésticos desde el domicilio de origen al de destino singularizado en este instrumento.");
+                self::printClause($pdf, 'SEGUNDO: INEXISTENCIA DE IMPEDIMENTOS', "Declara expresamente no tener impedimento judicial, legal ni contractual para realizar dicho traslado, encontrándose al día en sus obligaciones de arriendo o siendo propietario legítimo del inmueble de origen.");
+                break;
+
+            case 'autorizacion-domicilio-tributario-sii':
+                self::printClause($pdf, 'PRIMERO: INMUEBLE Y ROL DE AVALÚO FISCAL', "El Propietario o Comodante declara ser legítimo poseedor del inmueble y su respectivo Rol de Avalúo Fiscal acreditado ante el Servicio de Impuestos Internos (SII).");
+                self::printClause($pdf, 'SEGUNDO: COMODATO GRATUITO PARA EFECTOS TRIBUTARIOS', "Otorga formalmente en comodato gratuito el uso del inmueble para que la empresa autorizada fije su domicilio tributario, comercial y postal conforme a las exigencias normativas del SII.");
+                break;
+
+            case 'poder-especial-privado':
+                self::printClause($pdf, 'PRIMERO: MANDATO Y FACULTADES DELEGADAS', "El Mandante confiere poder especial amplio y suficiente al Mandatario para que en su nombre y representación ejecute las gestiones administrativas, trámites y gestiones singularizadas.");
+                self::printClause($pdf, 'SEGUNDO: VIGENCIA Y RESPONSABILIDAD', "El mandato se entenderá otorgado por el plazo convenido o hasta la conclusión del encargo, rindiendo oportuna cuenta de su cometido con arreglo al Código Civil.");
+                break;
+
+            default:
+                self::printClause($pdf, 'PRIMERO: ANTECEDENTES Y OBJETO', "Las partes formalizan el presente instrumento de " . $doc['titulo'] . ", reconociéndole plena fuerza obligatoria al amparo del principio de autonomía de la voluntad consagrado en el Artículo 1545 del Código Civil chileno.");
+                self::printClause($pdf, 'SEGUNDO: CUMPLIMIENTO Y BUENA FE', "Las partes se obligan a ejecutar fielmente las estipulaciones contenidas en este contrato con estricta sujeción al principio de buena fe legal.");
+                break;
         }
+    }
+
+    private static function printClause($pdf, $title, $text) {
+        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->SetTextColor(15, 42, 74);
+        $pdf->Cell(0, 4.5, utf8_decode($title), 0, 1, 'L');
+        
+        $pdf->SetFont('Arial', '', 8.8);
+        $pdf->SetTextColor(30, 41, 59);
+        $pdf->MultiCell(0, 4.2, utf8_decode($text));
+        $pdf->Ln(2.5);
     }
 
     private static function mesEnEspanol($mesNum) {
@@ -257,4 +306,3 @@ class DocumentPdfService {
         return $meses[$mesNum] ?? 'mes';
     }
 }
-

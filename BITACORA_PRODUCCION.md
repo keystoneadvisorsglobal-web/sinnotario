@@ -269,3 +269,26 @@
     - Carga directa con HTTP/2 200 OK en `https://sinnotario.cl/admin.php`.
     - Conmutación fluida entre pestañas validada.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
+
+---
+
+### Entrada: 2026-11-06 12:45:00 UTC-3
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0027`
+- **Resumen de la Ejecución:**
+  - **Robustecimiento Profesional de Plantillas Legales y Generador PDF:**
+    1. Se contrastaron los modelos de referencia de Keystone Advisors (KeyHub) y normativa civil/laboral chilena (Dirección del Trabajo, Ley 21.561 de 40 Horas, Ley 21.461 Devuélveme Mi Casa, Ley 20.227 de Salvoconducto y Ley 18.010 de Operaciones de Crédito) para elevar el estándar técnico y la solidez probatoria de las 13 plantillas del catálogo.
+    2. En `redactar.php`: Se reemplazaron formularios genéricos por interfaces ricas con variables legales especializadas:
+       - **Contrato Individual de Trabajo:** Jornada semanal ajustada a la Ley 40 Horas, gratificación legal (Art. 47 y 50), tipo de contrato y pacto de teletrabajo/lugar de funciones.
+       - **Reconocimiento de Deuda y Convenio de Pago:** Detalle de cuotas, causa de la obligación, Cláusula de Aceleración ipso facto y estipulación de Pagaré con interés máximo convencional.
+       - **Acta de Entrega e Inventario:** Número de llaves, lecturas de medidores de luz y agua potable, checklist de pintura e inventario de bienes empotrados.
+       - **Autorización de Domicilio Tributario SII:** Comodato gratuito según Art. 2174 del Código Civil con inclusión del Rol de Avalúo Fiscal.
+       - **Poder Especial Privado:** Facultades administrativas tasadas, vigencia definida y cláusula de delegación/sustitución.
+       - **Declaración Jurada de Ingresos:** Especificación de rubro independiente y apercibimiento penal por falso testimonio (Art. 210 CP).
+    3. En `DocumentPdfService.php`: Se incorporó la redacción dogmática formal de cláusulas estructuradas para cada instrumento al momento de emitir y estampar el PDF criptográfico con QR en Cloudflare R2.
+    4. Se actualizó la versión de cache-busting a `?v=20261106_5`.
+  - **Pruebas Validadas:**
+    - Verificación sintáctica remota (`php -l redactar.php` y `php -l DocumentPdfService.php` -> 0 errores).
+    - Carga directa con HTTP/2 200 OK en wizards de `contrato-individual-trabajo`, `reconocimiento-deuda-pagare-privado` y `autorizacion-domicilio-tributario-sii`.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
