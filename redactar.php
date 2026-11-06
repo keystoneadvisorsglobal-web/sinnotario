@@ -557,7 +557,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js?v=20261106_14"></script>
+    <script src="assets/js/app.js?v=20261106_15"></script>
     <script>
         // Funciones auxiliares seguras locales
         function escapeHtml(text) {
@@ -767,6 +767,30 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     help.innerText = 'Poder especial para asambleas de copropietarios conforme a la Ley N° 21.442 de Copropiedad Inmobiliaria con voz y voto (4 cláusulas).';
                 } else if (val === 'opcion_c') {
                     help.innerText = 'Mandato vehicular para trámites ante el Registro Civil, duplicados de padrón/placas y revisión técnica en PRT (5 cláusulas).';
+                }
+            }
+            updateUniversalPreview();
+        }
+
+        function toggleDeclJuradaFields(slug) {
+            const prefix = (slug === 'declaracion-jurada-residencia') ? 'f_res' : 'f_ing';
+            const sel = document.getElementById(`${prefix}_modalidad`);
+            if (!sel) return;
+            const val = sel.value;
+            const wrapB = document.getElementById(`wrap_${prefix}_opcion_b`);
+            const wrapC = document.getElementById(`wrap_${prefix}_opcion_c`);
+            const help = document.getElementById(`${prefix}_modalidad_help`);
+
+            if (wrapB) wrapB.style.display = (val === 'opcion_b') ? 'block' : 'none';
+            if (wrapC) wrapC.style.display = (val === 'opcion_c') ? 'block' : 'none';
+
+            if (help) {
+                if (val === 'opcion_a') {
+                    help.innerText = 'Estándar Notarial con apercibimiento penal expreso del Art. 210 del Código Penal para trámites oficiales generales (4 cláusulas solemnes).';
+                } else if (val === 'opcion_b') {
+                    help.innerText = 'Acreditación socioeconómica / familiar para postulación a beneficios estatales (FUAS, gratuidad, Junji/Integra, subsidios) (5 cláusulas).';
+                } else if (val === 'opcion_c') {
+                    help.innerText = 'Acreditación independiente con respaldo de transferencias, depósitos y costos operacionales para bancos y arriendo (5 cláusulas).';
                 }
             }
             updateUniversalPreview();
@@ -1329,13 +1353,69 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                 case 'declaracion-jurada-residencia':
                     fieldsHtml = `
+                        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#166534;">
+                            <i class="fas fa-home"></i> <strong>Declaración Jurada Simple de Residencia</strong>:
+                            Acreditación oficial de domicilio habitual bajo solemnidad legal y responsabilidad penal del declarante.
+                        </div>
+
+                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad de Declaración de Residencia *</label>
+                            <select id="f_res_modalidad" class="form-control" onchange="toggleDeclJuradaFields('declaracion-jurada-residencia')" style="font-weight:600; border-color:#059669;">
+                                <option value="opcion_a" selected>Opción A: Estándar Notarial con Apercibimiento Penal Art. 210 CP (4 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Familiar / Acreditación de Carga para Becas y Asignaciones (5 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: Independiente con Respaldo de Movimientos y Arriendo (5 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="f_res_modalidad_help">Estándar Notarial con apercibimiento penal expreso del Art. 210 del Código Penal para trámites oficiales generales (4 cláusulas solemnes).</small>
+                        </div>
+
                         <div class="form-group">
-                            <label>Dirección Exacta del Domicilio Declarado *</label>
+                            <label>Dirección Exacta del Domicilio Declarado (Calle, Número, Depto, Comuna y Ciudad) *</label>
                             <input type="text" id="f_decl_domicilio" class="form-control" value="Pasaje Los Copihues 456, Maipú, Santiago">
                         </div>
-                        <div class="form-group">
-                            <label>Institución o Fin para el cual se Presenta *</label>
-                            <input type="text" id="f_decl_destino" class="form-control" value="Acreditación de residencia para trámites bancarios y escolares">
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Institución o Fin para el cual se Presenta *</label>
+                                <input type="text" id="f_decl_destino" class="form-control" value="Acreditación de residencia para trámites bancarios, casas comerciales y matrícula escolar">
+                            </div>
+                            <div class="form-group">
+                                <label>Tiempo de Residencia Continua en el Domicilio *</label>
+                                <input type="text" id="f_res_antiguedad" class="form-control" value="Más de 3 años continuos e ininterrumpidos">
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción B (Familiar / Becas / Subsidios) -->
+                        <div id="wrap_f_res_opcion_b" style="display:none; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#1E40AF; margin-bottom:0.5rem;">
+                                <i class="fas fa-users"></i> Composición del Grupo Familiar y Acreditación Socioeconómica
+                            </h5>
+                            <div class="form-row" style="margin-bottom:0;">
+                                <div class="form-group">
+                                    <label>Cargas Familiares que Cohabitan en el Hogar *</label>
+                                    <input type="text" id="f_res_cargas" class="form-control" value="Cónyuge y 2 hijos menores de edad acreditados en Registro Social de Hogares">
+                                </div>
+                                <div class="form-group">
+                                    <label>Destino de Postulación Estatal *</label>
+                                    <input type="text" id="f_res_programa" class="form-control" value="Postulación a beneficios estudiantiles FUAS, Gratuidad y subsidio habitacional MINVU">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción C (Independiente / Arriendo / Cuentas) -->
+                        <div id="wrap_f_res_opcion_c" style="display:none; background:#FEFCE8; border:1px solid #FEF08A; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#854D0E; margin-bottom:0.5rem;">
+                                <i class="fas fa-receipt"></i> Comprobantes de Respaldo y Cuentas de Servicios
+                            </h5>
+                            <div class="form-row" style="margin-bottom:0;">
+                                <div class="form-group">
+                                    <label>Calidad sobre el Inmueble y Servicios a su Nombre *</label>
+                                    <input type="text" id="f_res_servicios" class="form-control" value="Arrendatario con contrato vigente y boletas de servicios básicos (luz/internet) a su nombre">
+                                </div>
+                                <div class="form-group">
+                                    <label>Finalidad Financiera / Comercial *</label>
+                                    <input type="text" id="f_res_banco" class="form-control" value="Acreditación de domicilio para apertura de cuenta corriente y evaluación crediticia">
+                                </div>
+                            </div>
                         </div>
                     `;
                     break;
@@ -1761,19 +1841,75 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                 case 'declaracion-jurada-ingresos-informales':
                     fieldsHtml = `
+                        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#166534;">
+                            <i class="fas fa-coins"></i> <strong>Declaración Jurada Simple de Ingresos (Independientes e Informales)</strong>:
+                            Acreditación patrimonial de ingresos lícitos percibidos de forma autónoma o sin contrato laboral dependiente, con fe de juramento y apercibimiento penal.
+                        </div>
+
+                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad de Declaración de Ingresos *</label>
+                            <select id="f_ing_modalidad" class="form-control" onchange="toggleDeclJuradaFields('declaracion-jurada-ingresos-informales')" style="font-weight:600; border-color:#059669;">
+                                <option value="opcion_a" selected>Opción A: Estándar Notarial con Apercibimiento Penal Art. 210 CP (4 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Familiar / Acreditación de Carga para Becas y Asignaciones (5 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: Independiente con Respaldo de Movimientos y Transferencias (5 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="f_ing_modalidad_help">Estándar Notarial con apercibimiento penal expreso del Art. 210 del Código Penal para trámites oficiales generales (4 cláusulas solemnes).</small>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Actividad u Oficio Generador de Ingresos *</label>
-                                <input type="text" id="f_ingr_actividad" class="form-control" value="Comercio independiente, venta de productos y servicios autónomos">
+                                <label>Actividad, Oficio o Rubro Generador de Ingresos *</label>
+                                <input type="text" id="f_ingr_actividad" class="form-control" value="Comercio independiente, servicios técnicos y ventas autónomas">
                             </div>
                             <div class="form-group">
-                                <label>Ingreso Promedio Mensual Declarado ($ CLP) *</label>
+                                <label>Ingreso Promedio Mensual Líquido ($ CLP) *</label>
                                 <input type="number" id="f_ingr_monto" class="form-control" value="950000">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Institución o Finalidad para la cual se Declara *</label>
-                            <input type="text" id="f_ingr_destino" class="form-control" value="Acreditación de solvencia económica para postulación a arriendo y créditos">
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Institución o Fin para el cual se Presenta *</label>
+                                <input type="text" id="f_ingr_destino" class="form-control" value="Acreditación de solvencia económica para postulación a arriendo y créditos">
+                            </div>
+                            <div class="form-group">
+                                <label>Tiempo Desarrollando la Actividad *</label>
+                                <input type="text" id="f_ing_antiguedad" class="form-control" value="Más de 2 años de ejercicio continuo">
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción B (Familiar / Becas / FUAS) -->
+                        <div id="wrap_f_ing_opcion_b" style="display:none; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#1E40AF; margin-bottom:0.5rem;">
+                                <i class="fas fa-graduation-cap"></i> Acreditación Socioeconómica para Beneficios Estudiantiles y Subsidios
+                            </h5>
+                            <div class="form-row" style="margin-bottom:0;">
+                                <div class="form-group">
+                                    <label>Aporte al Sustento del Grupo Familiar *</label>
+                                    <input type="text" id="f_ing_aporte_familiar" class="form-control" value="Sustentador principal del hogar, destinado íntegramente a alimentación, salud y educación de cargas">
+                                </div>
+                                <div class="form-group">
+                                    <label>Programa o Beneficio Solicitado *</label>
+                                    <input type="text" id="f_ing_programa_estatal" class="form-control" value="Acreditación socioeconómica para Formulario Único de Acreditación Socioeconómica (FUAS / Gratuidad) y JUNAEB">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción C (Independiente con Transferencias y Costos) -->
+                        <div id="wrap_f_ing_opcion_c" style="display:none; background:#FEFCE8; border:1px solid #FEF08A; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#854D0E; margin-bottom:0.5rem;">
+                                <i class="fas fa-chart-line"></i> Respaldo Financiero, Depósitos y Costos Operativos
+                            </h5>
+                            <div class="form-row" style="margin-bottom:0;">
+                                <div class="form-group">
+                                    <label>Depósitos Bancarios / Transferencias Mensuales Brutas ($ CLP) *</label>
+                                    <input type="text" id="f_ing_depositos" class="form-control" value="Abonos promedio mensuales de $1.400.000 CLP en cuenta bancaria acreditables con cartola">
+                                </div>
+                                <div class="form-group">
+                                    <label>Costos Operativos y Margen Neto Estimado *</label>
+                                    <input type="text" id="f_ing_costos" class="form-control" value="Costos operacionales de insumos de aprox. $450.000 CLP mensuales, arrojando un líquido disponible de $950.000 CLP">
+                                </div>
+                            </div>
                         </div>
                     `;
                     break;
@@ -2016,12 +2152,78 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     <p>Que de conformidad a la legislación vigente y bajo juramento de veracidad, declara su voluntad y antecedentes para todo efecto legal ante quien corresponda.</p>
                 `;
                 if (CURRENT_TEMPLATE.slug === 'declaracion-jurada-residencia') {
+                    const modRes = document.getElementById('f_res_modalidad')?.value || 'opcion_a';
                     const declDom = document.getElementById('f_decl_domicilio')?.value || domA;
                     const declFin = document.getElementById('f_decl_destino')?.value || 'fines pertinentes';
-                    html += `
-                        <div class="preview-clause-title">ACREDITACIÓN DE DOMICILIO</div>
-                        <p>Que su residencia fija y morada habitual corresponde a la ubicada en <span class="highlight-var">${escapeHtml(declDom)}</span>, presentada para <span class="highlight-var">${escapeHtml(declFin)}</span>.</p>
-                    `;
+                    const antiguedad = document.getElementById('f_res_antiguedad')?.value || 'Más de 3 años continuos';
+
+                    if (modRes === 'opcion_b') {
+                        // Opción B: Familiar / Acreditación de Carga para Becas y Asignaciones (5 Cláusulas)
+                        const cargas = document.getElementById('f_res_cargas')?.value || 'Cónyuge y cargas familiares acreditadas';
+                        const prog = document.getElementById('f_res_programa')?.value || 'Beneficios estudiantiles FUAS y gratuidad';
+
+                        html += `
+                            <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                                DECLARACIÓN JURADA DE RESIDENCIA FAMILIAR Y ACREDITACIÓN SOCIOECONÓMICA
+                            </div>
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: FIJACIÓN SOLEMNE DE DOMICILIO FAMILIAR</div>
+                            <p>El declarante acredita bajo juramento que su morada habitual y residencia principal familiar corresponde al inmueble ubicado en: <span class="highlight-var" style="font-weight:600;">${escapeHtml(declDom)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: TIEMPO DE RESIDENCIA CONTINUA</div>
+                            <p>Que habita dicho hogar en forma continua e ininterrumpida por un lapso no inferior a: <span class="highlight-var">${escapeHtml(antiguedad)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: COHABITACIÓN Y CARGAS FAMILIARES DEL HOGAR</div>
+                            <p>Se deja expresa constancia de que en el domicilio residen bajo el mismo techo y bajo su sustento económico las siguientes cargas: <span class="highlight-var" style="font-weight:600;">${escapeHtml(cargas)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: DESTINO EXCLUSIVO PARA POSTULACIÓN A BENEFICIOS ESTATALES</div>
+                            <p>La presente declaración se emite para los fines exclusivos de: <span class="highlight-var">${escapeHtml(prog)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: FE PÚBLICA Y RESPONSABILIDAD PENAL (ART. 210 CP)</div>
+                            <p>El declarante asume plena responsabilidad legal sobre la exactitud de lo expresado, conociendo las sanciones penales contempladas en el artículo 210 del Código Penal en caso de falsedad en declaración jurada ante instituciones públicas.</p>
+                        `;
+                    } else if (modRes === 'opcion_c') {
+                        // Opción C: Independiente con Respaldo de Movimientos y Arriendo (5 Cláusulas)
+                        const serv = document.getElementById('f_res_servicios')?.value || 'Arrendatario con servicios a su nombre';
+                        const banco = document.getElementById('f_res_banco')?.value || 'Acreditación ante instituciones financieras';
+
+                        html += `
+                            <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                                DECLARACIÓN JURADA DE DOMICILIO CON RESPALDO DE SERVICIOS Y CONTRATO
+                            </div>
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: ACREDITACIÓN DE MORADA Y DOMICILIO EFECTIVO</div>
+                            <p>Que el declarante tiene su asiento legal y domicilio efectivo en la propiedad de: <span class="highlight-var" style="font-weight:600;">${escapeHtml(declDom)}</span>, con residencia de <span class="highlight-var">${escapeHtml(antiguedad)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: CALIDAD DE OCUPACIÓN Y SUMINISTROS BÁSICOS</div>
+                            <p>Que detenta la ocupación del inmueble en calidad de: <span class="highlight-var" style="font-weight:600;">${escapeHtml(serv)}</span>, encontrándose las cuentas domiciliarias al día.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: DESTINO COMERCIAL Y FINANCIERO</div>
+                            <p>La presente declaración jurada se otorga con destino a: <span class="highlight-var">${escapeHtml(banco)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: CORRESPONDENCIA Y NOTIFICACIONES</div>
+                            <p>El declarante designa dicho domicilio como válido para la recepción de toda correspondencia bancaria, notificaciones y requerimientos legales emanados del trámite.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: DECLARACIÓN SOLEMNE Y APERCIBIMIENTO LEGAL</div>
+                            <p>El declarante sostiene bajo fe de juramento la veracidad incondicional de los antecedentes expuestos, sometiéndose a las prescripciones legales del Art. 210 del Código Penal chileno.</p>
+                        `;
+                    } else {
+                        // Opción A: Estándar Notarial con Apercibimiento Penal Art. 210 CP (4 Cláusulas - Recomendado)
+                        html += `
+                            <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                                DECLARACIÓN JURADA SIMPLE DE RESIDENCIA (ART. 210 CÓDIGO PENAL)
+                            </div>
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: DECLARACIÓN SOLEMNE BAJO JURAMENTO</div>
+                            <p>El compareciente individualizado en la comparecencia declara libre, espontáneamente y bajo fe de juramento de decir verdad ante las leyes de la República de Chile.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: FIJACIÓN Y ACREDITACIÓN DE RESIDENCIA HABITUAL</div>
+                            <p>Que su residencia fija, permanente y morada habitual corresponde a la ubicada en: <span class="highlight-var" style="font-weight:600;">${escapeHtml(declDom)}</span>, donde habita en forma continua desde hace: <span class="highlight-var">${escapeHtml(antiguedad)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: DESTINO Y FINALIDAD DEL INSTRUMENTO</div>
+                            <p>Que la presente declaración jurada se extiende para ser presentada ante: <span class="highlight-var" style="font-weight:600;">${escapeHtml(declFin)}</span>, para los efectos legales y administrativos a que haya lugar.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: APERCIBIMIENTO PENAL POR FALSO TESTIMONIO (ART. 210 CP)</div>
+                            <p>El declarante manifiesta tener pleno y cabal conocimiento de que prestar declaración jurada falsa ante la autoridad o para efectos públicos constituye delito penado por el Artículo 210 del Código Penal chileno con penas de presidio menor y multas legales, ratificando la autenticidad íntegra de sus dichos mediante firma digital de plena validez probatoria (Ley N° 19.799).</p>
+                        `;
+                    }
                 } else if (CURRENT_TEMPLATE.slug === 'salvoconducto-mudanza') {
                     const modMud = document.getElementById('f_mud_modalidad')?.value || 'opcion_a';
                     const origen = document.getElementById('f_mud_origen')?.value || 'Av. Grecia 1234, Depto 301, Ñuñoa, Santiago';
@@ -2111,16 +2313,80 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         `;
                     }
                 } else if (CURRENT_TEMPLATE.slug === 'declaracion-jurada-ingresos-informales') {
+                    const modIng = document.getElementById('f_ing_modalidad')?.value || 'opcion_a';
                     const activ = document.getElementById('f_ingr_actividad')?.value || 'Actividades comerciales independientes';
                     const montIng = document.getElementById('f_ingr_monto')?.value || '950000';
                     const destIng = document.getElementById('f_ingr_destino')?.value || 'fines pertinentes';
+                    const antigIng = document.getElementById('f_ing_antiguedad')?.value || 'Más de 2 años de ejercicio continuo';
                     const ingFmt = new Intl.NumberFormat('es-CL').format(montIng);
-                    html += `
-                        <div class="preview-clause-title">DECLARACIÓN DE ACTIVIDADES E INGRESOS PERCIBIDOS</div>
-                        <p>Que percibe legítimamente ingresos de carácter independiente derivados de <span class="highlight-var">${escapeHtml(activ)}</span> por un promedio mensual de <span class="highlight-var">$${ingFmt} CLP</span>, careciendo de relación de dependencia laboral subordinada.</p>
-                        <div class="preview-clause-title">DESTINO Y RESPONSABILIDAD PENAL</div>
-                        <p>La presente declaración se extiende para <span class="highlight-var">${escapeHtml(destIng)}</span>, asumiendo el declarante la responsabilidad civil y penal derivada del Art. 210 del Código Penal en caso de falsedad.</p>
-                    `;
+
+                    if (modIng === 'opcion_b') {
+                        // Opción B: Familiar / Acreditación de Carga para Becas y Asignaciones (5 Cláusulas)
+                        const aporte = document.getElementById('f_ing_aporte_familiar')?.value || 'Sustentador principal del hogar destinado a educación y salud de cargas';
+                        const progEst = document.getElementById('f_ing_programa_estatal')?.value || 'FUAS / Gratuidad y beneficios socioeconómicos estatales';
+
+                        html += `
+                            <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                                DECLARACIÓN JURADA DE INGRESOS FAMILIARES Y ACREDITACIÓN SOCIOECONÓMICA
+                            </div>
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: DECLARACIÓN SOLEMNE DE ORIGEN DE FONDOS</div>
+                            <p>El compareciente expone bajo fe de juramento que percibe ingresos económicos autónomos derivados de: <span class="highlight-var" style="font-weight:600;">${escapeHtml(activ)}</span>, actividad que realiza en forma lícita y constante desde hace: <span class="highlight-var">${escapeHtml(antigIng)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: CUANTIFICACIÓN MENSUAL DEL INGRESO PERCIBIDO</div>
+                            <p>Que dichos ingresos corresponden a un promedio líquido mensual disponible de: <span class="highlight-var" style="font-weight:700; color:#0F2A4A;">$${ingFmt} CLP</span>, sin contar con liquidaciones de sueldo patronales bajo contrato de subordinación.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: DESTINACIÓN AL SUSTENTO FAMILIAR Y CARGAS</div>
+                            <p>Que los recursos percibidos se destinan prioritariamente a: <span class="highlight-var">${escapeHtml(aporte)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: FINALIDAD SOCIOECONÓMICA Y BENEFICIOS ESTATALES</div>
+                            <p>La presente declaración jurada se suscribe a efectos de: <span class="highlight-var">${escapeHtml(progEst)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: FE PÚBLICA Y RESPONSABILIDAD PENAL (ART. 210 CP)</div>
+                            <p>El declarante declara bajo juramento que los antecedentes declarados son íntegramente verídicos, conociendo las sanciones penales de presidio menor y multas contempladas en el artículo 210 del Código Penal en caso de perjurio ante organismos del Estado.</p>
+                        `;
+                    } else if (modIng === 'opcion_c') {
+                        // Opción C: Independiente con Respaldo de Movimientos y Transferencias (5 Cláusulas)
+                        const dep = document.getElementById('f_ing_depositos')?.value || 'Abonos y transferencias bancarias mensuales';
+                        const costos = document.getElementById('f_ing_costos')?.value || 'Costos operativos y margen líquido';
+
+                        html += `
+                            <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                                DECLARACIÓN JURADA DE INGRESOS INDEPENDIENTES CON RESPALDO FINANCIERO
+                            </div>
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: ACTIVIDAD INDEPENDIENTE Y TRAYECTORIA</div>
+                            <p>El declarante expone bajo juramento desempeñar de manera autónoma el rubro de: <span class="highlight-var" style="font-weight:600;">${escapeHtml(activ)}</span> con una antigüedad verificable de <span class="highlight-var">${escapeHtml(antigIng)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: FLUJO BRUTO DE INGRESOS Y TRANSFERENCIAS</div>
+                            <p>Declara percibir abonos mediante transferencias electrónicas y depósitos bancarios conforme a: <span class="highlight-var" style="font-weight:600;">${escapeHtml(dep)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: COSTOS OPERATIVOS Y LÍQUIDO DISPONIBLE</div>
+                            <p>Deducidos los gastos operacionales e insumos: <span class="highlight-var">${escapeHtml(costos)}</span>, fijando un ingreso neto mensual de: <span class="highlight-var" style="font-weight:700; color:#0F2A4A;">$${ingFmt} CLP</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: DESTINO FINANCIERO O ARRENDATICIO</div>
+                            <p>El instrumento se extiende para acreditar solvencia económica ante: <span class="highlight-var">${escapeHtml(destIng)}</span>, autorizando el cruce de información respectivo.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: VALOR PROBATORIO Y RESPONSABILIDAD PENAL</div>
+                            <p>Se asume plena responsabilidad civil y penal sobre la legitimidad de las cifras declaradas conforme al Art. 210 del Código Penal chileno, ratificando su suscripción digital fehaciente (Ley N° 19.799).</p>
+                        `;
+                    } else {
+                        // Opción A: Estándar Notarial con Apercibimiento Penal Art. 210 CP (4 Cláusulas - Recomendado)
+                        html += `
+                            <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                                DECLARACIÓN JURADA SIMPLE DE INGRESOS (ART. 210 CÓDIGO PENAL)
+                            </div>
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: DECLARACIÓN SOLEMNE BAJO FE DE JURAMENTO</div>
+                            <p>El declarante comparece libre, voluntariamente y bajo juramento de decir verdad ante las leyes de la República de Chile.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: DECLARACIÓN DE ACTIVIDADES E INGRESOS PERCIBIDOS</div>
+                            <p>Que percibe legítimamente ingresos de carácter autónomo o independiente derivados de: <span class="highlight-var" style="font-weight:600;">${escapeHtml(activ)}</span> por un promedio mensual líquido de: <span class="highlight-var" style="font-weight:700; color:#0F2A4A;">$${ingFmt} CLP</span>, careciendo de relación de dependencia laboral subordinada.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: DESTINO Y FINALIDAD DEL DOCUMENTO</div>
+                            <p>Que la presente declaración jurada se otorga exclusivamente para ser presentada ante: <span class="highlight-var" style="font-weight:600;">${escapeHtml(destIng)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: APERCIBIMIENTO LEGAL Y RESPONSABILIDAD PENAL (ART. 210 CP)</div>
+                            <p>El declarante manifiesta tener pleno conocimiento de que mentir o falsear antecedentes en una declaración jurada constituye delito de perjurio sancionado por el Artículo 210 del Código Penal con penas de privación de libertad e inhabilidades legales, ratificando la total veracidad de sus dichos mediante firma electrónica (Ley N° 19.799).</p>
+                        `;
+                    }
                 }
             } else {
                 html = `
@@ -3170,7 +3436,24 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     f_poder_asamblea_tipo: document.getElementById('f_poder_asamblea_tipo')?.value,
                     f_poder_auto_patente: document.getElementById('f_poder_auto_patente')?.value,
                     f_poder_auto_datos: document.getElementById('f_poder_auto_datos')?.value,
-                    f_poder_auto_tramites: document.getElementById('f_poder_auto_tramites')?.value
+                    f_poder_auto_tramites: document.getElementById('f_poder_auto_tramites')?.value,
+                    f_res_modalidad: document.getElementById('f_res_modalidad')?.value,
+                    f_decl_domicilio: document.getElementById('f_decl_domicilio')?.value,
+                    f_decl_destino: document.getElementById('f_decl_destino')?.value,
+                    f_res_antiguedad: document.getElementById('f_res_antiguedad')?.value,
+                    f_res_cargas: document.getElementById('f_res_cargas')?.value,
+                    f_res_programa: document.getElementById('f_res_programa')?.value,
+                    f_res_servicios: document.getElementById('f_res_servicios')?.value,
+                    f_res_banco: document.getElementById('f_res_banco')?.value,
+                    f_ing_modalidad: document.getElementById('f_ing_modalidad')?.value,
+                    f_ingr_actividad: document.getElementById('f_ingr_actividad')?.value,
+                    f_ingr_monto: document.getElementById('f_ingr_monto')?.value,
+                    f_ingr_destino: document.getElementById('f_ingr_destino')?.value,
+                    f_ing_antiguedad: document.getElementById('f_ing_antiguedad')?.value,
+                    f_ing_aporte_familiar: document.getElementById('f_ing_aporte_familiar')?.value,
+                    f_ing_programa_estatal: document.getElementById('f_ing_programa_estatal')?.value,
+                    f_ing_depositos: document.getElementById('f_ing_depositos')?.value,
+                    f_ing_costos: document.getElementById('f_ing_costos')?.value
                 }
             };
 

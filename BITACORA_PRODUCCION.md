@@ -1,5 +1,33 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-06 15:48 UTC-3] - SOL-0037
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0037`
+- **Alcance de los Cambios:**
+  - **Declaración Jurada Simple de Residencia y Declaración Jurada de Ingresos Informales:**
+    1. **Paso 1 y Paso 3 con Selectores Interactivos para Ambos Documentos:**
+       - **Declaración Jurada Simple de Residencia:**
+         - *Opción A: Estándar Notarial con Apercibimiento Penal Art. 210 CP (4 Cláusulas Solemnes - Recomendado).* Declaración solemne bajo juramento ante la ley, señalamiento de morada habitual con tiempo de residencia ininterrumpida, destino específico del instrumento (bancos, casas comerciales, colegios) y conocimiento expreso de sanciones de presidio menor y multas contempladas en el Art. 210 del Código Penal por falso testimonio ante la autoridad.
+         - *Opción B: Familiar / Acreditación de Carga para Becas y Asignaciones (5 Cláusulas).* Fijación solemne del domicilio familiar, tiempo de residencia continua, acreditación de cargas familiares (cónyuge, hijos menores de edad inscritos en Registro Social de Hogares) que cohabitan bajo el mismo techo, y destino exclusivo para postulación a beneficios estatales (FUAS, Gratuidad, jardines infantiles Junji/Integra y subsidio habitacional MINVU).
+         - *Opción C: Independiente con Respaldo de Movimientos y Arriendo (5 Cláusulas).* Acreditación de morada efectiva, calidad de ocupación (arrendatario con contrato vigente y cuentas de servicios básicos pagadas a su nombre), destino bancario/financiero para evaluación crediticia y fijación de domicilio para notificaciones.
+       - **Declaración Jurada de Ingresos (Actividades Informales / Independientes):**
+         - *Opción A: Estándar Notarial con Apercibimiento Penal Art. 210 CP (4 Cláusulas Solemnes - Recomendado).* Declaración bajo juramento, actividad u oficio lícito, cuantificación mensual promedio de ingresos líquidos percibidos sin relación de dependencia laboral, institución de destino y apercibimiento penal expreso del Art. 210 CP por perjurio.
+         - *Opción B: Familiar / Acreditación de Carga para Becas y Asignaciones (5 Cláusulas).* Origen de fondos independientes con antigüedad, promedio mensual líquido, destinación prioritaria al sustento familiar, salud y educación de cargas familiares, y finalidad socioeconómica para postulación a beneficios estudiantiles (FUAS / Gratuidad).
+         - *Opción C: Independiente con Respaldo de Movimientos y Transferencias (5 Cláusulas).* Actividad y trayectoria comercial, flujo bruto de depósitos y transferencias bancarias electrónicas, costos operativos deducibles y margen neto disponible resultante, para acreditación de solvencia ante bancos o contratos de arriendo.
+    2. **Previsualizador en Vivo y Motor PDF Criptográfico (`DocumentPdfService.php`):**
+       - Sincronización completa de `renderClauses()` para ambos documentos en sus 3 opciones con código QR dinámico, Hash SHA-256 inalterable y resguardo en Cloudflare R2.
+    3. **Emisión de Borradores (`create_draft`):**
+       - Persistencia de los metadatos específicos (`f_res_modalidad`, `f_res_antiguedad`, `f_res_cargas`, `f_res_programa`, `f_res_servicios`, `f_res_banco`, `f_ing_modalidad`, `f_ing_antiguedad`, `f_ing_aporte_familiar`, `f_ing_programa_estatal`, `f_ing_depositos`, `f_ing_costos`) en el payload del formulario.
+    4. **Cache-Busting:** Bump a `?v=20261106_15`.
+- **Pruebas Validadas:**
+  - PHP Lint remoto en Hostinger: 0 errores de sintaxis en `redactar.php` y `DocumentPdfService.php`.
+  - Smoke tests HTTP en producción:
+    - `curl -I "https://sinnotario.cl/redactar.php?slug=declaracion-jurada-residencia"` -> `HTTP/2 200 OK`.
+    - `curl -I "https://sinnotario.cl/redactar.php?slug=declaracion-jurada-ingresos-informales"` -> `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
 ### [2026-11-06 15:43 UTC-3] - SOL-0036
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

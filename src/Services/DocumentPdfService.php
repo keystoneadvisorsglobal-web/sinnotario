@@ -563,6 +563,77 @@ class DocumentPdfService {
                 }
                 break;
 
+            case 'declaracion-jurada-residencia':
+                $modRes = $formData['f_res_modalidad'] ?? 'opcion_a';
+                $declDom = $formData['f_decl_domicilio'] ?? ($formData['parte_a_domicilio'] ?? 'Pasaje Los Copihues 456, Maipu, Santiago');
+                $declFin = $formData['f_decl_destino'] ?? 'tramites bancarios y escolares';
+                $antiguedad = $formData['f_res_antiguedad'] ?? 'Mas de 3 anos continuos';
+
+                if ($modRes === 'opcion_b') {
+                    // Opción B: Familiar / Acreditación de Carga para Becas y Asignaciones (5 Cláusulas)
+                    $cargas = $formData['f_res_cargas'] ?? 'Conyuge e hijos menores en Registro Social de Hogares';
+                    $prog = $formData['f_res_programa'] ?? 'Beneficios estudiantiles FUAS, Gratuidad y subsidios estatales';
+
+                    self::printClause($pdf, 'PRIMERO: DECLARACION SOLEMNE DE DOMICILIO FAMILIAR', "El declarante acredita bajo juramento que su morada habitual y residencia principal familiar corresponde al inmueble ubicado en: {$declDom}.");
+                    self::printClause($pdf, 'SEGUNDO: TIEMPO DE RESIDENCIA CONTINUA', "Que habita dicho hogar en forma ininterrumpida por un lapso no inferior a: {$antiguedad}.");
+                    self::printClause($pdf, 'TERCERO: COHABITACION Y CARGAS FAMILIARES', "Se deja constancia de que en dicho hogar cohabitan bajo su sustento economico las siguientes cargas: {$cargas}.");
+                    self::printClause($pdf, 'CUARTO: DESTINO EXCLUSIVO PARA POSTULACION ESTATAL', "La presente declaracion se emite a efectos exclusivos de: {$prog}.");
+                    self::printClause($pdf, 'QUINTO: RESPONSABILIDAD PENAL POR PERJURIO (ART. 210 CP)', "El declarante asume plena responsabilidad legal sobre lo expresado, conociendo las sanciones penales contempladas en el Art. 210 del Codigo Penal ante declaraciones falsas.");
+                } else if ($modRes === 'opcion_c') {
+                    // Opción C: Independiente con Respaldo de Movimientos y Arriendo (5 Cláusulas)
+                    $serv = $formData['f_res_servicios'] ?? 'Arrendatario con cuentas de servicios a su nombre';
+                    $banco = $formData['f_res_banco'] ?? 'Acreditacion ante instituciones financieras y bancarias';
+
+                    self::printClause($pdf, 'PRIMERO: ACREDITACION DE DOMICILIO Y ASIENTO HABITUAL', "Que el declarante tiene su asiento legal y domicilio efectivo en la propiedad de: {$declDom}, con residencia de {$antiguedad}.");
+                    self::printClause($pdf, 'SEGUNDO: CALIDAD DE OCUPACION Y SUMINISTROS', "Detenta la ocupacion del inmueble como: {$serv}, encontrandose los suministros domiciliarios al dia.");
+                    self::printClause($pdf, 'TERCERO: DESTINO COMERCIAL Y FINANCIERO', "La presente declaracion jurada se extiende para: {$banco}.");
+                    self::printClause($pdf, 'CUARTO: VALIDEZ DE NOTIFICACIONES', "Designa dicho domicilio como valido para la recepcion de correspondencia bancaria y notificaciones legales.");
+                    self::printClause($pdf, 'QUINTO: DECLARACION SOLEMNE Y APERCIBIMIENTO LEGAL', "Sostiene bajo fe de juramento la veracidad incondicional de los antecedentes expuestos, sometiendose al Art. 210 del Codigo Penal.");
+                } else {
+                    // Opción A: Estándar Notarial con Apercibimiento Penal Art. 210 CP (4 Cláusulas - Recomendado)
+                    self::printClause($pdf, 'PRIMERO: DECLARACION SOLEMNE BAJO FE DE JURAMENTO', "El declarante manifiesta de forma libre, espontanea y bajo juramento de decir verdad ante las leyes de la Republica de Chile.");
+                    self::printClause($pdf, 'SEGUNDO: FIJACION Y ACREDITACION DE RESIDENCIA HABITUAL', "Que su residencia fija, permanente y morada habitual corresponde a la ubicada en: {$declDom}, habitando en ella desde hace: {$antiguedad}.");
+                    self::printClause($pdf, 'TERCERO: DESTINO Y FINALIDAD DEL INSTRUMENTO', "Que la presente declaracion jurada se extiende para ser presentada ante: {$declFin}.");
+                    self::printClause($pdf, 'CUARTO: APERCIBIMIENTO PENAL POR FALSO TESTIMONIO (ART. 210 CP)', "El declarante manifiesta conocer que prestar declaracion jurada falsa ante la autoridad o para efectos publicos constituye delito de perjurio penado por el Articulo 210 del Codigo Penal chileno con penas de presidio menor y multas legales, ratificando la autenticidad integra de sus dichos mediante firma digital (Ley N° 19.799).");
+                }
+                break;
+
+            case 'declaracion-jurada-ingresos-informales':
+                $modIng = $formData['f_ing_modalidad'] ?? 'opcion_a';
+                $activ = $formData['f_ingr_actividad'] ?? 'Comercio independiente y servicios autonomos';
+                $montIng = !empty($formData['f_ingr_monto']) ? '$' . number_format($formData['f_ingr_monto'], 0, ',', '.') . ' CLP' : '$950.000 CLP';
+                $destIng = $formData['f_ingr_destino'] ?? 'postulacion a creditos y arriendos';
+                $antigIng = $formData['f_ing_antiguedad'] ?? 'Mas de 2 anos de ejercicio continuo';
+
+                if ($modIng === 'opcion_b') {
+                    // Opción B: Familiar / Acreditación de Carga para Becas y Asignaciones (5 Cláusulas)
+                    $aporte = $formData['f_ing_aporte_familiar'] ?? 'Sustentador del hogar destinado a alimentacion y educacion';
+                    $progEst = $formData['f_ing_programa_estatal'] ?? 'FUAS / Gratuidad y beneficios socioeconomicos estatales';
+
+                    self::printClause($pdf, 'PRIMERO: DECLARACION SOLEMNE DE ORIGEN DE FONDOS', "El declarante expone bajo juramento percibir ingresos derivados de: {$activ}, con antiguedad de: {$antigIng}.");
+                    self::printClause($pdf, 'SEGUNDO: CUANTIFICACION MENSUAL DEL INGRESO PERCIBIDO', "Dichos ingresos corresponden a un promedio liquido mensual disponible de: {$montIng}, sin contrato de subordinacion.");
+                    self::printClause($pdf, 'TERCERO: DESTINACION AL SUSTENTO FAMILIAR Y CARGAS', "Los recursos percibidos se destinan prioritariamente a: {$aporte}.");
+                    self::printClause($pdf, 'CUARTO: FINALIDAD SOCIOECONOMICA Y BENEFICIOS ESTATALES', "La declaracion jurada se suscribe a efectos de: {$progEst}.");
+                    self::printClause($pdf, 'QUINTO: RESPONSABILIDAD PENAL POR PERJURIO (ART. 210 CP)', "Asume plena responsabilidad penal sobre la exactitud de lo expresado, conociendo las sanciones del Art. 210 del Codigo Penal ante declaraciones falsas.");
+                } else if ($modIng === 'opcion_c') {
+                    // Opción C: Independiente con Respaldo de Movimientos y Transferencias (5 Cláusulas)
+                    $dep = $formData['f_ing_depositos'] ?? 'Abonos y transferencias bancarias mensuales acreditables';
+                    $costos = $formData['f_ing_costos'] ?? 'Costos operativos e insumos deducibles';
+
+                    self::printClause($pdf, 'PRIMERO: ACTIVIDAD INDEPENDIENTE Y TRAYECTORIA', "El declarante desempena de manera autonoma el rubro de: {$activ}, con trayectoria de: {$antigIng}.");
+                    self::printClause($pdf, 'SEGUNDO: FLUJO BRUTO DE INGRESOS Y TRANSFERENCIAS', "Percibe transferencias bancarias y depositos conforme a: {$dep}.");
+                    self::printClause($pdf, 'TERCERO: COSTOS OPERATIVOS Y MARGEN NETO ESTIMADO', "Deducidos los gastos operacionales e insumos: {$costos}, fijando un promedio liquido mensual de: {$montIng}.");
+                    self::printClause($pdf, 'CUARTO: DESTINO FINANCIERO O ARRENDATICIO', "El instrumento se extiende para acreditar solvencia economica ante: {$destIng}.");
+                    self::printClause($pdf, 'QUINTO: VALOR PROBATORIO Y RESPONSABILIDAD PENAL', "Se asume plena responsabilidad civil y penal sobre la legitimidad de las cifras declaradas conforme al Art. 210 del Codigo Penal y Ley N° 19.799.");
+                } else {
+                    // Opción A: Estándar Notarial con Apercibimiento Penal Art. 210 CP (4 Cláusulas - Recomendado)
+                    self::printClause($pdf, 'PRIMERO: DECLARACION SOLEMNE BAJO FE DE JURAMENTO', "El declarante comparece libre, voluntariamente y bajo juramento de decir verdad ante las leyes de la Republica de Chile.");
+                    self::printClause($pdf, 'SEGUNDO: DECLARACION DE ACTIVIDADES E INGRESOS PERCIBIDOS', "Que percibe legitimamente ingresos de caracter independiente derivados de: {$activ} por un promedio mensual liquido de: {$montIng}, careciendo de relacion de dependencia laboral subordinada.");
+                    self::printClause($pdf, 'TERCERO: DESTINO Y FINALIDAD DEL DOCUMENTO', "Que la presente declaracion jurada se otorga exclusivamente para ser presentada ante: {$destIng}.");
+                    self::printClause($pdf, 'CUARTO: APERCIBIMIENTO LEGAL Y RESPONSABILIDAD PENAL (ART. 210 CP)', "El declarante manifiesta tener pleno conocimiento de que falsear antecedentes en una declaracion jurada constituye delito de perjurio sancionado por el Articulo 210 del Codigo Penal con penas de presidio menor y multas legales, ratificando la total veracidad de sus dichos mediante firma electronica (Ley N° 19.799).");
+                }
+                break;
+
             default:
                 self::printClause($pdf, 'PRIMERO: ANTECEDENTES Y OBJETO', "Las partes formalizan el presente instrumento de " . $doc['titulo'] . ", reconociéndole plena fuerza obligatoria al amparo del principio de autonomía de la voluntad consagrado en el Artículo 1545 del Código Civil chileno.");
                 self::printClause($pdf, 'SEGUNDO: CUMPLIMIENTO Y BUENA FE', "Las partes se obligan a ejecutar fielmente las estipulaciones contenidas en este contrato con estricta sujeción al principio de buena fe legal.");
