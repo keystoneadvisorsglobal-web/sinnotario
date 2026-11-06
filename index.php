@@ -256,8 +256,8 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
         <div class="footer-bottom">
             <div>Cumplimiento normativo estricto bajo legislación de la República de Chile.</div>
             <div style="display: flex; gap: 1rem;">
-                <a href="#" style="color: #64748B; text-decoration: none;">Términos y Condiciones</a>
-                <a href="#" style="color: #64748B; text-decoration: none;">Política de Privacidad</a>
+                <a href="terminos-condiciones.php" style="color: #64748B; text-decoration: none;">Términos y Condiciones</a>
+                <a href="politica-privacidad.php" style="color: #64748B; text-decoration: none;">Política de Privacidad</a>
             </div>
         </div>
     </footer>

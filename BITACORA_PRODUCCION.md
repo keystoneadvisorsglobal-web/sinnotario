@@ -214,3 +214,17 @@
     - Carga directa con HTTP 200 OK de todas las vistas legales (`ley-19799`, `ley-21461`, etc.).
     - Validación de redirección de enlaces a `bcn.cl / leychile.cl`.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
+
+---
+
+### Entrada: 2026-11-06 10:18:00 UTC-3
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0024`
+- **Resumen de la Ejecución:**
+  - **Términos y Condiciones (`terminos-condiciones.php`):** Elaboración y publicación del marco contractual y de adhesión digital conforme a la Ley N° 19.496 de Protección a los Consumidores y Ley N° 19.799. Delimita expresamente la exclusión de trámites solemnes reservados a Notaría, la validez probatoria de la firma electrónica, deberes del usuario, pasarelas de pago y jurisdicción en Santiago de Chile.
+  - **Política de Privacidad (`politica-privacidad.php`):** Marco regulatorio estricto bajo la Ley N° 19.628 de Protección de la Vida Privada. Establece el compromiso de no comercialización de datos, finalidades de tratamiento para emisión de contratos y firma, cifrado de archivos en reposo en Cloudflare R2 (AES-256 / TLS 1.3), y mecanismo formal para el ejercicio de derechos ARCO (Acceso, Rectificación, Cancelación y Oposición) vía `privacidad@sinnotario.cl`.
+  - **Vinculación en Frontend (`index.php`):** Enlace de ambos documentos al pie de página inferior.
+  - **Pruebas Validadas:**
+    - Carga directa con HTTP/2 200 OK en `https://sinnotario.cl/terminos-condiciones.php` y `https://sinnotario.cl/politica-privacidad.php`.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
