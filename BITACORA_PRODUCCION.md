@@ -32,3 +32,22 @@
   - Validación de RUT: Borde verde al ingresar RUT válido, alerta roja si el dígito verificador es incorrecto e impedimento de submit si no es válido.
   - Carga progresiva funcional: Muestra 3 tarjetas iniciales y despliega las siguientes al pulsar *"Ver más trámites"*.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
+
+### [2026-11-06 02:38 UTC-3] - SOL-0007
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0007`
+- **Alcance de los Cambios:**
+  - Incorporación en el bloque B2B del botón interactivo `Conocer Solución Empresas` con icono dinámico.
+  - Al hacer clic, se despliega una grilla corporativa (`b2b-features-grid`) con las 6 bondades estratégicas:
+    1. **Carga Masiva desde Excel:** Smart Bulk Wizard con mapeo y validación de RUT Módulo 11 en segundos.
+    2. **WhatsApp Oficial Dedicado:** Notificaciones desde el número y foto de la propia empresa cliente (Evolution API White-Label con chip prepago).
+    3. **Firma en 1 Clic del Representante Legal:** Firma por lotes con una sola autenticación ClaveÚnica.
+    4. **Cumplimiento Dirección del Trabajo (DT):** Exportación codificada para el portal Mi DT según la Ley N° 21.327.
+    5. **Expediente Digital del Trabajador:** Historial cronológico de contratos, anexos (40 Horas), EPP y finiquitos.
+    6. **Bolsas Prepagadas con Descuento:** Tarifas preferenciales por volumen desde $1.990 y facturación exenta.
+- **Pruebas Validadas:**
+  - Sintaxis PHP: 0 errores detectados.
+  - Smoke test HTTP 200 OK en producción (`sinnotario.cl`).
+  - Despliegue interactivo fluido y responsivo en móviles y escritorio.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
