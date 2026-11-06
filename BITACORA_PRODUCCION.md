@@ -1,5 +1,29 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-06 15:43 UTC-3] - SOL-0036
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0036`
+- **Alcance de los Cambios:**
+  - **Mandato y Poder Especial Privado (Arts. 2116 y ss. del Código Civil):**
+    1. **Paso 1 y 2 Personalizados:**
+       - Paso 1 adaptado para "Mandante (Quien Otorga el Poder)" (Nombre, RUT, Profesión y Domicilio).
+       - Paso 2 adaptado para "Mandatario / Apoderado" (Nombre, RUT, Profesión y Domicilio).
+    2. **Paso 3 con Selector Interactivo de las 3 Modalidades:**
+       - *Opción A: Mandato Administrativo / Trámites y Encomiendas (5 Cláusulas - Recomendado).* Objeto y encargo de mandato, facultades específicas delimitadas (retiro de encomiendas y correspondencia certificada en Correos de Chile, Chilexpress, Starken; cobro bancario de mesón y vales vista menores a $1.500.000; gestiones municipales y sanitarias; trámites ante empresas de telecomunicaciones), vigencia acotada (3 a 12 meses o única gestión), régimen de no delegación y rendición de cuentas con culpa leve (Art. 2129 CC).
+       - *Opción B: Poder para Representación en Asambleas de Copropietarios (Ley 21.442 - 4 Cláusulas).* Individualización del departamento/bodega/estacionamiento y condominio, concesión solemne de derecho a voz y voto para asambleas ordinarias y extraordinarias, aprobación de balances, elección de Comité de Administración y fijación de gastos comunes, vigencia, revocabilidad y suscripción de actas de asamblea.
+       - *Opción C: Poder para Trámites de Vehículos Motorizados (Registro Civil / PRT - 5 Cláusulas).* Individualización del vehículo (marca, modelo, año y Placa Patente Única PPU inscrita en el RVM), facultades para obtención de duplicados de padrón/CAV y placas patentes en el Registro Civil, ingreso a Planta de Revisión Técnica (PRT), pago de Permiso de Circulación y contratación de SOAP en Direcciones de Tránsito, con cláusula taxativa de prohibición de disposición patrimonial (no autoriza venta, cesión ni gravamen sobre el móvil).
+    3. **Motor PDF Criptográfico (`DocumentPdfService.php`):**
+       - Sincronización del método `renderClauses()` para emitir las cláusulas contractuales específicas de cada una de las 3 opciones en el PDF descargable con QR dinámico, Hash SHA-256 y resguardo en Cloudflare R2.
+    4. **Emisión de Borradores (`create_draft`):**
+       - Inclusión de los campos específicos del mandato (`f_poder_modalidad`, `f_poder_facultades`, `f_poder_vigencia`, `f_poder_delegar`, `f_poder_cuentas`, `f_poder_edificio`, `f_poder_unidad`, `f_poder_asamblea_tipo`, `f_poder_auto_patente`, `f_poder_auto_datos`, `f_poder_auto_tramites`) en el payload del formulario.
+    5. **Cache-Busting:** Bump a `?v=20261106_14`.
+- **Pruebas Validadas:**
+  - PHP Lint remoto en Hostinger: 0 errores de sintaxis en `redactar.php` y `DocumentPdfService.php`.
+  - Smoke test HTTP en producción: `curl -I "https://sinnotario.cl/redactar.php?slug=poder-especial-privado"` -> `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
 ### [2026-11-06 15:40 UTC-3] - SOL-0035
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

@@ -557,7 +557,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js?v=20261106_13"></script>
+    <script src="assets/js/app.js?v=20261106_14"></script>
     <script>
         // Funciones auxiliares seguras locales
         function escapeHtml(text) {
@@ -749,6 +749,29 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
             updateUniversalPreview();
         }
 
+        function togglePoderFields() {
+            const sel = document.getElementById('f_poder_modalidad');
+            if (!sel) return;
+            const val = sel.value;
+            const wrapB = document.getElementById('wrap_poder_opcion_b');
+            const wrapC = document.getElementById('wrap_poder_opcion_c');
+            const help = document.getElementById('poder_modalidad_help');
+
+            if (wrapB) wrapB.style.display = (val === 'opcion_b') ? 'block' : 'none';
+            if (wrapC) wrapC.style.display = (val === 'opcion_c') ? 'block' : 'none';
+
+            if (help) {
+                if (val === 'opcion_a') {
+                    help.innerText = 'Mandato civil para gestiones administrativas cotidianas, cobro de vales vista menores, trámites municipales y encomiendas (5 cláusulas).';
+                } else if (val === 'opcion_b') {
+                    help.innerText = 'Poder especial para asambleas de copropietarios conforme a la Ley N° 21.442 de Copropiedad Inmobiliaria con voz y voto (4 cláusulas).';
+                } else if (val === 'opcion_c') {
+                    help.innerText = 'Mandato vehicular para trámites ante el Registro Civil, duplicados de padrón/placas y revisión técnica en PRT (5 cláusulas).';
+                }
+            }
+            updateUniversalPreview();
+        }
+
         // Ejecución inmediata o diferida según estado del DOM
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initUniversalWizard);
@@ -922,6 +945,28 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                 document.getElementById('f_parte_a_profesion').value = 'Ingeniero Comercial';
                 document.getElementById('f_parte_a_domicilio').value = 'Av. Grecia 1234, Depto 301';
                 document.getElementById('f_parte_a_comuna').value = 'Ñuñoa, Santiago';
+            } else if (CURRENT_TEMPLATE.slug === 'poder-especial-privado') {
+                document.getElementById('lblStep1').innerText = 'Mandante';
+                document.getElementById('lblStep2').innerText = 'Mandatario';
+                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Mandante (Quien Otorga el Poder)';
+                document.getElementById('step1Desc').innerText = 'Identificación oficial de la persona que delega facultades específicas.';
+                document.getElementById('lbl_parte_a_nombre').innerText = 'Nombre Completo del Mandante *';
+                document.getElementById('f_parte_a_nombre').value = 'Juan Andrés Pérez González';
+                document.getElementById('f_parte_a_rut').value = '12.345.678-5';
+                document.getElementById('f_parte_a_civil').value = 'chileno, soltero';
+                document.getElementById('f_parte_a_profesion').value = 'Ingeniero Comercial';
+                document.getElementById('f_parte_a_domicilio').value = 'Av. Providencia 1234, Depto 402';
+                document.getElementById('f_parte_a_comuna').value = 'Providencia, Santiago';
+
+                document.getElementById('step2Title').innerText = 'Paso 2: Datos del Apoderado / Mandatario';
+                document.getElementById('step2Desc').innerText = 'Identificación de la persona que recibe el encargo y actuará en representación del mandante.';
+                document.getElementById('lbl_parte_b_nombre').innerText = 'Nombre Completo del Mandatario *';
+                document.getElementById('f_parte_b_nombre').value = 'María José Valenzuela Soto';
+                document.getElementById('f_parte_b_rut').value = '15.444.555-6';
+                document.getElementById('f_parte_b_civil').value = 'chilena, soltera';
+                document.getElementById('f_parte_b_profesion').value = 'Abogada';
+                document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
+                document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
             }
             let fieldsHtml = '';
 
@@ -1735,25 +1780,89 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                 case 'poder-especial-privado':
                     fieldsHtml = `
+                        <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#1E40AF;">
+                            <i class="fas fa-file-signature"></i> <strong>Mandato y Poder Especial Privado (Arts. 2116 y ss. del Código Civil)</strong>:
+                            Delegación solemne de representación legal con fijación de facultades delimitadas y vigencia acotada para trámites administrativos, vecinales o vehiculares.
+                        </div>
+
+                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad del Poder Especial *</label>
+                            <select id="f_poder_modalidad" class="form-control" onchange="togglePoderFields()" style="font-weight:600; border-color:#2563EB;">
+                                <option value="opcion_a" selected>Opción A: Mandato Administrativo / Trámites y Encomiendas (5 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Poder para Representación en Asambleas de Copropietarios (Ley 21.442 - 4 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: Poder para Trámites de Vehículos Motorizados (Registro Civil / PRT - 5 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="poder_modalidad_help">Mandato civil para gestiones administrativas cotidianas, cobro de vales vista menores, trámites municipales y encomiendas (5 cláusulas).</small>
+                        </div>
+
                         <div class="form-group">
                             <label>Facultades y Gestiones Específicas Delegadas *</label>
-                            <textarea id="f_poder_facultades" class="form-control" rows="2">Representar al mandante ante empresas de telecomunicaciones, bancos para trámites de mesón, retiro de encomiendas en Chilexpress y Correos de Chile, y trámites municipales.</textarea>
+                            <textarea id="f_poder_facultades" class="form-control" rows="3">Representar al mandante ante empresas de telecomunicaciones (WOM, Entel, Movistar, Claro), instituciones bancarias para trámites de mesón y cobro de vales vista menores a $1.500.000, retiro de encomiendas y correspondencia certificada en Correos de Chile, Chilexpress y Starken, gestiones municipales y obtención de certificados.</textarea>
                         </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Vigencia del Poder Especial *</label>
                                 <select id="f_poder_vigencia" class="form-control">
-                                    <option value="6 meses contados desde la firma" selected>6 Meses a contar de la firma</option>
-                                    <option value="1 año contados desde la firma">1 Año a contar de la firma</option>
-                                    <option value="Válido exclusivamente para una única gestión">Para una única gestión específica</option>
+                                    <option value="6 meses contados desde la firma digital" selected>6 Meses a contar de la firma</option>
+                                    <option value="3 meses contados desde la firma digital">3 Meses a contar de la firma</option>
+                                    <option value="1 año contados desde la firma digital">1 Año a contar de la firma</option>
+                                    <option value="Válido exclusivamente para una única gestión específica">Para una única gestión específica</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Facultad de Sustituir / Delegar *</label>
+                                <label>Facultad de Delegar / Sustituir el Mandato *</label>
                                 <select id="f_poder_delegar" class="form-control">
-                                    <option value="Sin facultad de delegación ni sustitución" selected>No permite delegar en terceros</option>
-                                    <option value="Con facultad expresa de delegar en terceros">Permite delegar en terceros</option>
+                                    <option value="Sin facultad de delegación ni sustitución en terceros" selected>No permite delegar en terceros (personalísimo)</option>
+                                    <option value="Con facultad expresa de delegar en terceros">Permite delegar o sustituir en terceros</option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Rendición de Cuentas y Responsabilidad Civil *</label>
+                            <input type="text" id="f_poder_cuentas" class="form-control" value="El mandatario responderá de culpa leve conforme al Art. 2129 del Código Civil y rendirá cuenta detallada de su gestión al término del encargo">
+                        </div>
+
+                        <!-- Campos específicos para Opción B (Asamblea Copropietarios Ley 21.442) -->
+                        <div id="wrap_poder_opcion_b" style="display:none; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#1E40AF; margin-bottom:0.5rem;">
+                                <i class="fas fa-building"></i> Individualización de la Unidad y Asamblea de Copropietarios (Ley N° 21.442)
+                            </h5>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Condominio / Edificio y Dirección *</label>
+                                    <input type="text" id="f_poder_edificio" class="form-control" value="Comunidad Edificio Nueva Providencia, Av. Providencia 1234">
+                                </div>
+                                <div class="form-group">
+                                    <label>Unidad / Departamento / Bodega y Estacionamiento *</label>
+                                    <input type="text" id="f_poder_unidad" class="form-control" value="Departamento 402, Bodega 12 y Estacionamiento 45">
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Tipo de Asamblea y Facultades de Voto *</label>
+                                <input type="text" id="f_poder_asamblea_tipo" class="form-control" value="Voz y voto pleno para asamblea ordinaria o extraordinaria, aprobación de cuentas, elección de Comité de Administración y modificación de gastos comunes">
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción C (Trámites Vehiculares / Registro Civil / PRT) -->
+                        <div id="wrap_poder_opcion_c" style="display:none; background:#FEFCE8; border:1px solid #FEF08A; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#854D0E; margin-bottom:0.5rem;">
+                                <i class="fas fa-car"></i> Individualización del Vehículo Motorizado
+                            </h5>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Placa Patente Única (PPU) *</label>
+                                    <input type="text" id="f_poder_auto_patente" class="form-control" value="BB-CC-34">
+                                </div>
+                                <div class="form-group">
+                                    <label>Marca, Modelo y Año del Vehículo *</label>
+                                    <input type="text" id="f_poder_auto_datos" class="form-control" value="Toyota RAV4 2.5 Automático, Año 2022">
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Trámites Vehiculares Habilitados *</label>
+                                <input type="text" id="f_poder_auto_tramites" class="form-control" value="Obtención de duplicado de Certificado de Anotaciones Vigentes (CAV), duplicado de placas patentes en Registro Civil, ingreso a Planta de Revisión Técnica (PRT) y retiro de SOAP/Permiso de Circulación">
                             </div>
                         </div>
                     `;
@@ -2604,15 +2713,89 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         `;
                     }
                 } else if (CURRENT_TEMPLATE.slug === 'poder-especial-privado') {
-                    const fac = document.getElementById('f_poder_facultades')?.value || 'Gestiones administrativas';
-                    const vig = document.getElementById('f_poder_vigencia')?.value || '6 meses';
-                    const del = document.getElementById('f_poder_delegar')?.value || 'Sin facultad de delegar';
-                    html += `
-                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Mandato y Facultades Especiales</div>
-                        <p>El Mandante confiere poder especial suficiente al Mandatario para que en su nombre y representación realice: <span class="highlight-var">${escapeHtml(fac)}</span>.</p>
-                        <div class="preview-clause-title">CLÁUSULA TERCERA: Vigencia y Delegación</div>
-                        <p>El presente poder tendrá una vigencia de <span class="highlight-var">${escapeHtml(vig)}</span>, estipulándose expresamente que actúa <span class="highlight-var">${escapeHtml(del)}</span>.</p>
+                    const modPoder = document.getElementById('f_poder_modalidad')?.value || 'opcion_a';
+                    const fac = document.getElementById('f_poder_facultades')?.value || 'Representar al mandante en gestiones administrativas';
+                    const vig = document.getElementById('f_poder_vigencia')?.value || '6 meses contados desde la firma digital';
+                    const del = document.getElementById('f_poder_delegar')?.value || 'Sin facultad de delegación ni sustitución';
+                    const cuentas = document.getElementById('f_poder_cuentas')?.value || 'Rendición de cuenta al término del encargo con culpa leve';
+
+                    html = `
+                        <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                            MANDATO Y PODER ESPECIAL PRIVADO (ARTS. 2116 Y SS. CÓDIGO CIVIL)
+                        </div>
+                        <p>En la ciudad de <strong>${escapeHtml(comA || 'Santiago')}</strong>, República de Chile, a <strong>${new Date().toLocaleDateString('es-CL')}</strong>, comparecen:</p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>POR UNA PARTE (MANDANTE):</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutA)}</span>, de nacionalidad y estado civil <span class="highlight-var">${escapeHtml(civilA)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profA)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, en adelante el <strong>«Mandante»</strong>; y
+                        </p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>POR LA OTRA PARTE (MANDATARIO):</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomB)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutB)}</span>, de nacionalidad y estado civil <span class="highlight-var">${escapeHtml(civilB)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profB)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domB)}</span>, comuna de <span class="highlight-var">${escapeHtml(comB)}</span>, en adelante el <strong>«Mandatario o Apoderado»</strong>.
+                        </p>
+
+                        <p style="margin-top:0.6rem;">Los comparecientes mayores de edad, plenamente capaces, acuerdan otorgar el presente mandato especial al tenor de las siguientes estipulaciones:</p>
                     `;
+
+                    if (modPoder === 'opcion_b') {
+                        // Opción B: Representación en Asambleas de Copropietarios (Ley 21.442 - 4 Cláusulas)
+                        const edif = document.getElementById('f_poder_edificio')?.value || 'Comunidad Edificio Nueva Providencia';
+                        const unidad = document.getElementById('f_poder_unidad')?.value || 'Departamento 402 y bodega';
+                        const asamTipo = document.getElementById('f_poder_asamblea_tipo')?.value || 'Voz y voto pleno para asambleas de copropietarios';
+
+                        html += `
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: DOMINIO DE LA UNIDAD INMOBILIARIA</div>
+                            <p>El Mandante declara ser legítimo y exclusivo propietario de la siguiente unidad: <span class="highlight-var" style="font-weight:600;">${escapeHtml(unidad)}</span>, ubicada en el condominio o edificio <span class="highlight-var" style="font-weight:600;">${escapeHtml(edif)}</span>, regido por la Ley N° 21.442 sobre Copropiedad Inmobiliaria.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: FACULTADES DE VOZ Y VOTO EN ASAMBLEAS (LEY N° 21.442)</div>
+                            <p>Por este instrumento, el Mandante confiere poder especial suficiente al Mandatario para que en su nombre y representación asista con derecho a voz y voto a las Asambleas Ordinarias y Extraordinarias de Copropietarios, facultándolo expresamente para: <span class="highlight-var">${escapeHtml(asamTipo)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: VIGENCIA Y REVOCABILIDAD</div>
+                            <p>El presente poder regirá por un plazo de: <span class="highlight-var">${escapeHtml(vig)}</span>, pudiendo ser revocado en cualquier momento por el Mandante mediante comunicación escrita a la Administración del Edificio, y se estipula: <span class="highlight-var">${escapeHtml(del)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: RESPONSABILIDAD Y FIRMA DE ACTAS</div>
+                            <p>El Mandatario queda expresamente facultado para suscribir la lista de asistencia y las actas de asamblea correspondientes. Régimen de responsabilidad: <span class="highlight-var">${escapeHtml(cuentas)}</span>.</p>
+                        `;
+                    } else if (modPoder === 'opcion_c') {
+                        // Opción C: Trámites de Vehículos Motorizados (Registro Civil / PRT - 5 Cláusulas)
+                        const pat = document.getElementById('f_poder_auto_patente')?.value || 'BB-CC-34';
+                        const auto = document.getElementById('f_poder_auto_datos')?.value || 'Vehículo motorizado';
+                        const tramites = document.getElementById('f_poder_auto_tramites')?.value || 'Trámites de padrón y revisión técnica';
+
+                        html += `
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: INDIVIDUALIZACIÓN DEL VEHÍCULO MOTORIZADO</div>
+                            <p>El Mandante declara ser legítimo propietario del vehículo motorizado: <strong><span class="highlight-var">${escapeHtml(auto)}</span></strong>, Placa Patente Única (PPU) <strong><span class="highlight-var">${escapeHtml(pat)}</span></strong>, inscrito a su nombre en el Registro de Vehículos Motorizados (RVM) del Servicio de Registro Civil e Identificación.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: FACULTADES ESPECIALES ANTE EL REGISTRO CIVIL Y PRT</div>
+                            <p>El Mandante confiere poder especial amplio y suficiente al Mandatario para que en su representación tramite, gestione y suscriba: <span class="highlight-var">${escapeHtml(tramites)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: GESTIONES MUNICIPALES Y TRÁNSITO</div>
+                            <p>El Mandatario queda habilitado para comparecer ante Direcciones de Tránsito municipales a efectos de pagar el Permiso de Circulación, contratar el Seguro Obligatorio de Accidentes Personales (SOAP) y tramitar duplicados de sellos verdes u homologaciones.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: VIGENCIA Y PROHIBICIÓN DE DISPOSICIÓN PATRIMONIAL</div>
+                            <p>El presente poder tendrá una duración de: <span class="highlight-var">${escapeHtml(vig)}</span>, actuando <span class="highlight-var">${escapeHtml(del)}</span>. Se deja expresa constancia de que este mandato NO faculta al Mandatario para vender, donar, prendar ni transferir el dominio del vehículo.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: RENDICIÓN DE CUENTAS Y LEGISLACIÓN</div>
+                            <p>El Mandatario responderá de sus actos conforme a las reglas del mandato civil: <span class="highlight-var">${escapeHtml(cuentas)}</span>, sometiéndose las partes a los tribunales ordinarios de Santiago.</p>
+                        `;
+                    } else {
+                        // Opción A: Mandato Administrativo / Trámites y Encomiendas (5 Cláusulas - Recomendado)
+                        html += `
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: OBJETO DEL MANDATO Y ENCARGO</div>
+                            <p>El Mandante confiere poder especial al Mandatario, quien acepta expresamente, para que en su nombre y representación realice todas las gestiones y actos jurídicos necesarios para el cumplimiento de los encargos encomendados en este instrumento.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: FACULTADES ESPECÍFICAS DELEGADAS</div>
+                            <p>El Mandatario queda expresamente facultado para: <span class="highlight-var" style="font-weight:600;">${escapeHtml(fac)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: VIGENCIA DEL PODER ESPECIAL</div>
+                            <p>El presente mandato tendrá una vigencia acotada de: <strong><span class="highlight-var">${escapeHtml(vig)}</span></strong>, vencida la cual cesarán de pleno derecho las facultades delegadas sin necesidad de notificación judicial.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: DELEGACIÓN Y SUSTITUCIÓN</div>
+                            <p>Régimen de delegación: <strong><span class="highlight-var">${escapeHtml(del)}</span></strong>. Toda actuación ejecutada por un tercero no autorizado carecerá de validez frente al Mandante.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: RENDICIÓN DE CUENTAS, RESPONSABILIDAD Y JURISDICCIÓN</div>
+                            <p>De conformidad a los Artículos 2129 y 2155 del Código Civil: <span class="highlight-var">${escapeHtml(cuentas)}</span>. Para todos los efectos legales, las partes fijan domicilio convencional en la comuna y ciudad de Santiago.</p>
+                        `;
+                    }
                 } else if (CURRENT_TEMPLATE.slug === 'prestacion-servicios-honorarios') {
                     const modServ = document.getElementById('f_serv_modalidad')?.value || 'opcion_a';
                     const servDesc = document.getElementById('f_servicio_desc')?.value || 'Consultoría especializada y servicios técnicos';
@@ -2976,7 +3159,18 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     f_mud_sag: document.getElementById('f_mud_sag')?.value,
                     f_mud_empresa_datos: document.getElementById('f_mud_empresa_datos')?.value,
                     f_mud_ti_equipos: document.getElementById('f_mud_ti_equipos')?.value,
-                    f_mud_archivos: document.getElementById('f_mud_archivos')?.value
+                    f_mud_archivos: document.getElementById('f_mud_archivos')?.value,
+                    f_poder_modalidad: document.getElementById('f_poder_modalidad')?.value,
+                    f_poder_facultades: document.getElementById('f_poder_facultades')?.value,
+                    f_poder_vigencia: document.getElementById('f_poder_vigencia')?.value,
+                    f_poder_delegar: document.getElementById('f_poder_delegar')?.value,
+                    f_poder_cuentas: document.getElementById('f_poder_cuentas')?.value,
+                    f_poder_edificio: document.getElementById('f_poder_edificio')?.value,
+                    f_poder_unidad: document.getElementById('f_poder_unidad')?.value,
+                    f_poder_asamblea_tipo: document.getElementById('f_poder_asamblea_tipo')?.value,
+                    f_poder_auto_patente: document.getElementById('f_poder_auto_patente')?.value,
+                    f_poder_auto_datos: document.getElementById('f_poder_auto_datos')?.value,
+                    f_poder_auto_tramites: document.getElementById('f_poder_auto_tramites')?.value
                 }
             };
 

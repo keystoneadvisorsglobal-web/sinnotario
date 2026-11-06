@@ -526,8 +526,41 @@ class DocumentPdfService {
                 break;
 
             case 'poder-especial-privado':
-                self::printClause($pdf, 'PRIMERO: MANDATO Y FACULTADES DELEGADAS', "El Mandante confiere poder especial amplio y suficiente al Mandatario para que en su nombre y representación ejecute las gestiones administrativas, trámites y gestiones singularizadas.");
-                self::printClause($pdf, 'SEGUNDO: VIGENCIA Y RESPONSABILIDAD', "El mandato se entenderá otorgado por el plazo convenido o hasta la conclusión del encargo, rindiendo oportuna cuenta de su cometido con arreglo al Código Civil.");
+                $modPoder = $formData['f_poder_modalidad'] ?? 'opcion_a';
+                $fac = $formData['f_poder_facultades'] ?? 'Representar al mandante en gestiones administrativas';
+                $vig = $formData['f_poder_vigencia'] ?? '6 meses contados desde la firma digital';
+                $del = $formData['f_poder_delegar'] ?? 'Sin facultad de delegacion ni sustitucion en terceros';
+                $cuentas = $formData['f_poder_cuentas'] ?? 'Rendicion de cuentas con culpa leve conforme al Art. 2129 del Codigo Civil';
+
+                if ($modPoder === 'opcion_b') {
+                    // Opción B: Poder para Representación en Asambleas de Copropietarios (Ley 21.442 - 4 Cláusulas)
+                    $edif = $formData['f_poder_edificio'] ?? 'Comunidad Edificio Nueva Providencia';
+                    $unidad = $formData['f_poder_unidad'] ?? 'Departamento 402 y bodega';
+                    $asamTipo = $formData['f_poder_asamblea_tipo'] ?? 'Voz y voto pleno para asambleas de copropietarios ordinarias y extraordinarias';
+
+                    self::printClause($pdf, 'PRIMERO: DOMINIO DE LA UNIDAD INMOBILIARIA', "El Mandante declara ser legitimo y exclusivo propietario de: {$unidad}, ubicada en el edificio o condominio: {$edif}, sujeto a la Ley N° 21.442 sobre Copropiedad Inmobiliaria.");
+                    self::printClause($pdf, 'SEGUNDO: FACULTADES DE VOZ Y VOTO EN ASAMBLEAS (LEY N° 21.442)', "El Mandante confiere poder especial suficiente al Mandatario para asistir con derecho a voz y voto a las Asambleas de Copropietarios: {$asamTipo}, y suscribir actas de asamblea.");
+                    self::printClause($pdf, 'TERCERO: VIGENCIA Y REVOCABILIDAD', "El poder rige por: {$vig}. Puede ser revocado en cualquier momento comunicandolo por escrito a la Administracion. Regimen de delegacion: {$del}.");
+                    self::printClause($pdf, 'CUARTO: RESPONSABILIDAD Y RENDICION DE CUENTAS', "Rendicion de cuentas y deber de lealtad: {$cuentas}. Las partes fijan domicilio convencional en Santiago.");
+                } else if ($modPoder === 'opcion_c') {
+                    // Opción C: Poder para Trámites de Vehículos Motorizados (Registro Civil / PRT - 5 Cláusulas)
+                    $pat = $formData['f_poder_auto_patente'] ?? 'BB-CC-34';
+                    $auto = $formData['f_poder_auto_datos'] ?? 'Vehiculo motorizado';
+                    $tramites = $formData['f_poder_auto_tramites'] ?? 'Tramites de padron, duplicado de placas y revision tecnica en PRT';
+
+                    self::printClause($pdf, 'PRIMERO: INDIVIDUALIZACION DEL VEHICULO MOTORIZADO', "El Mandante es dueno del vehiculo: {$auto}, Placa Patente Unica (PPU) {$pat}, inscrito a su nombre en el Registro de Vehiculos Motorizados del Registro Civil.");
+                    self::printClause($pdf, 'SEGUNDO: FACULTADES ESPECIALES ANTE EL REGISTRO CIVIL Y PRT', "Confiere poder al Mandatario para gestionar: {$tramites}, suscribir solicitudes oficiales y retirar certificados y distintivos.");
+                    self::printClause($pdf, 'TERCERO: GESTIONES MUNICIPALES Y TRANSITO', "El Mandatario podra tramitar y pagar el Permiso de Circulacion en Direcciones de Transito y contratar el SOAP respectivo.");
+                    self::printClause($pdf, 'CUARTO: VIGENCIA Y PROHIBICION DE DISPOSICION PATRIMONIAL', "Vigencia: {$vig}, actuando {$del}. Se deja expresa constancia de que este mandato NO faculta para vender, transferir, prendar ni gravar el vehiculo.");
+                    self::printClause($pdf, 'QUINTO: RESPONSABILIDAD, RENDICION DE CUENTAS Y JURISDICCION', "El Mandatario respondera de sus actos con arreglo al mandato civil: {$cuentas}, fijando las partes domicilio en Santiago.");
+                } else {
+                    // Opción A: Mandato Administrativo / Trámites y Encomiendas (5 Cláusulas - Recomendado)
+                    self::printClause($pdf, 'PRIMERO: OBJETO DEL MANDATO Y ENCARGO', "El Mandante confiere poder especial al Mandatario, quien acepta para si, para que en su nombre y representacion realice todas las actuaciones necesarias para el encargo conferido.");
+                    self::printClause($pdf, 'SEGUNDO: FACULTADES ESPECIFICAS DELEGADAS', "Facultades especificas conferidas: {$fac}.");
+                    self::printClause($pdf, 'TERCERO: VIGENCIA DEL PODER ESPECIAL', "El presente mandato tendra una duracion de: {$vig}, vencida la cual cesaran de pleno derecho las facultades sin necesidad de notificacion judicial.");
+                    self::printClause($pdf, 'CUARTO: REGIMEN DE DELEGACION Y SUSTITUCION', "Regimen de sustitucion: {$del}. Toda actuacion ejecutada por terceros carecera de validez frente al Mandante.");
+                    self::printClause($pdf, 'QUINTO: RENDICION DE CUENTAS Y TRIBUNALES COMPETENTES', "Conforme a los Arts. 2129 y 2155 del Codigo Civil: {$cuentas}. Las partes fijan domicilio convencional en la comuna y ciudad de Santiago.");
+                }
                 break;
 
             default:
