@@ -129,3 +129,25 @@
   - Emisión de prueba: Documento `SN-C17A-CE54` generado y vaulting verificado en Cloudflare R2 con Hash SHA-256 `58b3e2cc57a4b02ab260c2570b7210f172d54dcf8232838119fb21185f632b76` (`r2_uploaded: true`).
   - Consulta en `/api/index.php?action=verify_document&code=SN-C17A-CE54` retornando HTTP 200 OK y todos los metadatos de custodia.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
+
+### [2026-11-06 03:45 UTC-3] - SOL-0017, SOL-0018 & SOL-0019
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificadores:** `SOL-0017`, `SOL-0018`, `SOL-0019`
+- **Componentes Desplegados:**
+  1. **Motor de Asesoría Legal IA (`asesoria-legal.php` & `GeminiLegalService.php`):**
+     - Pestaña *Smart Legal Check*: Diagnóstico heurístico y con IA de contratos existentes con semáforo tricolor (alertas críticas rojas, sugerencias amarillas y puntos sólidos verdes).
+     - Pestaña *Smart Drafter (Libre Albedrío)*: Generación de acuerdos y contratos atípicos a partir de lenguaje natural bajo el Art. 1545 del Código Civil.
+     - Banner de conversión para visación formal con abogado titulado ($19.990 CLP).
+  2. **Consola Administrativa Operativa (`admin.php`):**
+     - Acceso restringido por usuario y contraseña maestra.
+     - Dashboard de KPIs: Documentos emitidos, facturación acumulada, plantillas activas, monitor de Cloudflare R2 y estado del Gateway WhatsApp (Evolution API).
+     - Tabla en vivo de contratos con sus folios, estados de pago y hashes SHA-256 custodiados.
+  3. **Suite B2B Empresas (`empresas.php`):**
+     - *Smart Bulk Wizard*: Carga masiva de planillas de colaboradores o arriendos vía drag-and-drop de Excel/CSV.
+     - Tabla de pre-visualización y validación de nóminas con Módulo 11 de RUT.
+     - Botón maestro de Firma en 1 Clic con ClaveÚnica y exportación estandarizada para el portal Mi DT de la Dirección del Trabajo (Ley N° 21.327).
+- **Pruebas Validadas:**
+  - PHP Lint: 0 errores en todos los scripts nuevos.
+  - Smoke tests HTTP 200 OK en `https://sinnotario.cl/asesoria-legal.php`, `https://sinnotario.cl/admin.php` y `https://sinnotario.cl/empresas.php`.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
