@@ -557,7 +557,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js?v=20261106_8"></script>
+    <script src="assets/js/app.js?v=20261106_9"></script>
     <script>
         // Funciones auxiliares seguras locales
         function escapeHtml(text) {
@@ -612,6 +612,29 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     help.innerText = 'Modelo de blindaje patronal: incluye acreditación de cotizaciones (Ley Bustos N° 19.631) y declaración de no accidentes laborales (9 cláusulas).';
                 } else if (val === 'opcion_c') {
                     help.innerText = 'Modelo transaccional extrajudicial (Art. 2446 Código Civil) con acápite formal de reserva de derechos según jurisprudencia de la Corte Suprema.';
+                }
+            }
+            updateUniversalPreview();
+        }
+
+        function toggleServiciosFields() {
+            const sel = document.getElementById('f_serv_modalidad');
+            if (!sel) return;
+            const val = sel.value;
+            const wrapB = document.getElementById('wrap_serv_opcion_b');
+            const wrapC = document.getElementById('wrap_serv_opcion_c');
+            const help = document.getElementById('serv_modalidad_help');
+
+            if (wrapB) wrapB.style.display = (val === 'opcion_b') ? 'block' : 'none';
+            if (wrapC) wrapC.style.display = (val === 'opcion_c') ? 'block' : 'none';
+
+            if (help) {
+                if (val === 'opcion_a') {
+                    help.innerText = 'Exclusión probatoria de relación laboral: plena autonomía técnica, libertad horaria, sin exclusividad ni subordinación (8 cláusulas).';
+                } else if (val === 'opcion_b') {
+                    help.innerText = 'Servicios por proyectos cerrados: pagos contra hitos aprobados, entregables, garantía técnica y soporte correctivo (7 cláusulas).';
+                } else if (val === 'opcion_c') {
+                    help.innerText = 'SLA Corporativo continuo: tiempos de respuesta calificados, penalizaciones por demora y sustitución de personal clave (9 cláusulas).';
                 }
             }
             updateUniversalPreview();
@@ -690,6 +713,28 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                 document.getElementById('step1Desc').innerText = 'Identificación de la primera parte que suscribe el Acuerdo de Confidencialidad.';
                 document.getElementById('step2Title').innerText = 'Paso 2: Datos de la Segunda Parte (Divulgante / Receptora)';
                 document.getElementById('step2Desc').innerText = 'Identificación de la segunda parte obligada a los deberes de confidencialidad y reserva.';
+            } else if (CURRENT_TEMPLATE.slug === 'prestacion-servicios-honorarios') {
+                document.getElementById('lblStep1').innerText = 'Mandante';
+                document.getElementById('lblStep2').innerText = 'Profesional';
+                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Mandante / Empresa Contratante';
+                document.getElementById('step1Desc').innerText = 'Identificación de la persona o empresa que encarga y contrata los servicios profesionales independientes.';
+                document.getElementById('lbl_parte_a_nombre').innerText = 'Razón Social o Nombre del Mandante *';
+                document.getElementById('f_parte_a_nombre').value = 'Inversiones y Servicios Keystone SpA';
+                document.getElementById('f_parte_a_rut').value = '76.890.123-4';
+                document.getElementById('f_parte_a_civil').value = 'Giro: Consultoría y Gestión de Inversiones';
+                document.getElementById('f_parte_a_profesion').value = 'Rep. Legal: Juan Andrés Pérez González, C.I. 12.345.678-5';
+                document.getElementById('f_parte_a_domicilio').value = 'Av. Andrés Bello 2711, Piso 14';
+                document.getElementById('f_parte_a_comuna').value = 'Las Condes, Santiago';
+
+                document.getElementById('step2Title').innerText = 'Paso 2: Datos del Profesional Independiente';
+                document.getElementById('step2Desc').innerText = 'Identificación del prestador de servicios que emitirá la boleta de honorarios electrónica (BHE).';
+                document.getElementById('lbl_parte_b_nombre').innerText = 'Nombre Completo del Profesional *';
+                document.getElementById('f_parte_b_nombre').value = 'María José Valenzuela Soto';
+                document.getElementById('f_parte_b_rut').value = '15.444.555-6';
+                document.getElementById('f_parte_b_civil').value = 'chilena, soltera';
+                document.getElementById('f_parte_b_profesion').value = 'Ingeniera Civil en Computación';
+                document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
+                document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
             }
 
             // Campos específicos según slug
@@ -965,21 +1010,88 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                 case 'prestacion-servicios-honorarios':
                     fieldsHtml = `
-                        <div class="form-group">
-                            <label>Descripción del Servicio Profesional *</label>
-                            <input type="text" id="f_servicio_desc" class="form-control" value="Asesoría tributaria, financiera y control de gestión contable">
+                        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#166534;">
+                            <i class="fas fa-briefcase"></i> <strong>Contrato Civil de Prestación de Servicios Profesionales (Art. 2006 Código Civil)</strong>:
+                            Regulado por el derecho civil y mercantil. Selecciona la modalidad para adecuar los hitos, el blindaje anti-laboral o los acuerdos SLA.
                         </div>
+
+                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad del Contrato de Servicios *</label>
+                            <select id="f_serv_modalidad" class="form-control" onchange="toggleServiciosFields()" style="font-weight:600; border-color:#10B981;">
+                                <option value="opcion_a" selected>Opción A: Civil Profesional con Blindaje Anti-Laboralidad (8 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Por Hito / Proyecto Cerrado (7 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: SLA Corporativo / Servicios Continuos con Penalizaciones (9 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="serv_modalidad_help">Exclusión probatoria de relación laboral: autonomía técnica, libertad de horarios y sin subordinación.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Descripción Detallada de los Servicios Profesionales *</label>
+                            <textarea id="f_servicio_desc" class="form-control" rows="3">Consultoría técnica especializada en arquitectura cloud, desarrollo de integraciones API, optimización de base de datos e informes de seguridad tecnológica.</textarea>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Honorario Mensual Bruto ($ CLP) *</label>
-                                <input type="number" id="f_honorario_monto" class="form-control" value="850000">
+                                <label>Honorario Bruto ($ CLP) *</label>
+                                <input type="number" id="f_honorario_monto" class="form-control" value="1250000">
                             </div>
                             <div class="form-group">
-                                <label>Retención de Boleta de Honorarios *</label>
+                                <label>Régimen de Retención de Boleta de Honorarios (BHE) *</label>
                                 <select id="f_retencion" class="form-control">
-                                    <option value="Con retención legal efectuada por el mandante" selected>Con retención efectuada por mandante</option>
-                                    <option value="Con pago provisional directo del profesional">Pago provisional directo del profesional</option>
+                                    <option value="Con retención legal efectuada por el mandante según tasa del SII vigente" selected>Con retención legal efectuada por Mandante (SII)</option>
+                                    <option value="Con pago provisional mensual directo asumido por el profesional">Pago provisional directo del profesional</option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Forma y Oportunidad de Pago *</label>
+                                <input type="text" id="f_serv_forma_pago" class="form-control" value="Dentro de los primeros 5 días hábiles siguientes contra entrega de la BHE emitida">
+                            </div>
+                            <div class="form-group">
+                                <label>Plazo de Desahucio / Aviso Previo de Término Anticipado *</label>
+                                <select id="f_serv_aviso_previo" class="form-control">
+                                    <option value="30 días corridos de anticipación mediante comunicación escrita" selected>30 días corridos de anticipación</option>
+                                    <option value="15 días corridos de anticipación mediante comunicación escrita">15 días corridos de anticipación</option>
+                                    <option value="Inmediato por incumplimiento grave de obligaciones">Inmediato ante incumplimiento grave</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción B (Hitos / Proyecto Cerrado) -->
+                        <div id="wrap_serv_opcion_b" style="display:none; background:#FEFCE8; border:1px solid #FEF08A; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#854D0E; margin-bottom:0.5rem;">
+                                <i class="fas fa-tasks"></i> Especificaciones de Hitos, Fases y Entregables
+                            </h5>
+                            <div class="form-group">
+                                <label>Desglose de Fases, Entregables y Criterios de Aceptación *</label>
+                                <textarea id="f_serv_hitos_detalle" class="form-control" rows="2">Fase 1 (40%): Diseño y arquitectura aprobada. Fase 2 (40%): Implementación y pruebas QA. Fase 3 (20%): Puesta en marcha y recepción final conforme.</textarea>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Garantía Técnica y Soporte Post-Entrega *</label>
+                                <input type="text" id="f_serv_garantia_tecnica" class="form-control" value="60 días corridos de soporte correctivo sin costo adicional sobre fallas o bugs atribuibles al desarrollo">
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción C (SLA Corporativo) -->
+                        <div id="wrap_serv_opcion_c" style="display:none; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#1E40AF; margin-bottom:0.5rem;">
+                                <i class="fas fa-chart-line"></i> Acuerdos de Nivel de Servicio (SLA) y Penalizaciones
+                            </h5>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Tiempos de Respuesta SLA (Crítico / Normal) *</label>
+                                    <input type="text" id="f_serv_sla_tiempo" class="form-control" value="Incidencias críticas: 2 horas máx. / Requerimientos normales: 24 horas">
+                                </div>
+                                <div class="form-group">
+                                    <label>Penalización por Incumplimiento de SLA *</label>
+                                    <input type="text" id="f_serv_sla_multa" class="form-control" value="Descuento del 2% del honorario mensual por cada hora de retraso no justificado (tope 20%)">
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Sustitución de Personal Clave y Responsabilidad Civil *</label>
+                                <input type="text" id="f_serv_sla_seguro" class="form-control" value="Reemplazo de consultores en máx. 5 días hábiles previa aprobación del Mandante + deber de indemnidad patrimonial">
                             </div>
                         </div>
                     `;
@@ -1776,13 +1888,121 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         <p>El presente poder tendrá una vigencia de <span class="highlight-var">${escapeHtml(vig)}</span>, estipulándose expresamente que actúa <span class="highlight-var">${escapeHtml(del)}</span>.</p>
                     `;
                 } else if (CURRENT_TEMPLATE.slug === 'prestacion-servicios-honorarios') {
-                    const serv = document.getElementById('f_servicio_desc')?.value || 'Servicio';
-                    const honor = document.getElementById('f_honorario_monto')?.value || '0';
-                    const honorFmt = new Intl.NumberFormat('es-CL').format(honor);
-                    html += `
-                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Prestación y Honorarios</div>
-                        <p>El Profesional prestará los servicios de <span class="highlight-var">${escapeHtml(serv)}</span>, fijándose un honorario de <span class="highlight-var">$${honorFmt} CLP</span> brutos.</p>
+                    const modServ = document.getElementById('f_serv_modalidad')?.value || 'opcion_a';
+                    const servDesc = document.getElementById('f_servicio_desc')?.value || 'Consultoría especializada y servicios técnicos';
+                    const honorario = parseInt(document.getElementById('f_honorario_monto')?.value || '0', 10);
+                    const honorFmt = new Intl.NumberFormat('es-CL').format(honorario);
+                    const retencion = document.getElementById('f_retencion')?.value || 'Con retención legal efectuada por el mandante';
+                    const formaPago = document.getElementById('f_serv_forma_pago')?.value || 'Dentro de los primeros 5 días hábiles';
+                    const avisoPrevio = document.getElementById('f_serv_aviso_previo')?.value || '30 días corridos de anticipación';
+
+                    html = `
+                        <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                            CONTRATO DE PRESTACIÓN DE SERVICIOS PROFESIONALES INDEPENDIENTES
+                        </div>
+                        <p>En la ciudad de <strong>${escapeHtml(comA || 'Santiago')}</strong>, República de Chile, a <strong>${new Date().toLocaleDateString('es-CL')}</strong>, comparecen:</p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>POR UNA PARTE:</strong> La entidad o persona <span class="highlight-var">${escapeHtml(nomA)}</span>, RUT N° <span class="highlight-var">${escapeHtml(rutA)}</span>, Actividad / Giro: <span class="highlight-var">${escapeHtml(civilA)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, debidamente representada por <span class="highlight-var">${escapeHtml(profA)}</span>, en adelante el <strong>«Mandante»</strong>; y
+                        </p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>POR LA OTRA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomB)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutB)}</span>, antecedentes: <span class="highlight-var">${escapeHtml(civilB)}</span>, de profesión u oficio <span class="highlight-var">${escapeHtml(profB)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domB)}</span>, comuna de <span class="highlight-var">${escapeHtml(comB)}</span>, en adelante el <strong>«Profesional»</strong>.
+                        </p>
+
+                        <p style="margin-top:0.6rem;">
+                            Las partes mayores de edad, en pleno ejercicio de sus facultades civiles, convienen en celebrar el presente Contrato de Prestación de Servicios Profesionales regulado por el Artículo 2006 y siguientes del Código Civil, al tenor de las siguientes estipulaciones:
+                        </p>
+
+                        <div class="preview-clause-title">CLÁUSULA PRIMERA: OBJETO Y ENCARGO PROFESIONAL</div>
+                        <p>El Mandante encomienda al Profesional, quien acepta para sí, la prestación de los siguientes servicios técnicos y profesionales especializados:<br>
+                        <span class="highlight-var" style="font-weight:600;">${escapeHtml(servDesc)}</span>.</p>
+
+                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: HONORARIOS Y RÉGIMEN TRIBUTARIO</div>
+                        <p>Por la debida y oportuna ejecución de los servicios encomendados, el Mandante pagará al Profesional la suma bruta de <span class="highlight-var" style="font-weight:700; color:#0F2A4A;">$${honorFmt} CLP</span>.<br>
+                        El pago se efectuará: <span class="highlight-var">${escapeHtml(formaPago)}</span>, previa emisión y envío de la respectiva Boleta de Honorarios Electrónica (BHE).<br>
+                        Régimen tributario: <span class="highlight-var">${escapeHtml(retencion)}</span> conforme a las normas de la Ley sobre Impuesto a la Renta y circulares del SII.</p>
                     `;
+
+                    if (modServ === 'opcion_b') {
+                        // Opción B: Por Hito / Proyecto Cerrado (7 Cláusulas)
+                        const hitos = document.getElementById('f_serv_hitos_detalle')?.value || 'Entregables por fases aprobadas';
+                        const garantia = document.getElementById('f_serv_garantia_tecnica')?.value || '60 días de soporte correctivo';
+
+                        html += `
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: FASES, ENTREGABLES Y CRITERIOS DE ACEPTACIÓN</div>
+                            <p>La ejecución y los pagos parciales se estructuran bajo el siguiente esquema de hitos verificables:<br>
+                            <span class="highlight-var" style="white-space:pre-line;">${escapeHtml(hitos)}</span>.<br>
+                            Cada hito se entenderá completado una vez que el Mandante otorgue su aprobación formal por escrito dentro de los 5 días hábiles siguientes a su presentación.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: GARANTÍA TÉCNICA Y SOPORTE CORRECTIVO POST-ENTREGA</div>
+                            <p>El Profesional garantiza la calidad técnica, estabilidad y funcionalidad de los entregables conforme a los estándares de la industria, obligándose a: <span class="highlight-var">${escapeHtml(garantia)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: PROPIEDAD INTELECTUAL DE LOS ENTREGABLES</div>
+                            <p>Una vez pagada la totalidad de los honorarios correspondientes al hito o entrega final, la titularidad patrimonial sobre todos los informes, planos, código fuente, desarrollos o diseños elaborados se transferirá íntegra y exclusivamente al Mandante (Ley N° 17.336), conservando el Profesional únicamente sus derechos morales irrenunciables.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEXTA: CONFIDENCIALIDAD Y DEBER DE RESERVA</div>
+                            <p>El Profesional se compromete a mantener estricta reserva de toda información técnica, financiera y estratégica del Mandante a la que acceda con ocasión del servicio, subsistiendo este deber indefinidamente tras la conclusión del proyecto.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SÉPTIMA: TÉRMINO ANTICIPADO Y JURISDICCIÓN</div>
+                            <p>Cualquiera de las partes podrá poner término anticipado al contrato con <span class="highlight-var">${escapeHtml(avisoPrevio)}</span>, liquidándose exclusivamente los hitos efectivamente concluidos y aprobados. Para todos los efectos legales, las partes fijan domicilio en la ciudad de Santiago y se someten a sus tribunales ordinarios.</p>
+                        `;
+                    } else if (modServ === 'opcion_c') {
+                        // Opción C: SLA Corporativo / Servicios Continuos con Penalizaciones (9 Cláusulas)
+                        const slaTiempo = document.getElementById('f_serv_sla_tiempo')?.value || 'Crítico: 2h / Normal: 24h';
+                        const slaMulta = document.getElementById('f_serv_sla_multa')?.value || '2% por hora de retardo';
+                        const slaSeguro = document.getElementById('f_serv_sla_seguro')?.value || 'Sustitución en 5 días y responsabilidad civil';
+
+                        html += `
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: ACUERDOS DE NIVEL DE SERVICIO (SLA) Y DISPONIBILIDAD</div>
+                            <p>El Profesional y su equipo técnico se comprometen a prestar los servicios continuos asegurando los siguientes niveles de atención:<br>
+                            <span class="highlight-var" style="font-weight:600;">${escapeHtml(slaTiempo)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: AUDITORÍA DE CALIDAD Y PENALIZACIONES POR INCUMPLIMIENTO</div>
+                            <p>El Mandante auditará mensualmente el cumplimiento de los indicadores SLA pactados. En caso de retraso o incumplimiento atribuible al Profesional, se aplicará la siguiente penalización deducible de la liquidación mensual: <br>
+                            <span class="highlight-var" style="color:#DC2626; font-weight:600;">${escapeHtml(slaMulta)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: CONTINUIDAD OPERATIVA Y SUSTITUCIÓN DE PERSONAL CLAVE</div>
+                            <p>El Profesional garantiza la asignación de profesionales idóneos y titulados para el servicio. Procedimiento de reemplazo y resguardo: <span class="highlight-var">${escapeHtml(slaSeguro)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEXTA: AUTONOMÍA TÉCNICA E INDEPENDENCIA PATRIMONIAL</div>
+                            <p>El Profesional ejecutará las labores con total autonomía técnica y con sus propios medios materiales, asumiendo la exclusiva responsabilidad respecto de sus colaboradores y dependientes, sin que exista vínculo laboral alguno con el Mandante.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SÉPTIMA: PROPIEDAD INTELECTUAL Y CONFIDENCIALIDAD</div>
+                            <p>Todos los desarrollos, scripts, bases de datos y metodologías adaptadas pertenecerán en forma exclusiva al Mandante al amparo de las Leyes 17.336 y 19.039, rigiendo secreto profesional perpetuo.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA OCTAVA: VIGENCIA Y CONDICIONES DE RESCISIÓN</div>
+                            <p>El presente contrato tendrá vigencia indefinida sujeta a evaluación periódica de SLAs, pudiendo rescindirlo unilateralmente cualquiera de las partes con <span class="highlight-var">${escapeHtml(avisoPrevio)}</span> o en forma inmediata por reiteración de multas graves.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA NOVENA: DOMICILIO Y TRIBUNALES COMPETENTES</div>
+                            <p>Las partes fijan su domicilio convencional en la comuna y ciudad de Santiago, sometiéndose a la competencia de sus Juzgados Ordinarios de Letras en lo Civil.</p>
+                        `;
+                    } else {
+                        // Opción A: Civil Profesional con Blindaje Anti-Laboralidad (8 Cláusulas - Recomendado)
+                        html += `
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: EXCLUSIÓN CATEGÓRICA DE SUBORDINACIÓN Y DEPENDENCIA</div>
+                            <p>Las partes declaran expresa y solemnemente que el presente contrato es de naturaleza estrictamente civil conforme al Artículo 2006 del Código Civil, careciendo de vínculo laboral de subordinación y dependencia. En consecuencia, el Profesional:<br>
+                            a) No está sujeto a jornada de trabajo, registro de asistencia ni horario rígido impuesto por el Mandante;<br>
+                            b) No recibe órdenes jerárquicas directas ni está sujeto a potestad disciplinaria patronal;<br>
+                            c) Cuenta con plena y absoluta autonomía técnica para determinar la forma, lugar e instrumentos para prestar sus servicios;<br>
+                            d) No goza de exclusividad, pudiendo prestar libremente servicios para otras personas naturales o jurídicas.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: PROVISIÓN DE MEDIOS E INDEMNIDAD</div>
+                            <p>El Profesional utilizará sus propios medios computacionales, licencias, vehículos y herramientas para el cumplimiento de sus labores, no teniendo derecho a prestaciones laborales tales como feriado legal, gratificaciones, asignaciones de colación o movilización, ni cotizaciones de seguridad social patronales.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: PROPIEDAD INTELECTUAL Y ENTREGA DE RESULTADOS</div>
+                            <p>Todos los estudios, informes, diagnósticos, creaciones técnicas, código y documentación generada con ocasión de este contrato pertenecerán íntegra y exclusivamente al Mandante una vez satisfechos los honorarios acordados, en conformidad a la Ley N° 17.336 sobre Propiedad Intelectual.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEXTA: CONFIDENCIALIDAD Y SECRETO PROFESIONAL</div>
+                            <p>El Profesional se obliga a guardar estricta reserva y secreto profesional respecto de toda información, datos personales, estrategias y antecedentes técnicos o comerciales a los que tenga acceso en virtud de este contrato, manteniéndose vigente este deber por un lapso no inferior a tres años tras su término.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SÉPTIMA: VIGENCIA Y TÉRMINO ANTICIPADO (DESAHUCIO CIVIL)</div>
+                            <p>El presente contrato entrará en vigencia a contar de la firma electrónica. Cualquiera de las partes podrá ponerle término anticipado, sin necesidad de invocar causa y sin derecho a indemnización alguna, dando aviso escrito a la otra con a lo menos <span class="highlight-var">${escapeHtml(avisoPrevio)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA OCTAVA: DOMICILIO, LEY APLICABLE Y JURISDICCIÓN</div>
+                            <p>Para todos los efectos legales y judiciales emanados del presente contrato, las partes fijan su domicilio en la comuna y ciudad de Santiago y prorrogan competencia en sus Tribunales Ordinarios de Justicia en lo Civil, renunciando a cualquier otro fuero.</p>
+                        `;
+                    }
                 }
             }
 

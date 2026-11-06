@@ -1,5 +1,27 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-06 15:22 UTC-3] - SOL-0031
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0031`
+- **Alcance de los Cambios:**
+  - **Contrato de Prestación de Servicios Profesionales (Art. 2006 Código Civil):**
+    1. **Paso 1 y 2 Adaptativos:**
+       - Paso 1 personalizado para "Mandante / Empresa Contratante" (Razón Social, RUT, Giro, Representante Legal y Domicilio).
+       - Paso 2 personalizado para "Profesional Independiente" (Nombre, RUT, Profesión y Domicilio).
+    2. **Paso 3 con Selector Interactivo de las 3 Opciones:**
+       - *Opción A: Civil Profesional con Blindaje Anti-Laboralidad (8 Cláusulas - Recomendado).* Exclusión taxativa de subordinación y dependencia (Art. 7 y 8 Código del Trabajo), libertad de horarios, ausencia de jefatura jerárquica y de potestad disciplinaria, sin exclusividad, provisión de medios propios, propiedad intelectual (Ley 17.336), secreto profesional y término anticipado por desahucio escrito de 15 a 30 días.
+       - *Opción B: Por Hito / Proyecto Cerrado (7 Cláusulas).* Desglose de fases con criterios de aceptación escrita, garantía técnica y soporte correctivo post-entrega (60 días), transferencia de titularidad patrimonial contra pago de hito final y liquidación pro-rata en caso de término.
+       - *Opción C: SLA Corporativo / Servicios Continuos con Penalizaciones (9 Cláusulas).* Acuerdos de nivel de servicio (SLA) con tiempos de respuesta categorizados (crítico 2h / normal 24h), auditorías mensuales con penalizaciones escalonadas deducibles de los honorarios (hasta 20%), continuidad operativa con sustitución de personal clave en máximo 5 días hábiles y deber de indemnidad patrimonial.
+    3. **Motor PDF Criptográfico (`DocumentPdfService.php`):**
+       - Sincronización del método `renderClauses()` para emitir las cláusulas contractuales específicas de cada una de las 3 modalidades en el PDF final con QR dinámico y Hash SHA-256 en Cloudflare R2.
+    4. **Cache-Busting:** Bump a `?v=20261106_9`.
+- **Pruebas Validadas:**
+  - Verificación sintáctica remota PHP Lint en Hostinger: 0 errores detectados en `redactar.php` y `DocumentPdfService.php`.
+  - Smoke test HTTP: `curl -I "https://sinnotario.cl/redactar.php?slug=prestacion-servicios-honorarios"` -> `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
 ### [2026-11-06 15:19 UTC-3] - SOL-0030
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

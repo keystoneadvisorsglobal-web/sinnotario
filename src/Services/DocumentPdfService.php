@@ -296,9 +296,48 @@ class DocumentPdfService {
                 break;
 
             case 'prestacion-servicios-honorarios':
-                self::printClause($pdf, 'PRIMERO: NATURALEZA CIVIL DEL CONTRATO', "El Profesional prestará servicios independientes con plena autonomía técnica y funcional bajo las reglas del Artículo 2006 y siguientes del Código Civil, sin subordinación ni dependencia laboral.");
-                self::printClause($pdf, 'SEGUNDO: HONORARIOS Y FORMA DE PAGO', "Por la prestación de los servicios profesionales convenidos, el Mandante pagará los honorarios acordados contra entrega de la boleta de honorarios electrónica respectiva con la retención tributaria legal.");
-                self::printClause($pdf, 'TERCERO: PROPIEDAD INTELECTUAL Y CONFIDENCIALIDAD', "Los entregables, informes o creaciones técnicas confeccionadas pertenecerán al mandante una vez pagados los honorarios, resguardando ambas partes la reserva de los antecedentes.");
+                $modServ = $formData['f_serv_modalidad'] ?? 'opcion_a';
+                $servDesc = $formData['servicio_desc'] ?? ($formData['f_servicio_desc'] ?? 'Consultoria tecnica especializada y servicios profesionales');
+                $honorario = !empty($formData['honorario']) ? '$' . number_format($formData['honorario'], 0, ',', '.') . ' CLP' : '$1.250.000 CLP';
+                $retencion = $formData['retencion'] ?? ($formData['f_retencion'] ?? 'Con retencion legal por Mandante');
+                $formaPago = $formData['forma_pago'] ?? ($formData['f_serv_forma_pago'] ?? 'Dentro de 5 dias habiles contra entrega de BHE');
+                $avisoPrevio = $formData['aviso_previo'] ?? ($formData['f_serv_aviso_previo'] ?? '30 dias corridos de anticipacion');
+
+                self::printClause($pdf, 'PRIMERO: OBJETO Y ENCARGO PROFESIONAL', "El Mandante encomienda al Profesional, quien acepta y se obliga a ejecutar con estricta sujecion al Codigo Civil, los siguientes servicios: {$servDesc}.");
+                self::printClause($pdf, 'SEGUNDO: HONORARIOS Y REGIMEN TRIBUTARIO', "Por la prestacion integra de los servicios, el Mandante pagara la suma de {$honorario} brutos. Forma de pago: {$formaPago}, previa entrega de la Boleta de Honorarios Electronica (BHE). Regimen tributario: {$retencion}.");
+
+                if ($modServ === 'opcion_b') {
+                    // Opción B: Por Hito / Proyecto Cerrado (7 Cláusulas)
+                    $hitos = $formData['hitos'] ?? ($formData['f_serv_hitos_detalle'] ?? 'Fases aprobadas por escrito');
+                    $garantia = $formData['garantia'] ?? ($formData['f_serv_garantia_tecnica'] ?? '60 dias de soporte correctivo');
+
+                    self::printClause($pdf, 'TERCERO: FASES, ENTREGABLES Y RECEPCION CONFORME', "Los servicios se estructuran bajo hitos verificables: {$hitos}. Cada hito se considerara recibido tras la aprobacion escrita formal del Mandante dentro de 5 dias habiles.");
+                    self::printClause($pdf, 'CUARTO: GARANTIA TECNICA Y SOPORTE POST-ENTREGA', "El Profesional garantiza la estabilidad y operatividad tecnica de los entregables: {$garantia}.");
+                    self::printClause($pdf, 'QUINTO: PROPIEDAD INTELECTUAL EXCLUSIVA DEL MANDANTE', "Una vez satisfechos los honorarios del proyecto, la titularidad patrimonial sobre todos los entregables, codigos, informes y disenos pertenecera íntegra al Mandante (Ley N° 17.336).");
+                    self::printClause($pdf, 'SEXTO: DEBER PERPETUO DE CONFIDENCIALIDAD', "El Profesional mantendra estricta reserva de toda informacion tecnica y estrategica del Mandante, no pudiendo divulgarla a terceros.");
+                    self::printClause($pdf, 'SEPTIMO: TERMINO ANTICIPADO Y TRIBUNALES', "Cualquiera de las partes podra rescindir el contrato con {$avisoPrevio}, liquidando los hitos finalizados. Las partes prorrogan competencia en los Tribunales Ordinarios de Santiago.");
+                } else if ($modServ === 'opcion_c') {
+                    // Opción C: SLA Corporativo / Servicios Continuos con Penalizaciones (9 Cláusulas)
+                    $slaTiempo = $formData['sla_tiempo'] ?? ($formData['f_serv_sla_tiempo'] ?? 'Critico: 2h / Normal: 24h');
+                    $slaMulta = $formData['sla_multa'] ?? ($formData['f_serv_sla_multa'] ?? 'Descuento 2% por hora de retraso');
+                    $slaSeguro = $formData['sla_seguro'] ?? ($formData['f_serv_sla_seguro'] ?? 'Sustitucion en 5 dias y resguardo patrimonial');
+
+                    self::printClause($pdf, 'TERCERO: ACUERDOS DE NIVEL DE SERVICIO (SLA)', "El Profesional asegura los siguientes estandares de disponibilidad y tiempos de respuesta: {$slaTiempo}.");
+                    self::printClause($pdf, 'CUARTO: AUDITORIA DE CALIDAD Y PENALIZACIONES', "El Mandante auditara mensualmente los SLA. En caso de incumplimiento imputable al Profesional, se aplicara la siguiente sancion deducible: {$slaMulta}.");
+                    self::printClause($pdf, 'QUINTO: CONTINUIDAD OPERATIVA Y SUSTITUCION DE PERSONAL', "El Profesional garantiza personal calificado para el servicio: {$slaSeguro}.");
+                    self::printClause($pdf, 'SEXTO: AUTONOMIA TECNICA E INDEPENDENCIA PATRIMONIAL', "El Profesional ejecutara sus labores con sus propios medios materiales, respondiendo de sus dependientes sin vinculo laboral con el Mandante.");
+                    self::printClause($pdf, 'SEPTIMO: PROPIEDAD INTELECTUAL Y SECRETO INDUSTRIAL', "Todos los desarrollos generados corresponderan exclusivamente al Mandante bajo las Leyes 17.336 y 19.039.");
+                    self::printClause($pdf, 'OCTAVO: VIGENCIA Y RESCISION UNILATERAL', "El contrato tendra vigencia continuada, pudiendo terminarse con {$avisoPrevio} o ipso facto ante fallas SLA graves.");
+                    self::printClause($pdf, 'NOVENO: DOMICILIO Y JURISDICCION CIVIL', "Las partes fijan domicilio convencional en Santiago y se someten a sus Juzgados Civiles.");
+                } else {
+                    // Opción A: Civil Profesional con Blindaje Anti-Laboralidad (8 Cláusulas - Recomendado)
+                    self::printClause($pdf, 'TERCERO: EXCLUSION CATEGORICA DE SUBORDINACION Y DEPENDENCIA', "Las partes declaran que el presente contrato es estrictamente civil (Art. 2006 Codigo Civil), careciendo de subordinacion: el Profesional goza de libertad horaria, sin fiscalizacion superior jerarquica, con plena autonomia tecnica y sin exclusividad.");
+                    self::printClause($pdf, 'CUARTO: PROVISION DE MEDIOS E INDEMNIDAD LABORAL', "El Profesional operara con sus propios equipos, software y herramientas, no existiendo derecho a feriado legal, asignaciones ni cotizaciones de seguridad social patronales.");
+                    self::printClause($pdf, 'QUINTO: PROPIEDAD INTELECTUAL DE LOS ENTREGABLES', "Los entregables, informes, creaciones tecnicas y codigos elaborados perteneceran en forma exclusiva al Mandante al satisfacer los honorarios (Ley 17.336).");
+                    self::printClause($pdf, 'SEXTO: CONFIDENCIALIDAD Y SECRETO PROFESIONAL', "El Profesional mantendra estricta reserva de todos los datos y antecedentes a los que tenga acceso, subsistiendo este deber por un minimo de 3 anos tras su cese.");
+                    self::printClause($pdf, 'SEPTIMO: VIGENCIA Y DESAHUCIO CIVIL ANTICIPADO', "Cualquiera de las partes podra poner termino anticipado al contrato sin expresion de causa mediante aviso escrito previo de {$avisoPrevio}.");
+                    self::printClause($pdf, 'OCTAVO: DOMICILIO Y JURISDICCION', "Para todos los efectos legales, las partes fijan domicilio en la ciudad de Santiago y prorrogan competencia en sus Tribunales Ordinarios en lo Civil.");
+                }
                 break;
 
             case 'contrato-individual-trabajo':
