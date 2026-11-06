@@ -71,3 +71,15 @@
   - Smoke test: HTTP 200 OK en `https://sinnotario.cl/redactar.php?slug=contrato-arriendo-ley-21461`.
   - Validación de RUT: Bloqueo de avance en pasos 1 y 2 si los RUTs no superan la validación Módulo 11.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
+
+### [2026-11-06 02:59 UTC-3] - SOL-0010
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0010`
+- **Alcance del Cambio:**
+  - Actualización del titular del Hero a mayúsculas completas:
+    `TUS CONTRATOS Y TRÁMITES LEGALES 100% ONLINE Y SIN PISAR UNA NOTARÍA`
+- **Pruebas Validadas:**
+  - PHP Lint: 0 errores de sintaxis en `index.php`.
+  - Smoke test: HTTP 200 OK en producción.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
