@@ -62,7 +62,7 @@ body {
 }
 
 .brand-logo img {
-    height: 44px;
+    height: 58px;
     width: auto;
 }
 
@@ -75,9 +75,9 @@ body {
 
 .nav-links a {
     text-decoration: none;
-    color: #334155;
-    font-weight: 500;
-    font-size: 0.93rem;
+    color: #1E293B;
+    font-weight: 700;
+    font-size: 0.96rem;
     letter-spacing: -0.01em;
     transition: color 0.15s ease;
 }
@@ -85,7 +85,7 @@ body {
 .nav-links a:hover,
 .nav-links a.active {
     color: var(--primary);
-    font-weight: 600;
+    font-weight: 800;
 }
 
 .nav-whatsapp {
@@ -93,8 +93,8 @@ body {
     align-items: center;
     gap: 0.4rem;
     color: #15803D !important;
-    font-weight: 600 !important;
-    font-size: 0.9rem !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
 }
 
 .btn-cta {

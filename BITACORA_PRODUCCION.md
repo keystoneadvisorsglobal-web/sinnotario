@@ -151,3 +151,18 @@
   - PHP Lint: 0 errores en todos los scripts nuevos.
   - Smoke tests HTTP 200 OK en `https://sinnotario.cl/asesoria-legal.php`, `https://sinnotario.cl/admin.php` y `https://sinnotario.cl/empresas.php`.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
+
+---
+
+### Entrada: 2026-11-06 10:05:00 UTC-3
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0020`
+- **Resumen de la Ejecución:**
+  - **Aumento de Tamaño del Logotipo:** Se incrementó la dimensión del logotipo corporativo de SinNotario en un 30% en el encabezado de navegación principal (`.brand-logo img` de 44px a 58px de altura), mejorando sustancialmente el reconocimiento de marca.
+  - **Jerarquización y Negrita en Menú de Navegación:** Se actualizaron los estilos de los enlaces del menú (`.nav-links a`), aumentando su peso visual a `font-weight: 700`, color `#1E293B` y `font-size: 0.96rem` (con `font-weight: 800` en estados hover/active y WhatsApp en `font-weight: 700`), logrando una lectura nítida y destacada contra la barra superior.
+  - **Pruebas Validadas:**
+    - Carga de hoja de estilos en producción: HTTP 200 OK (`https://sinnotario.cl/assets/css/style.css`).
+    - Smoke test del portal home: HTTP 200 OK (`https://sinnotario.cl/`).
+    - Verificación de renderizado de selectores `.brand-logo img` y `.nav-links a`.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
