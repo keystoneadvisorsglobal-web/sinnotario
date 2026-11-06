@@ -557,7 +557,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js?v=20261106_7"></script>
+    <script src="assets/js/app.js?v=20261106_8"></script>
     <script>
         // Funciones auxiliares seguras locales
         function escapeHtml(text) {
@@ -591,6 +591,29 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
             }
 
             bindUniversalPreviewSync();
+            updateUniversalPreview();
+        }
+
+        function toggleFiniquitoFields() {
+            const sel = document.getElementById('f_fini_modalidad');
+            if (!sel) return;
+            const val = sel.value;
+            const wrapB = document.getElementById('wrap_fini_opcion_b');
+            const wrapC = document.getElementById('wrap_fini_opcion_c');
+            const help = document.getElementById('fini_modalidad_help');
+
+            if (wrapB) wrapB.style.display = (val === 'opcion_b') ? 'block' : 'none';
+            if (wrapC) wrapC.style.display = (val === 'opcion_c') ? 'block' : 'none';
+
+            if (help) {
+                if (val === 'opcion_a') {
+                    help.innerText = 'Modelo estándar homologable ante la Dirección del Trabajo (portal Mi DT) con ClaveÚnica (6 cláusulas).';
+                } else if (val === 'opcion_b') {
+                    help.innerText = 'Modelo de blindaje patronal: incluye acreditación de cotizaciones (Ley Bustos N° 19.631) y declaración de no accidentes laborales (9 cláusulas).';
+                } else if (val === 'opcion_c') {
+                    help.innerText = 'Modelo transaccional extrajudicial (Art. 2446 Código Civil) con acápite formal de reserva de derechos según jurisprudencia de la Corte Suprema.';
+                }
+            }
             updateUniversalPreview();
         }
 
@@ -638,6 +661,35 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                 document.getElementById('f_parte_b_profesion').value = 'Ingeniera en Informática';
                 document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
                 document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
+            } else if (CURRENT_TEMPLATE.slug === 'finiquito-laboral-mutuo-acuerdo') {
+                document.getElementById('lblStep1').innerText = 'Empleador';
+                document.getElementById('lblStep2').innerText = 'Trabajador';
+                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Empleador y Representante';
+                document.getElementById('step1Desc').innerText = 'Identificación de la empresa empleadora y de su representante legal que suscribe el finiquito.';
+                document.getElementById('lbl_parte_a_nombre').innerText = 'Razón Social o Nombre del Empleador *';
+                document.getElementById('f_parte_a_nombre').value = 'Servicios Tecnológicos SpA';
+                document.getElementById('f_parte_a_rut').value = '76.987.654-3';
+                document.getElementById('f_parte_a_civil').value = 'Giro: Consultoría en TI y Desarrollo de Software';
+                document.getElementById('f_parte_a_profesion').value = 'Rep. Legal: Juan Andrés Pérez González, C.I. 12.345.678-5';
+                document.getElementById('f_parte_a_domicilio').value = 'Av. Andrés Bello 2711, Piso 14';
+                document.getElementById('f_parte_a_comuna').value = 'Las Condes, Santiago';
+
+                document.getElementById('step2Title').innerText = 'Paso 2: Datos del Trabajador Finiquitado';
+                document.getElementById('step2Desc').innerText = 'Datos completos del trabajador para la ratificación del finiquito ante ministro de fe o portal Mi DT.';
+                document.getElementById('lbl_parte_b_nombre').innerText = 'Nombre Completo del Trabajador *';
+                document.getElementById('f_parte_b_nombre').value = 'María José Valenzuela Soto';
+                document.getElementById('f_parte_b_rut').value = '15.444.555-6';
+                document.getElementById('f_parte_b_civil').value = 'chilena, soltera';
+                document.getElementById('f_parte_b_profesion').value = 'Analista de Operaciones';
+                document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
+                document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
+            } else if (CURRENT_TEMPLATE.slug === 'acuerdo-confidencialidad-nda') {
+                document.getElementById('lblStep1').innerText = 'Parte A';
+                document.getElementById('lblStep2').innerText = 'Parte B';
+                document.getElementById('step1Title').innerText = 'Paso 1: Datos de la Primera Parte (Divulgante / Receptora)';
+                document.getElementById('step1Desc').innerText = 'Identificación de la primera parte que suscribe el Acuerdo de Confidencialidad.';
+                document.getElementById('step2Title').innerText = 'Paso 2: Datos de la Segunda Parte (Divulgante / Receptora)';
+                document.getElementById('step2Desc').innerText = 'Identificación de la segunda parte obligada a los deberes de confidencialidad y reserva.';
             }
 
             // Campos específicos según slug
@@ -750,28 +802,113 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                 case 'finiquito-laboral-mutuo-acuerdo':
                     fieldsHtml = `
+                        <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#1E40AF;">
+                            <i class="fas fa-file-contract"></i> <strong>Finiquito de Trabajo y Término de Relación Laboral (Art. 159 y 177 CdT)</strong>:
+                            Selecciona la modalidad deseada para adaptar la dogmática jurídica del instrumento.
+                        </div>
+
+                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad / Enfoque del Finiquito *</label>
+                            <select id="f_fini_modalidad" class="form-control" onchange="toggleFiniquitoFields()" style="font-weight:600; border-color:#3B82F6;">
+                                <option value="opcion_a" selected>Opción 1: Estándar Dirección del Trabajo (Portal Mi DT - 6 Cláusulas)</option>
+                                <option value="opcion_b">Opción 2: Blindaje Corporativo / Patronal (Ley Bustos + Sin Accidentes - 9 Cláusulas)</option>
+                                <option value="opcion_c">Opción 3: Transaccional Extrajudicial con Reserva de Derechos (Art. 2446 CC)</option>
+                            </select>
+                            <small class="form-text text-muted" id="fini_modalidad_help">Modelo ágil y homologable ante la Dirección del Trabajo (Mi DT) con ClaveÚnica.</small>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Cargo Desempeñado por el Trabajador *</label>
                                 <input type="text" id="f_cargo" class="form-control" value="Analista de Operaciones">
                             </div>
                             <div class="form-group">
-                                <label>Fecha de Término de Relación Laboral *</label>
-                                <input type="date" id="f_fecha_termino" class="form-control">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
                                 <label>Causal Legal de Término *</label>
                                 <select id="f_causal" class="form-control">
                                     <option value="Art. 159 N° 1 Mutuo acuerdo de las partes" selected>Art. 159 N° 1 Mutuo acuerdo de las partes</option>
-                                    <option value="Art. 161 Necesidades de la empresa">Art. 161 Necesidades de la empresa</option>
-                                    <option value="Art. 159 N° 4 Vencimiento del plazo">Art. 159 N° 4 Vencimiento del plazo</option>
+                                    <option value="Art. 161 inc. 1° Necesidades de la empresa">Art. 161 inc. 1° Necesidades de la empresa</option>
+                                    <option value="Art. 159 N° 4 Vencimiento del plazo del contrato">Art. 159 N° 4 Vencimiento del plazo</option>
+                                    <option value="Art. 159 N° 2 Renuncia voluntaria del trabajador">Art. 159 N° 2 Renuncia voluntaria</option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Fecha de Inicio del Contrato *</label>
+                                <input type="date" id="f_fini_fecha_inicio" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha de Término Efectivo de Labores *</label>
+                                <input type="date" id="f_fecha_termino" class="form-control">
+                            </div>
+                        </div>
+
+                        <h4 style="font-size:0.95rem; font-weight:700; color:var(--primary); margin:1.25rem 0 0.75rem 0; border-bottom:1px solid #E2E8F0; padding-bottom:0.35rem;">
+                            Liquidación y Desglose de Haberes Finales
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Remuneraciones y Días Pendientes ($ CLP) *</label>
+                                <input type="number" id="f_fini_haberes_dias" class="form-control" value="450000">
+                            </div>
+                            <div class="form-group">
+                                <label>Feriado Proporcional / Vacaciones ($ CLP) *</label>
+                                <input type="number" id="f_fini_feriado" class="form-control" value="380000">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Indemnización Años de Servicio / Voluntaria ($ CLP) *</label>
+                                <input type="number" id="f_fini_indemnizacion" class="form-control" value="620000">
                             </div>
                             <div class="form-group">
                                 <label>Monto Total Líquido a Pagar ($ CLP) *</label>
-                                <input type="number" id="f_monto_finiquito" class="form-control" value="1450000">
+                                <input type="number" id="f_monto_finiquito" class="form-control" value="1450000" readonly style="background:#F1F5F9; font-weight:700;">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Medio y Forma de Pago *</label>
+                                <input type="text" id="f_fini_forma_pago" class="form-control" value="Transferencia electrónica a la cuenta bancaria personal del trabajador">
+                            </div>
+                            <div class="form-group">
+                                <label>Banco y Cuenta de Destino *</label>
+                                <input type="text" id="f_fini_cuenta" class="form-control" value="Banco de Chile - Cuenta Vista N° 987-65432-10">
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción B (Ley Bustos y Seguridad) -->
+                        <div id="wrap_fini_opcion_b" style="display:none; background:#FEFCE8; border:1px solid #FEF08A; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#854D0E; margin-bottom:0.5rem;">
+                                <i class="fas fa-shield-alt"></i> Cláusulas de Blindaje Ley Bustos y Prevención de Riesgos
+                            </h5>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Institución AFP y Certificado al Día *</label>
+                                    <input type="text" id="f_fini_bustos_afp" class="form-control" value="AFP Habitat - Cotizaciones íntegramente pagadas al mes anterior">
+                                </div>
+                                <div class="form-group">
+                                    <label>Institución de Salud y AFC al Día *</label>
+                                    <input type="text" id="f_fini_bustos_salud" class="form-control" value="FONASA y AFC Chile sin deudas previsionales registradas">
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Declaración de Accidentes del Trabajo (Ley 16.744) *</label>
+                                <input type="text" id="f_fini_accidentes" class="form-control" value="Inexistencia de siniestros, accidentes laborales ni enfermedades profesionales pendientes">
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción C (Reserva de Derechos) -->
+                        <div id="wrap_fini_opcion_c" style="display:none; background:#FAF5FF; border:1px solid #E9D5FF; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#6B21A8; margin-bottom:0.5rem;">
+                                <i class="fas fa-pen-nib"></i> Declaración y Reserva de Derechos (Doctrina Corte Suprema)
+                            </h5>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Texto de Reserva de Derechos por el Trabajador (Dejar vacío si no aplica)</label>
+                                <textarea id="f_fini_reserva_derechos" class="form-control" rows="2" placeholder="Ej: Me reservo el derecho a reclamar judicialmente la restitución del aporte del empleador a la AFC y diferencias de horas extras.">Me reservo el derecho a reclamar administrativamente diferencias eventuales en la base de cálculo de feriado proporcional.</textarea>
                             </div>
                         </div>
                     `;
@@ -779,23 +916,48 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                 case 'acuerdo-confidencialidad-nda':
                     fieldsHtml = `
-                        <div class="form-group">
-                            <label>Propósito del Acuerdo / Proyecto en Evaluación *</label>
-                            <input type="text" id="f_proyecto_nda" class="form-control" value="Desarrollo conjunto de plataforma fintech y arquitectura cloud">
+                        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#166534;">
+                            <i class="fas fa-shield-virus"></i> <strong>Acuerdo de Confidencialidad Bilateral Corporativo (Startups & Software)</strong>:
+                            8 cláusulas exhaustivas de blindaje de secretos industriales, know-how, código fuente, excepciones legales y cláusula penal tasada.
                         </div>
+
+                        <div class="form-group">
+                            <label>Propósito del Acuerdo y Proyecto en Evaluación *</label>
+                            <input type="text" id="f_proyecto_nda" class="form-control" value="Evaluación conjunta, integración tecnológica y desarrollo de plataforma fintech y arquitectura cloud">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Alcance de la Información Confidencial Protegida *</label>
+                            <textarea id="f_nda_alcance" class="form-control" rows="3">Código fuente, arquitectura de sistemas, diagramas de base de datos, algoritmos, modelos financieros, secretos comerciales, listados de clientes y proveedores, metodologías de trabajo e información técnica no accesible públicamente.</textarea>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Vigencia de la Confidencialidad *</label>
+                                <label>Vigencia del Deber de Confidencialidad *</label>
                                 <select id="f_vigencia_nda" class="form-control">
-                                    <option value="2 años" selected>2 años a partir de la firma</option>
-                                    <option value="3 años">3 años a partir de la firma</option>
-                                    <option value="5 años">5 años a partir de la firma</option>
-                                    <option value="Indefinida para secretos industriales">Indefinida para secretos industriales</option>
+                                    <option value="2 años" selected>2 años desde la firma</option>
+                                    <option value="3 años">3 años desde la firma</option>
+                                    <option value="5 años">5 años desde la firma</option>
+                                    <option value="Indefinida respecto a secretos industriales">Indefinida para Secretos Industriales (Ley 19.039)</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Cláusula Penal por Infracción ($ CLP) *</label>
-                                <input type="text" id="f_multa_nda" class="form-control" value="500 UF">
+                                <label>Cláusula Penal Compensatoria por Infracción *</label>
+                                <input type="text" id="f_multa_nda" class="form-control" value="500 UF (o su equivalente en pesos chilenos a la fecha de cobro)">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Procedimiento al Término de las Negociaciones *</label>
+                                <select id="f_nda_destruccion" class="form-control">
+                                    <option value="Devolución o destrucción certificada dentro de 10 días" selected>Devolución o destrucción certificada (10 días)</option>
+                                    <option value="Borrado lógico seguro de medios digitales">Borrado lógico seguro inmediato</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Jurisdicción y Competencia Legal *</label>
+                                <input type="text" id="f_nda_tribunales" class="form-control" value="Tribunales Ordinarios de Justicia de la comuna y ciudad de Santiago">
                             </div>
                         </div>
                     `;
@@ -1298,20 +1460,179 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         `;
                     }
                 } else if (CURRENT_TEMPLATE.slug === 'finiquito-laboral-mutuo-acuerdo') {
-                    const cargo = document.getElementById('f_cargo')?.value || 'Cargo';
-                    const causal = document.getElementById('f_causal')?.value || 'Mutuo acuerdo';
-                    const monto = document.getElementById('f_monto_finiquito')?.value || '0';
-                    const montoFmt = new Intl.NumberFormat('es-CL').format(monto);
-                    html += `
-                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Término de la Relación Laboral</div>
-                        <p>Las partes ponen término a la relación laboral correspondiente al cargo de <span class="highlight-var">${escapeHtml(cargo)}</span> por la causal de <span class="highlight-var">${escapeHtml(causal)}</span>, acordando un pago total y liquidación de <span class="highlight-var">$${montoFmt} CLP</span> con amplio finiquito.</p>
+                    const modFini = document.getElementById('f_fini_modalidad')?.value || 'opcion_a';
+                    const cargo = document.getElementById('f_cargo')?.value || 'Analista de Operaciones';
+                    const causal = document.getElementById('f_causal')?.value || 'Art. 159 N° 1 Mutuo acuerdo de las partes';
+                    const fechaInicio = document.getElementById('f_fini_fecha_inicio')?.value || '01-03-2023';
+                    const fechaTermino = document.getElementById('f_fecha_termino')?.value || new Date().toLocaleDateString('es-CL');
+                    const diasPend = parseInt(document.getElementById('f_fini_haberes_dias')?.value || '0', 10);
+                    const feriado = parseInt(document.getElementById('f_fini_feriado')?.value || '0', 10);
+                    const indemn = parseInt(document.getElementById('f_fini_indemnizacion')?.value || '0', 10);
+                    const totalLiq = diasPend + feriado + indemn;
+                    const formaPago = document.getElementById('f_fini_forma_pago')?.value || 'Transferencia electrónica';
+                    const cuentaBancaria = document.getElementById('f_fini_cuenta')?.value || 'Cuenta bancaria personal';
+
+                    const totalFmt = new Intl.NumberFormat('es-CL').format(totalLiq);
+                    const diasFmt = new Intl.NumberFormat('es-CL').format(diasPend);
+                    const feriadoFmt = new Intl.NumberFormat('es-CL').format(feriado);
+                    const indemnFmt = new Intl.NumberFormat('es-CL').format(indemn);
+
+                    // Sincronizar input readonly si existe
+                    const totalInput = document.getElementById('f_monto_finiquito');
+                    if (totalInput) totalInput.value = totalLiq;
+
+                    html = `
+                        <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                            FINIQUITO DE CONTRATO DE TRABAJO
+                        </div>
+                        <p>En la ciudad de <strong>${escapeHtml(comA || 'Santiago')}</strong>, a <strong>${new Date().toLocaleDateString('es-CL')}</strong>, comparecen:</p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>POR UNA PARTE:</strong> La entidad empleadora <span class="highlight-var">${escapeHtml(nomA)}</span>, RUT N° <span class="highlight-var">${escapeHtml(rutA)}</span>, Actividad / Giro: <span class="highlight-var">${escapeHtml(civilA)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, debidamente representada por <span class="highlight-var">${escapeHtml(profA)}</span>, en adelante indistintamente el <strong>«Empleador»</strong>; y
+                        </p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>POR LA OTRA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomB)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutB)}</span>, antecedentes: <span class="highlight-var">${escapeHtml(civilB)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profB)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domB)}</span>, comuna de <span class="highlight-var">${escapeHtml(comB)}</span>, en adelante el <strong>«Trabajador»</strong>.
+                        </p>
+
+                        <p style="margin-top:0.6rem;">
+                            Ambos comparecientes mayores de edad, quienes acreditan sus respectivas identidades, convienen en suscribir el presente Finiquito de Contrato de Trabajo conforme a las siguientes estipulaciones:
+                        </p>
+
+                        <div class="preview-clause-title">PRIMERO: ANTECEDENTES Y RELACIÓN LABORAL</div>
+                        <p>El Trabajador prestó servicios subordinados y dependientes para el Empleador desde el día <span class="highlight-var">${escapeHtml(fechaInicio)}</span>, desempeñando las labores de <span class="highlight-var">${escapeHtml(cargo)}</span>.</p>
+
+                        <div class="preview-clause-title">SEGUNDO: CESE Y CAUSAL DE TÉRMINO</div>
+                        <p>Las partes convienen formal y expresamente en poner término a la relación laboral con fecha <span class="highlight-var">${escapeHtml(fechaTermino)}</span>, por la causal consagrada en el <span class="highlight-var">${escapeHtml(causal)}</span> del Código del Trabajo de la República de Chile.</p>
+
+                        <div class="preview-clause-title">TERCERO: LIQUIDACIÓN DE PRESTACIONES Y HABERES</div>
+                        <p>El Empleador practica en este acto la liquidación final de todos los haberes devengados con motivo de la vigencia y cese del contrato de trabajo:<br>
+                        a) Remuneraciones y días pendientes: <span class="highlight-var">$${diasFmt} CLP</span>.<br>
+                        b) Feriado legal y proporcional adeudado: <span class="highlight-var">$${feriadoFmt} CLP</span>.<br>
+                        c) Indemnización convenida o voluntaria de término: <span class="highlight-var">$${indemnFmt} CLP</span>.<br>
+                        <strong>TOTAL LÍQUIDO A PAGAR:</strong> <span class="highlight-var" style="font-weight:700; color:#0F2A4A;">$${totalFmt} CLP</span>.</p>
+
+                        <div class="preview-clause-title">CUARTO: PAGO EFECTIVO Y RECEPCIÓN CONFORME</div>
+                        <p>El Trabajador declara haber recibido a su total y entera satisfacción la suma total liquidada en la cláusula anterior mediante <span class="highlight-var">${escapeHtml(formaPago)}</span> transferida a <span class="highlight-var">${escapeHtml(cuentaBancaria)}</span>, no existiendo saldos de remuneración pendientes.</p>
                     `;
+
+                    if (modFini === 'opcion_b') {
+                        // Opción 2: Blindaje Corporativo / Patronal con Ley Bustos y Prevención de Riesgos
+                        const afpBustos = document.getElementById('f_fini_bustos_afp')?.value || 'AFP al día';
+                        const saludBustos = document.getElementById('f_fini_bustos_salud')?.value || 'FONASA y AFC al día';
+                        const accid = document.getElementById('f_fini_accidentes')?.value || 'Sin siniestros pendientes';
+
+                        html += `
+                            <div class="preview-clause-title">QUINTO: CUMPLIMIENTO PREVISIONAL ÍNTEGRO (LEY BUSTOS / LEY N° 19.631)</div>
+                            <p>El Empleador declara haber integrado y pagado la totalidad de las imposiciones y cotizaciones de seguridad social devengadas durante la vigencia de la relación laboral hasta el último día del mes precedente al término, dando estricto cumplimiento al Artículo 162 del Código del Trabajo (Ley N° 19.631):<br>
+                            - Administradora de Fondos de Pensiones (AFP): <span class="highlight-var">${escapeHtml(afpBustos)}</span>.<br>
+                            - Salud y Seguro de Cesantía (AFC): <span class="highlight-var">${escapeHtml(saludBustos)}</span>.<br>
+                            El Trabajador declara tener conocimiento fehaciente de la planilla de cotizaciones exhibida y ratificada.</p>
+
+                            <div class="preview-clause-title">SEXTO: DECLARACIÓN DE ACCIDENTES Y ENFERMEDADES (LEY N° 16.744)</div>
+                            <p>El Trabajador expone y declara expresamente que durante todo el tiempo servido no sufrió accidentes del trabajo ni contrajo enfermedades de índole profesional: <span class="highlight-var">${escapeHtml(accid)}</span>, declarando que el Empleador cumplió cabalmente con su deber de protección, seguridad y provisión de elementos de protección personal conforme al Artículo 184 del Código del Trabajo.</p>
+
+                            <div class="preview-clause-title">SÉPTIMO: AMPLIO, COMPLETO Y RECÍPROCO FINIQUITO</div>
+                            <p>En mérito de lo estipulado, las partes declaran que nada se adeudan por concepto alguno emanado de la relación laboral, horas extraordinarias, descansos, gratificaciones, feriados o indemnizaciones, otorgándose mutuamente el más amplio, total, irrevocable y definitivo finiquito.</p>
+
+                            <div class="preview-clause-title">OCTAVO: RENUNCIA EXPRESA DE ACCIONES JUDICIALES Y ADMINISTRATIVAS</div>
+                            <p>El Trabajador renuncia irrevocablemente a interponer cualquier demanda, acción, reclamo, denuncia o recurso en contra del Empleador ante los Tribunales de Justicia, la Dirección del Trabajo u otro órgano jurisdiccional, con valor de transacción extrajudicial conforme al Artículo 2446 del Código Civil.</p>
+
+                            <div class="preview-clause-title">NOVENO: RATIFICACIÓN LEGAL ANTE MINISTRO DE FE (ART. 177 CÓDIGO DEL TRABAJO)</div>
+                            <p>Para constancia y plena validez legal, el presente instrumento es suscrito y ratificado electrónicamente mediante firma digital con valor probatorio pleno en conformidad a la Ley N° 19.799 y la Ley N° 21.327 sobre modernización de la Dirección del Trabajo (portal Mi DT).</p>
+                        `;
+                    } else if (modFini === 'opcion_c') {
+                        // Opción 3: Transaccional Extrajudicial con Reserva de Derechos
+                        const txtReserva = document.getElementById('f_fini_reserva_derechos')?.value || '';
+
+                        html += `
+                            <div class="preview-clause-title">QUINTO: NATURALEZA TRANSACCIONAL EXTRAJUDICIAL (ART. 2446 CÓDIGO CIVIL)</div>
+                            <p>Las partes dejan expresa constancia de que el presente finiquito reviste la naturaleza de una transacción extrajudicial en conformidad con los Artículos 2446 y siguientes del Código Civil chileno, produciendo el efecto de cosa juzgada en última instancia sobre las materias aquí reguladas.</p>
+
+                            <div class="preview-clause-title">SEXTO: ALCANCE DEL FINIQUITO Y FINIQUITO RECÍPROCO</div>
+                            <p>Sin perjuicio de la reserva formal estipulada en la cláusula siguiente, las partes se otorgan recíproco y amplio finiquito respecto de todos los rubros, estipulaciones contractuales y haberes laborales no expresamente controvertidos ni reservados.</p>
+                        `;
+
+                        if (txtReserva.trim()) {
+                            html += `
+                                <div class="preview-clause-title">SÉPTIMO: RESERVA DE DERECHOS FORMAL DEL TRABAJADOR</div>
+                                <p style="background:#FAF5FF; border-left:3px solid #9333EA; padding:0.5rem 0.75rem;"><strong>Constancia expresa de Reserva de Derechos:</strong><br>
+                                En conformidad a la doctrina uniforme de la Excma. Corte Suprema de Justicia respecto de la validez de la reserva formulada al momento de la suscripción del finiquito, el Trabajador deja constancia de la siguiente reserva explícita: <br>
+                                <span class="highlight-var" style="font-weight:600; color:#581C87;">«${escapeHtml(txtReserva)}»</span>.<br>
+                                El Empleador toma conocimiento de dicha reserva a los fines que en derecho correspondan.</p>
+                            `;
+                        } else {
+                            html += `
+                                <div class="preview-clause-title">SÉPTIMO: RENUNCIA VOLUNTARIA DE ACCIONES</div>
+                                <p>El Trabajador manifiesta no formular reserva alguna de derechos, declarando encontrarse íntegramente satisfecho en todas las acreencias laborales y previsionales.</p>
+                            `;
+                        }
+
+                        html += `
+                            <div class="preview-clause-title">OCTAVO: RATIFICACIÓN ANTE MINISTRO DE FE Y VALIDEZ LEGAL</div>
+                            <p>El presente documento es firmado electrónicamente al amparo de la Ley N° 19.799 y las disposiciones del Artículo 177 del Código del Trabajo, remitiéndose copia fidedigna para constancia de ambas partes.</p>
+                        `;
+                    } else {
+                        // Opción 1: Estándar Dirección del Trabajo (Portal Mi DT - 6 Cláusulas)
+                        html += `
+                            <div class="preview-clause-title">QUINTO: RENUNCIA MUTUA DE ACCIONES Y FINIQUITO DEFINITIVO</div>
+                            <p>Por medio del presente instrumento, y no existiendo prestaciones pendientes de ninguna especie, el Trabajador otorga al Empleador el más amplio, completo, total y definitivo finiquito por los servicios prestados, renunciando expresamente a cualquier acción, reclamo o demanda posterior en contra de este, ya sea por concepto de remuneraciones, cotizaciones previsionales, indemnizaciones o compensaciones derivadas directa o indirectamente de la relación laboral o de su término.</p>
+
+                            <div class="preview-clause-title">SEXTO: RATIFICACIÓN ELECTRÓNICA ANTE LA DIRECCIÓN DEL TRABAJO (MI DT)</div>
+                            <p>Las partes suscriben el presente instrumento en señal de aceptación y conformidad. Para constancia jurídica y en cumplimiento del Artículo 177 del Código del Trabajo y la Ley N° 21.327, el documento es ratificado electrónicamente con ClaveÚnica a través del portal institucional de la Dirección del Trabajo (Mi DT) o mediante firma electrónica avanzada amparada en la Ley N° 19.799.</p>
+                        `;
+                    }
                 } else if (CURRENT_TEMPLATE.slug === 'acuerdo-confidencialidad-nda') {
-                    const proy = document.getElementById('f_proyecto_nda')?.value || 'Proyecto confidencial';
-                    const vig = document.getElementById('f_vigencia_nda')?.value || '2 años';
-                    html += `
-                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Secreto Profesional y Deber de Reserva</div>
-                        <p>Las partes se comprometen a resguardar bajo estricta reserva toda información técnica, comercial y sensible vinculada al proyecto <span class="highlight-var">${escapeHtml(proy)}</span>, por una vigencia de <span class="highlight-var">${escapeHtml(vig)}</span>.</p>
+                    const proy = document.getElementById('f_proyecto_nda')?.value || 'Proyecto tecnológico y comercial';
+                    const alcance = document.getElementById('f_nda_alcance')?.value || 'Código fuente, bases de datos y algoritmos';
+                    const vig = document.getElementById('f_vigencia_nda')?.value || '2 años desde la firma';
+                    const multa = document.getElementById('f_multa_nda')?.value || '500 UF';
+                    const destrucc = document.getElementById('f_nda_destruccion')?.value || 'Devolución o destrucción certificada dentro de 10 días';
+                    const tribunales = document.getElementById('f_nda_tribunales')?.value || 'Tribunales de Santiago';
+
+                    html = `
+                        <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                            ACUERDO BILATERAL DE CONFIDENCIALIDAD Y NO DIVULGACIÓN (NDA)
+                        </div>
+                        <p>En la ciudad de <strong>${escapeHtml(comA || 'Santiago')}</strong>, República de Chile, a <strong>${new Date().toLocaleDateString('es-CL')}</strong>, comparecen:</p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>DE UNA PARTE:</strong> Don/Doña / Entidad <span class="highlight-var">${escapeHtml(nomA)}</span>, RUT N° <span class="highlight-var">${escapeHtml(rutA)}</span>, representada para estos efectos por <span class="highlight-var">${escapeHtml(profA)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, en adelante indistintamente la <strong>«Parte Divulgante»</strong> o <strong>«Parte Receptora»</strong>; y
+                        </p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>DE LA OTRA PARTE:</strong> Don/Doña / Entidad <span class="highlight-var">${escapeHtml(nomB)}</span>, RUT N° <span class="highlight-var">${escapeHtml(rutB)}</span>, representada para estos efectos por <span class="highlight-var">${escapeHtml(profB)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domB)}</span>, comuna de <span class="highlight-var">${escapeHtml(comB)}</span>, en adelante indistintamente la <strong>«Parte Receptora»</strong> o <strong>«Parte Divulgante»</strong>.
+                        </p>
+
+                        <p style="margin-top:0.6rem;">
+                            Ambas partes en conjunto denominadas las «Partes», quienes en el marco de sus negociaciones, alianzas y evaluaciones estratégicas convienen en celebrar el presente Acuerdo de Confidencialidad y No Divulgación sujeto a las siguientes 8 estipulaciones:
+                        </p>
+
+                        <div class="preview-clause-title">CLÁUSULA PRIMERA: PROPÓSITO DEL ACUERDO Y ANTECEDENTES</div>
+                        <p>Las Partes declaran que se encuentran en un proceso de evaluación, análisis y desarrollo conjunto relativo al siguiente propósito específico: <span class="highlight-var">${escapeHtml(proy)}</span> (en adelante, el «Proyecto»). Para tales efectos, resultará indispensable el intercambio y revelación de información técnica, comercial, operativa y estratégica de carácter reservado.</p>
+
+                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: DEFINICIÓN AMPLIA DE INFORMACIÓN CONFIDENCIAL</div>
+                        <p>Para todos los efectos del presente contrato, se entenderá por «Información Confidencial» toda aquella información de naturaleza técnica, científica, financiera, operativa, legal o de negocios transmitida por una de las Partes a la otra, ya sea en formato verbal, escrito, digital, visual o electromagnético, incluyendo especialmente pero sin limitarse a: <br>
+                        <span class="highlight-var" style="font-weight:600;">${escapeHtml(alcance)}</span>.<br>
+                        Asimismo, comprenderá todos los análisis, compilaciones, prototipos y desarrollos que contengan o se fundamenten en dicha información.</p>
+
+                        <div class="preview-clause-title">CLÁUSULA TERCERA: DEBER DE CUSTODIA Y ESTÁNDAR DE DILIGENCIA</div>
+                        <p>La Parte Receptora se compromete a: a) Mantener estricta confidencialidad de toda la información recibida, aplicándole el mismo grado de cuidado que emplea para resguardar su propia información confidencial más sensible, y en ningún caso menor a una diligencia calificada; b) Utilizar la información única y exclusivamente para los fines del Proyecto; c) No reproducir, duplicar ni realizar ingeniería inversa sobre la misma; y d) Limitar el acceso únicamente a aquellos dependientes, directores y asesores legales o técnicos que requieran conocerla para la ejecución del Proyecto, previa suscripción de obligaciones análogas de confidencialidad.</p>
+
+                        <div class="preview-clause-title">CLÁUSULA CUARTA: EXCEPCIONES AL DEBER DE RESERVA</div>
+                        <p>El deber de confidencialidad no será aplicable a aquella información que: a) Sea de dominio público al momento de su divulgación o adquiera tal calidad sin mediar infracción del presente Acuerdo; b) Se encontrare legítimamente en posesión de la Parte Receptora con anterioridad a su recepción; c) Haya sido recibida legalmente de un tercero libre de restricciones de confidencialidad; o d) Deba ser revelada por mandato imperativo de una ley o por orden de tribunal u órgano regulador competente, caso en el cual la Parte Receptora notificará de inmediato y por escrito a la Parte Divulgante para que pueda instar por las medidas cautelares o de protección pertinentes.</p>
+
+                        <div class="preview-clause-title">CLÁUSULA QUINTA: PROPIEDAD INTELECTUAL E INEXISTENCIA DE LICENCIA</div>
+                        <p>Toda la Información Confidencial continuará siendo de propiedad única y exclusiva de la Parte Divulgante. Nada de lo contenido en el presente Acuerdo se interpretará como la cesión, enajenación, licencia o transferencia de derechos de autor (Ley N° 17.336), patentes de invención, marcas comerciales o modelos industriales (Ley N° 19.039).</p>
+
+                        <div class="preview-clause-title">CLÁUSULA SEXTA: VIGENCIA Y PROCEDIMIENTO DE DEVOLUCIÓN O DESTRUCCIÓN</div>
+                        <p>El deber de confidencialidad y no divulgación permanecerá vigente por el plazo de <span class="highlight-var">${escapeHtml(vig)}</span> contados desde la firma del presente instrumento, subsistiendo indefinidamente respecto de secretos industriales y comerciales. A la conclusión del Proyecto o a requerimiento de la Parte Divulgante, la Parte Receptora procederá conforme a la siguiente modalidad: <span class="highlight-var">${escapeHtml(destrucc)}</span>, certificando dicho acto por escrito a través de su representante.</p>
+
+                        <div class="preview-clause-title">CLÁUSULA SÉPTIMA: CLÁUSULA PENAL TASADA Y REPARACIÓN DEL DAÑO</div>
+                        <p>En caso de contravención, revelación no autorizada o incumplimiento culpable o doloso de cualquiera de las obligaciones del presente instrumento por la Parte Receptora o sus dependientes, la parte infractora quedará obligada a pagar ipso facto a la Parte Divulgante, a título de Cláusula Penal tasada y convencional de perjuicios conforme al Artículo 1535 y siguientes del Código Civil, la suma de <span class="highlight-var" style="font-weight:700; color:#DC2626;">${escapeHtml(multa)}</span>, sin perjuicio del derecho de la Parte Divulgante a exigir la cesación inmediata del ilícito mediante medidas precautorias y accionar por la indemnización de mayores perjuicios que fueren acreditados.</p>
+
+                        <div class="preview-clause-title">CLÁUSULA OCTAVA: DOMICILIO, LEY APLICABLE Y JURISDICCIÓN</div>
+                        <p>El presente instrumento se rige íntegramente por las leyes de la República de Chile. Para todos los efectos legales que de él emanen, las Partes fijan su domicilio convencional en la comuna y ciudad de Santiago y se someten a la competencia de los <span class="highlight-var">${escapeHtml(tribunales)}</span>.</p>
                     `;
                 } else if (CURRENT_TEMPLATE.slug === 'acta-entrega-llaves-e-inventario') {
                     const dirActa = document.getElementById('f_acta_direccion')?.value || domA;

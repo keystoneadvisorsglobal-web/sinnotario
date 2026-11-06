@@ -1,5 +1,36 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-06 15:19 UTC-3] - SOL-0030
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0030`
+- **Alcance de los Cambios:**
+  1. **Finiquito Laboral por Mutuo Acuerdo (3 Modalidades Integradas):**
+     - **Paso 3 con Selector Dinámico e Interactivo:**
+       - *Opción 1: Estándar Dirección del Trabajo (Portal Mi DT).* Formato de 6 cláusulas para ratificación directa con ClaveÚnica.
+       - *Opción 2: Blindaje Corporativo / Patronal.* Formato de 9 cláusulas con acreditación de pago previsional íntegro bajo la Ley Bustos (Ley N° 19.631) y declaración de indemnidad por accidentes laborales y enfermedades profesionales (Ley N° 16.744 y Art. 184 CdT).
+       - *Opción 3: Transaccional Extrajudicial con Reserva de Derechos.* Formato de 8 cláusulas con valor de transacción (Art. 2446 Código Civil) y campo de texto condicional para estipular la "Reserva de Derechos" del trabajador según doctrina de la Corte Suprema.
+     - Cálculo y desglose automático de haberes: días y remuneraciones pendientes + feriado proporcional / vacaciones + indemnización voluntaria = Total Líquido a Pagar.
+  2. **Acuerdo de Confidencialidad y No Divulgación (NDA Bilateral Corporativo):**
+     - **Paso 3 y Estructura Dogmática de 8 Cláusulas:**
+       - Definición amplia de Información Confidencial (código fuente, modelos financieros, diagramas de sistemas, algoritmos y clientes).
+       - Estándar calificado de custodia y diligencia sin ingeniería inversa.
+       - Excepciones al deber de reserva (dominio público, orden judicial perentoria).
+       - Inexistencia de licencia sobre propiedad intelectual (Leyes 17.336 y 19.039).
+       - Vigencia parametrizable (2, 3, 5 años o indefinida para secretos industriales).
+       - Cláusula Penal tasada de 500 UF ante contravención (Art. 1535 CC).
+       - Fijación de domicilio y competencia en Tribunales Ordinarios de Santiago.
+  3. **Motor PDF Criptográfico (`DocumentPdfService.php`):**
+     - Sincronización para emitir tanto las 3 variantes del finiquito como las 8 cláusulas del NDA en el PDF con QR dinámico y Hash SHA-256.
+  4. **Cache-Busting:** Bump a `?v=20261106_8`.
+- **Pruebas Validadas:**
+  - PHP Lint remoto en Hostinger: 0 errores sintácticos en `redactar.php` y `DocumentPdfService.php`.
+  - Smoke tests HTTP en producción:
+    - `GET https://sinnotario.cl/redactar.php?slug=finiquito-laboral-mutuo-acuerdo` -> `HTTP/2 200 OK`.
+    - `GET https://sinnotario.cl/redactar.php?slug=acuerdo-confidencialidad-nda` -> `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
 ### [2026-11-06 14:38 UTC-3] - SOL-0029
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

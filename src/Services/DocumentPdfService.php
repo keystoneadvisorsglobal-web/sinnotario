@@ -235,15 +235,64 @@ class DocumentPdfService {
                 break;
 
             case 'finiquito-laboral-mutuo-acuerdo':
-                self::printClause($pdf, 'PRIMERO: TÉRMINO DE LA RELACIÓN LABORAL', "Las partes declaran de mutuo y común acuerdo poner término definitivo a la relación laboral que las unía, en conformidad a la causal del Artículo 159 N° 1 y con las formalidades del Artículo 177 del Código del Trabajo.");
-                self::printClause($pdf, 'SEGUNDO: LIQUIDACIÓN DE PRESTACIONES Y HABERES', "El Empleador hace entrega al Trabajador de la liquidación final por concepto de remuneraciones pendientes, feriado proporcional y demás haberes legales, que el Trabajador declara recibir conforme.");
-                self::printClause($pdf, 'TERCERO: AMPLIO, MUTUO Y COMPLETO FINIQUITO', "Las partes declaran que nada se adeudan por concepto de remuneraciones, horas extraordinarias ni cotizaciones previsionales, otorgándose el más amplio y completo finiquito con valor de transacción extrajudicial.");
+                $modFini = $formData['f_fini_modalidad'] ?? 'opcion_a';
+                $cargo = $formData['cargo'] ?? ($formData['f_cargo'] ?? 'Analista de Operaciones');
+                $causal = $formData['causal'] ?? ($formData['f_causal'] ?? 'Art. 159 N° 1 Mutuo acuerdo de las partes');
+                $fechaInicio = $formData['fecha_inicio'] ?? ($formData['f_fini_fecha_inicio'] ?? '01-03-2023');
+                $fechaTermino = $formData['fecha_termino'] ?? ($formData['f_fecha_termino'] ?? date('d-m-Y'));
+                $totalLiq = !empty($formData['monto_total']) ? '$' . number_format($formData['monto_total'], 0, ',', '.') . ' CLP' : '$1.450.000 CLP';
+                $diasPend = !empty($formData['dias_pendientes']) ? '$' . number_format($formData['dias_pendientes'], 0, ',', '.') . ' CLP' : '$450.000 CLP';
+                $feriado = !empty($formData['feriado_proporcional']) ? '$' . number_format($formData['feriado_proporcional'], 0, ',', '.') . ' CLP' : '$380.000 CLP';
+                $indemn = !empty($formData['indemnizacion']) ? '$' . number_format($formData['indemnizacion'], 0, ',', '.') . ' CLP' : '$620.000 CLP';
+                $formaPago = $formData['forma_pago'] ?? ($formData['f_fini_forma_pago'] ?? 'Transferencia electronica');
+                $cuenta = $formData['cuenta'] ?? ($formData['f_fini_cuenta'] ?? 'Cuenta bancaria personal');
+
+                self::printClause($pdf, 'PRIMERO: ANTECEDENTES Y RELACION LABORAL', "El Trabajador presto servicios subordinados y dependientes para el Empleador desde el {$fechaInicio}, desempenando las labores de {$cargo}.");
+                self::printClause($pdf, 'SEGUNDO: CESE Y CAUSAL DE TERMINO', "Las partes convienen poner termino formal y definitivo a la relacion laboral con fecha {$fechaTermino}, por la causal del {$causal} del Codigo del Trabajo.");
+                self::printClause($pdf, 'TERCERO: LIQUIDACION DE PRESTACIONES Y HABERES', "El Empleador liquida los siguientes haberes finales: a) Remuneraciones pendientes: {$diasPend}; b) Feriado proporcional adeudado: {$feriado}; c) Indemnizacion voluntaria o pactada: {$indemn}. TOTAL LIQUIDO A PAGAR: {$totalLiq}.");
+                self::printClause($pdf, 'CUARTO: PAGO EFECTIVO Y RECEPCION CONFORME', "El Trabajador declara recibir conforme a su entera satisfaccion el monto total liquidado mediante {$formaPago} en {$cuenta}, declarando que dicha suma cubre integro todo haber.");
+
+                if ($modFini === 'opcion_b') {
+                    // Blindaje Corporativo / Ley Bustos y Prevención de Riesgos
+                    self::printClause($pdf, 'QUINTO: CUMPLIMIENTO PREVISIONAL INTEGRO (LEY BUSTOS N° 19.631)', "El Empleador acredita haber integrado y pagado la totalidad de las imposiciones y cotizaciones de seguridad social devengadas (AFP, Salud y Seguro de Cesantia AFC) hasta el ultimo dia del mes precedente al termino, dando integro cumplimiento al articulo 162 del Codigo del Trabajo.");
+                    self::printClause($pdf, 'SEXTO: DECLARACION DE ACCIDENTES Y ENFERMEDADES (LEY N° 16.744)', "El Trabajador declara que durante la vigencia del contrato no sufrio accidentes laborales ni contrajo enfermedades profesionales, cumpliendo el Empleador su deber de seguridad y provision de EPP (Art. 184 CdT).");
+                    self::printClause($pdf, 'SEPTIMO: AMPLIO, COMPLETO Y RECIPROCO FINIQUITO', "Las partes declaran que nada se adeudan por concepto de remuneraciones, horas extras, feriados o indemnizaciones, otorgandose mutuamente el mas amplio, irrevocable y definitivo finiquito con valor de transaccion.");
+                    self::printClause($pdf, 'OCTAVO: RENUNCIA EXPRESA DE ACCIONES JUDICIALES Y ADMINISTRATIVAS', "El Trabajador renuncia irrevocablemente a entablar cualquier demanda, reclamo o accion judicial o administrativa ante Tribunales o la Direccion del Trabajo.");
+                    self::printClause($pdf, 'NOVENO: RATIFICACION LEGAL ANTE MINISTRO DE FE (ART. 177 CODIGO DEL TRABAJO)', "El instrumento se ratifica electronicamente mediante firma digital en el portal Mi DT de la Direccion del Trabajo al amparo de la Ley N° 19.799 y Ley N° 21.327.");
+                } else if ($modFini === 'opcion_c') {
+                    // Transaccional Extrajudicial con Reserva de Derechos
+                    $reserva = $formData['reserva_derechos'] ?? ($formData['f_fini_reserva_derechos'] ?? '');
+                    self::printClause($pdf, 'QUINTO: NATURALEZA TRANSACCIONAL EXTRAJUDICIAL (ART. 2446 CODIGO CIVIL)', "El presente instrumento reviste el caracter de transaccion extrajudicial conforme al articulo 2446 del Codigo Civil, produciendo efecto de cosa juzgada en ultima instancia respecto de los rubros regulados.");
+                    self::printClause($pdf, 'SEXTO: FINIQUITO RECIPROCO SOBRE MATERIAS NO CONTROVERTIDAS', "Las partes se otorgan recíproco finiquito respecto de todos los haberes y rubros laborales no objeto de reserva explícita.");
+                    if (!empty(trim($reserva))) {
+                        self::printClause($pdf, 'SEPTIMO: CONSTANCIA FORMAL DE RESERVA DE DERECHOS', "En conformidad a la doctrina uniforme de la Excma. Corte Suprema de Justicia, el Trabajador estipula la siguiente reserva expresa: \"{$reserva}\", tomando el Empleador conocimiento formal de la misma.");
+                    } else {
+                        self::printClause($pdf, 'SEPTIMO: RENUNCIA VOLUNTARIA DE ACCIONES', "El Trabajador no formula reserva de derechos alguna, declarandose plenamente satisfecho en todas sus acreencias.");
+                    }
+                    self::printClause($pdf, 'OCTAVO: RATIFICACION ANTE MINISTRO DE FE (ART. 177 CODIGO DEL TRABAJO)', "El finiquito se firma electronicamente con pleno valor legal probatorio conforme a la Ley N° 19.799 y normativa de la Direccion del Trabajo.");
+                } else {
+                    // Opción A: Estándar Dirección del Trabajo (Portal Mi DT - 6 Cláusulas)
+                    self::printClause($pdf, 'QUINTO: RENUNCIA MUTUA DE ACCIONES Y FINIQUITO DEFINITIVO', "El Trabajador otorga al Empleador el mas amplio, completo y definitivo finiquito, renunciando expresamente a cualquier accion, reclamo o demanda posterior por remuneraciones, cotizaciones o indemnizaciones de la relacion laboral.");
+                    self::printClause($pdf, 'SEXTO: RATIFICACION DIGITAL ANTE LA DIRECCION DEL TRABAJO (MI DT)', "Las partes ratifican el presente finiquito electronicamente en el portal institucional Mi DT con ClaveUnica conforme al articulo 177 del Codigo del Trabajo y la Ley N° 19.799.");
+                }
                 break;
 
             case 'acuerdo-confidencialidad-nda':
-                self::printClause($pdf, 'PRIMERO: INFORMACIÓN CONFIDENCIAL Y PROPÓSITO', "Toda información técnica, financiera, comercial, código fuente, algoritmos, bases de datos o secretos industriales revelados entre las partes se califica como Información Confidencial protegida.");
-                self::printClause($pdf, 'SEGUNDO: DEBER DE RESERVA Y NO DIVULGACIÓN', "La parte receptora se obliga a custodiar la información confidencial con la mayor diligencia, no pudiendo reproducirla, transferirla ni divulgarla a terceros no autorizados sin consentimiento expreso por escrito.");
-                self::printClause($pdf, 'TERCERO: VIGENCIA Y SANCIONES POR INFRACCIÓN', "El deber de confidencialidad subsistirá por el plazo acordado e indefinidamente respecto de secretos comerciales, facultando a la parte afectada a perseguir la indemnización civil y penal correspondiente.");
+                $proy = $formData['proyecto'] ?? ($formData['f_proyecto_nda'] ?? 'Evaluacion conjunta y desarrollo de plataforma tecnologica');
+                $alcance = $formData['alcance'] ?? ($formData['f_nda_alcance'] ?? 'Codigo fuente, diagramas de sistemas, modelos de negocio, algoritmos y clientes');
+                $vig = $formData['vigencia'] ?? ($formData['f_vigencia_nda'] ?? '2 anos desde la firma');
+                $multa = $formData['multa'] ?? ($formData['f_multa_nda'] ?? '500 UF');
+                $destrucc = $formData['destruccion'] ?? ($formData['f_nda_destruccion'] ?? 'Devolucion o destruccion certificada en 10 dias');
+                $tribunales = $formData['tribunales'] ?? ($formData['f_nda_tribunales'] ?? 'Tribunales de Santiago');
+
+                self::printClause($pdf, 'PRIMERO: PROPOSITO DEL ACUERDO Y ANTECEDENTES', "Las Partes celebran el presente acuerdo con el objeto de regular el intercambio y analisis de informacion reservada inherente a: {$proy}.");
+                self::printClause($pdf, 'SEGUNDO: DEFINICION AMPLIA DE INFORMACION CONFIDENCIAL', "Se considerara Informacion Confidencial toda informacion tecnica, financiera, comercial y legal transmitida, incluyendo: {$alcance}, ademas de informes, prototipos y desarrollos derivados.");
+                self::printClause($pdf, 'TERCERO: DEBER DE CUSTODIA Y ESTANDAR DE DILIGENCIA', "La Parte Receptora mantendra estricta reserva de la informacion empleando la mayor diligencia, usandola unicamente para el proposito convenido, sin reproducirla ni efectuar ingenieria inversa.");
+                self::printClause($pdf, 'CUARTO: EXCEPCIONES AL DEBER DE CONFIDENCIALIDAD', "El deber de reserva no aplicara a informacion de dominio publico sin mediar infraccion, recibida legalmente de terceros sin restricciones, o que deba ser revelada por mandato imperativo de ley u orden judicial.");
+                self::printClause($pdf, 'QUINTO: PROPIEDAD INTELECTUAL E INEXISTENCIA DE LICENCIA', "Toda la informacion confidencial continuara siendo propiedad exclusiva de la Parte Divulgante, sin que el presente instrumento constituya cesion, licencia o transferencia de propiedad intelectual o industrial.");
+                self::printClause($pdf, 'SEXTO: VIGENCIA Y PROCEDIMIENTO DE DEVOLUCION O DESTRUCCION', "El deber de confidencialidad regira por {$vig}, subsistiendo indefinidamente para secretos industriales. A su termino, se procedera mediante: {$destrucc}.");
+                self::printClause($pdf, 'SEPTIMO: CLAUSULA PENAL TASADA Y CONVENCIONAL DE PERJUICIOS', "En caso de contravencion o divulgacion indebida, la parte infractora pagara a la parte afectada, a titulo de clausula penal compensatoria tasada (Art. 1535 Codigo Civil), la cantidad de {$multa}, sin perjuicio de medidas cautelares y mayores perjuicios.");
+                self::printClause($pdf, 'OCTAVO: DOMICILIO, LEY APLICABLE Y JURISDICCION', "El contrato se rige por las leyes chilenas. Las Partes fijan domicilio en la ciudad de Santiago y se someten a la competencia de los {$tribunales}.");
                 break;
 
             case 'prestacion-servicios-honorarios':
