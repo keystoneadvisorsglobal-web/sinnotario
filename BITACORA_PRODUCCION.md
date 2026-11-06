@@ -51,3 +51,23 @@
   - Smoke test HTTP 200 OK en producción (`sinnotario.cl`).
   - Despliegue interactivo fluido y responsivo en móviles y escritorio.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
+
+### [2026-11-06 02:45 UTC-3] - SOL-0009
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl/redactar.php`)
+- **Identificador de Solución:** `SOL-0009`
+- **Componentes Desplegados:**
+  - `redactar.php`: Pantalla completa del Wizard de Redacción de Contrato de Arriendo Residencial Ley N° 21.461 en arquitectura Split View (60/40).
+  - Formulario paso a paso (5 etapas con barra de progreso interactiva):
+    1. *Arrendador:* Nombre, RUT Módulo 11, Email, WhatsApp, Domicilio.
+    2. *Arrendatario & Aval:* Nombre, RUT Módulo 11, Email, WhatsApp y casilla dinámica para incorporar Codeudor Solidario (Aval).
+    3. *Identificación del Inmueble:* Dirección, depto/casa, comuna, bodega y estacionamiento.
+    4. *Condiciones Económicas y Plazos:* Renta en CLP, día límite de pago, garantía, periodicidad de reajuste IPC (anual/semestral), fecha de inicio y sumisión formal a la Ley N° 21.461 ("Devuélveme Mi Casa").
+    5. *Resumen y Orden de Despacho:* Desglose transparente ($9.990 CLP con 2 firmas ClaveÚnica y custodia Cloudflare R2 incluidas).
+  - `Live Document Preview (40%)`: Previsualizador lateral sincronizado en tiempo real con marca de agua *"BORRADOR"* en diagonal y resaltado de variables dinámicas.
+  - Conexión con `api/index.php?action=create_draft` para guardar los datos y generar el código de verificación `SN-XXXX-XXXX`.
+- **Pruebas Validadas:**
+  - PHP Lint: 0 errores de sintaxis en el servidor remoto.
+  - Smoke test: HTTP 200 OK en `https://sinnotario.cl/redactar.php?slug=contrato-arriendo-ley-21461`.
+  - Validación de RUT: Bloqueo de avance en pasos 1 y 2 si los RUTs no superan la validación Módulo 11.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
