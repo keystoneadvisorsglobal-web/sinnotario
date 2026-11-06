@@ -181,3 +181,17 @@
     - Carga de `app.js?v=20261106_2`: HTTP 200 OK y sintaxis validada.
     - Smoke test funcional: HTTP 200 OK en `https://sinnotario.cl/`.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
+
+---
+
+### Entrada: 2026-11-06 10:10:00 UTC-3
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0022`
+- **Resumen de la Ejecución:**
+  - **Ampliación de Logotipo (+40% adicional):** Se aumentó la dimensión del logotipo de SinNotario en `.brand-logo img` pasando de `58px` a **`82px`** de altura, confiriéndole un protagonismo visual nítido y balanceado con los enlaces en negrita y el botón CTA del menú superior.
+  - **Inyección de Cache-Busting:** Se actualizó `index.php` a la versión `style.css?v=20261106_3` para asegurar la recarga inmediata de la regla CSS en clientes y proxys.
+  - **Pruebas Validadas:**
+    - Carga directa del CSS con cabeceras `HTTP/2 200` y confirmación de `height: 82px;`.
+    - Smoke test del sitio en vivo: `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
