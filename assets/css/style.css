@@ -128,6 +128,26 @@ body {
     background: var(--accent-hover);
 }
 
+.btn-outline-white {
+    background: transparent;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 0.6rem 1.25rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-outline-white:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #FFFFFF;
+}
+
 /* Hero Section */
 .hero-section {
     background: linear-gradient(180deg, #0A1C33 0%, #0F2A4A 100%);
@@ -246,7 +266,7 @@ body {
     margin-bottom: 0.35rem;
 }
 
-/* Catálogo & Paginación / Carga Más */
+/* Catálogo & Paginación */
 .catalog-section {
     max-width: 1240px;
     margin: -2.8rem auto 4.5rem;
@@ -431,6 +451,56 @@ body {
     border-color: #CBD5E1;
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
+}
+
+/* Sección Empresas B2B con Ver Más Desplegable */
+.b2b-features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    animation: fadeIn 0.3s ease;
+}
+
+.b2b-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.b2b-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+}
+
+.b2b-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: rgba(212, 175, 55, 0.15);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.b2b-card h4 {
+    color: #FFFFFF;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.b2b-card p {
+    color: #CBD5E1;
+    font-size: 0.88rem;
+    line-height: 1.55;
 }
 
 /* Modales y Formularios con Validación RUT */
