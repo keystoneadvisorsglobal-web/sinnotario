@@ -449,8 +449,42 @@ class DocumentPdfService {
                 break;
 
             case 'autorizacion-domicilio-tributario-sii':
-                self::printClause($pdf, 'PRIMERO: INMUEBLE Y ROL DE AVALÚO FISCAL', "El Propietario o Comodante declara ser legítimo poseedor del inmueble y su respectivo Rol de Avalúo Fiscal acreditado ante el Servicio de Impuestos Internos (SII).");
-                self::printClause($pdf, 'SEGUNDO: COMODATO GRATUITO PARA EFECTOS TRIBUTARIOS', "Otorga formalmente en comodato gratuito el uso del inmueble para que la empresa autorizada fije su domicilio tributario, comercial y postal conforme a las exigencias normativas del SII.");
+                $modSii = $formData['f_sii_modalidad'] ?? 'opcion_a';
+                $siiDir = $formData['f_sii_direccion'] ?? 'Av. Andres Bello 2711, Piso 8, Oficina 802, Las Condes, Santiago';
+                $siiRol = $formData['f_sii_rol'] ?? '1234-56 de Las Condes';
+                $siiDest = $formData['f_sii_destino'] ?? 'Domicilio tributario, comercial, postal y administrativo exclusivo';
+                $siiVig = $formData['f_sii_vigencia'] ?? 'Indefinida mientras subsista el giro de la sociedad';
+                $siiRest = $formData['f_sii_restitucion'] ?? 'Aviso escrito previo de 60 dias corridos para que la empresa traslade su domicilio tributario en el SII';
+
+                if ($modSii === 'opcion_c') {
+                    // Opción C: Declaración Jurada Simple Unipersonal del Propietario (4 Cláusulas)
+                    $apercib = $formData['f_sii_apercibimiento'] ?? 'Bajo fe de juramento y apercibimiento del Art. 210 del Codigo Penal en caso de falsedad en declaracion jurada ante la autoridad tributaria';
+                    $empNom = $formData['parte_b_nombre'] ?? ($formData['f_parte_b_nombre'] ?? 'Sociedad Beneficiaria');
+                    $empRut = $formData['parte_b_rut'] ?? ($formData['f_parte_b_rut'] ?? '77.888.999-0');
+
+                    self::printClause($pdf, 'DECLARACION PRIMERA: CALIDAD DE PROPIETARIO Y ROL DE AVALUO FISCAL', "El declarante expone bajo juramento ser el legitimo y exclusivo propietario del inmueble ubicado en {$siiDir}, enrolado ante el Servicio de Impuestos Internos bajo el Rol N° {$siiRol}.");
+                    self::printClause($pdf, 'DECLARACION SEGUNDA: AUTORIZACION EXPRESA DE USO Y DESTINO TRIBUTARIO', "Autoriza en forma libre y expresa a {$empNom} (RUT N° {$empRut}) para fijar y acreditar su domicilio tributario, comercial y administrativo en dicho inmueble para inicio de actividades, verificacion de actividad y timbraje ante el SII.");
+                    self::printClause($pdf, 'DECLARACION TERCERA: DESTINO EXCLUSIVO Y VIGENCIA', "La autorizacion se concede para: {$siiDest}, con vigencia de: {$siiVig}, declarando que el inmueble se encuentra libre de gravamenes que impidan este acto.");
+                    self::printClause($pdf, 'DECLARACION CUARTA: APERCIBIMIENTO LEGAL Y RESPONSABILIDAD PENAL (ART. 210 CP)', "El declarante asume plena responsabilidad legal sobre la veracidad de lo manifestado, conociendo las sanciones penales por perjurio del Art. 210 del Codigo Penal: {$apercib}.");
+                } else if ($modSii === 'opcion_b') {
+                    // Opción B: Autorización por Subarrendamiento / Espacio Co-Work (6 Cláusulas)
+                    $facCowork = $formData['f_sii_facultad_cowork'] ?? 'Facultad expresa segun contrato de arrendamiento matriz y estatutos del centro de negocios';
+                    $servVirt = $formData['f_sii_servicios_virtual'] ?? 'Recepcion de correspondencia postal, notificacion del SII y uso de salas de reuniones';
+
+                    self::printClause($pdf, 'PRIMERO: INMUEBLE, INSTALACIONES Y ROL DE AVALUO FISCAL', "El Operador Co-Work es poseedor y administrador del inmueble ubicado en {$siiDir}, Rol de Avaluo SII N° {$siiRol}.");
+                    self::printClause($pdf, 'SEGUNDO: FACULTADES EXPRESAS DE CESION Y SUBARRENDAMIENTO', "El Operador declara y acredita facultades suficientes para ceder domicilio tributario a terceros: {$facCowork}, conforme a la Circular N° 31 de 2007 del SII.");
+                    self::printClause($pdf, 'TERCERO: SERVICIOS DE OFICINA VIRTUAL Y RECEPCION TRIBUTARIA', "Se autoriza formalmente a la empresa a fijar su domicilio tributario y comercial en el inmueble, incluyendo los servicios de: {$servVirt}.");
+                    self::printClause($pdf, 'CUARTO: DESTINO EXCLUSIVO Y VERIFICACION DE ACTIVIDAD DEL SII', "Destino autorizado: {$siiDest}. La empresa se compromete a mantener en el recinto su documentacion legal y colaborar en visitas inspectivas de funcionarios del SII.");
+                    self::printClause($pdf, 'QUINTO: VIGENCIA Y PROCEDIMIENTO DE TRASLADO DE DOMICILIO', "Vigencia de {$siiVig}. Al termino del contrato rige el siguiente procedimiento: {$siiRest}.");
+                    self::printClause($pdf, 'SEXTO: DOMICILIO CONVENCIONAL Y JURISDICCION', "Las partes fijan domicilio convencional en la ciudad de Santiago y se someten a la jurisdiccion de sus Tribunales Ordinarios de Justicia.");
+                } else {
+                    // Opción A: Comodato Gratuito Inmobiliario - Formato Estándar SII Art. 2174 CC (5 Cláusulas - Recomendado)
+                    self::printClause($pdf, 'PRIMERO: INDIVIDUALIZACION DEL INMUEBLE Y ROL DE AVALUO FISCAL', "El Comodante declara ser el exclusivo dueno del inmueble ubicado en {$siiDir}, Rol de Avaluo Fiscal SII N° {$siiRol}.");
+                    self::printClause($pdf, 'SEGUNDO: OTORGAMIENTO DE COMODATO GRATUITO (ART. 2174 CODIGO CIVIL)', "El Comodante entrega en comodato o prestamo de uso a titulo enteramente gratuito a la Comodataria el uso del inmueble para fijar, acreditar y mantener su domicilio tributario, comercial y postal oficial ante el Servicio de Impuestos Internos (SII), Circular N° 31 de 2007.");
+                    self::printClause($pdf, 'TERCERO: DESTINO EXCLUSIVO Y PROHIBICION DE CESION', "El inmueble se destinara exclusivamente a: {$siiDest}. Se prohibe ceder o subarrendar el uso del domicilio tributario a terceros sin consentimiento escrito.");
+                    self::printClause($pdf, 'CUARTO: VIGENCIA Y PROCEDIMIENTO DE RESTITUCION / REVOCACION', "El comodato rige por: {$siiVig}. Procedimiento de restitucion: {$siiRest}, debiendo la empresa tramitar y acreditar el cambio de domicilio en el SII.");
+                    self::printClause($pdf, 'QUINTO: DOMICILIO CONVENCIONAL Y PRORROGA DE COMPETENCIA', "Para todos los efectos legales, las partes fijan domicilio en la ciudad de Santiago y prorrogan competencia ante sus Tribunales Ordinarios de Justicia en lo Civil.");
+                }
                 break;
 
             case 'poder-especial-privado':

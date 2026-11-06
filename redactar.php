@@ -557,7 +557,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js?v=20261106_11"></script>
+    <script src="assets/js/app.js?v=20261106_12"></script>
     <script>
         // Funciones auxiliares seguras locales
         function escapeHtml(text) {
@@ -572,7 +572,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
         const CURRENT_TEMPLATE = <?= json_encode($tpl, JSON_UNESCAPED_UNICODE) ?>;
         let currentStep = 1;
-        const isUnipersonal = ['declaracion-jurada-residencia', 'declaracion-jurada-ingresos-informales', 'salvoconducto-mudanza', 'autorizacion-domicilio-tributario-sii'].includes(CURRENT_TEMPLATE.slug);
+        const isUnipersonal = ['declaracion-jurada-residencia', 'declaracion-jurada-ingresos-informales', 'salvoconducto-mudanza'].includes(CURRENT_TEMPLATE.slug);
 
         function initUniversalWizard() {
             setupTemplateFields();
@@ -681,6 +681,46 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     help.innerText = 'Recepción provisoria: inventario, lecturas y lista de observaciones menores con plazo de subsanación (5 secciones).';
                 } else if (val === 'opcion_c') {
                     help.innerText = 'Desocupación final y restitución: constata estado de salida, descuentos y saldo líquido de garantía a restituir (5 secciones).';
+                }
+            }
+            updateUniversalPreview();
+        }
+
+        function toggleSiiFields() {
+            const sel = document.getElementById('f_sii_modalidad');
+            if (!sel) return;
+            const val = sel.value;
+            const wrapB = document.getElementById('wrap_sii_opcion_b');
+            const wrapC = document.getElementById('wrap_sii_opcion_c');
+            const help = document.getElementById('sii_modalidad_help');
+            const parteBWrap = document.getElementById('parteBFieldsWrap');
+            const signBWrap = document.getElementById('pv_sign_parte_b_wrap');
+
+            if (wrapB) wrapB.style.display = (val === 'opcion_b') ? 'block' : 'none';
+            if (wrapC) wrapC.style.display = (val === 'opcion_c') ? 'block' : 'none';
+
+            // Si es Opción C (Declaración Unipersonal del propietario), ocultar Parte B en el formulario y firma
+            if (val === 'opcion_c') {
+                if (parteBWrap) parteBWrap.style.display = 'none';
+                if (signBWrap) signBWrap.style.display = 'none';
+                document.getElementById('lblStep1').innerText = 'Propietario';
+                document.getElementById('lblStep2').innerText = 'Trámite SII';
+                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Propietario Declarante';
+            } else {
+                if (parteBWrap) parteBWrap.style.display = 'block';
+                if (signBWrap) signBWrap.style.display = 'block';
+                document.getElementById('lblStep1').innerText = 'Propietario';
+                document.getElementById('lblStep2').innerText = 'Empresa';
+                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Propietario / Autorizante';
+            }
+
+            if (help) {
+                if (val === 'opcion_a') {
+                    help.innerText = 'Contrato bilateral de comodato precario gratuito conforme al Art. 2174 del Código Civil, aceptado por el SII (5 cláusulas).';
+                } else if (val === 'opcion_b') {
+                    help.innerText = 'Autorización de oficina virtual / Co-Work: acreditación de facultades de subarriendo o cesión de espacios (6 cláusulas).';
+                } else if (val === 'opcion_c') {
+                    help.innerText = 'Declaración jurada simple unipersonal del dueño bajo apercibimiento penal del Art. 210 CP para trámite directo en Mi SII (4 cláusulas).';
                 }
             }
             updateUniversalPreview();
@@ -825,9 +865,29 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                 document.getElementById('f_parte_b_profesion').value = 'Abogada';
                 document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
                 document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
-            }
+            } else if (CURRENT_TEMPLATE.slug === 'autorizacion-domicilio-tributario-sii') {
+                document.getElementById('lblStep1').innerText = 'Propietario';
+                document.getElementById('lblStep2').innerText = 'Empresa';
+                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Propietario / Autorizante';
+                document.getElementById('step1Desc').innerText = 'Identificación del dueño del inmueble que autoriza fijar el domicilio tributario.';
+                document.getElementById('lbl_parte_a_nombre').innerText = 'Nombre Completo del Propietario *';
+                document.getElementById('f_parte_a_nombre').value = 'Juan Andrés Pérez González';
+                document.getElementById('f_parte_a_rut').value = '12.345.678-5';
+                document.getElementById('f_parte_a_civil').value = 'chileno, soltero';
+                document.getElementById('f_parte_a_profesion').value = 'Ingeniero Comercial';
+                document.getElementById('f_parte_a_domicilio').value = 'Av. Providencia 1234, Depto 402';
+                document.getElementById('f_parte_a_comuna').value = 'Providencia, Santiago';
 
-            // Campos específicos según slug
+                document.getElementById('step2Title').innerText = 'Paso 2: Datos de la Empresa Beneficiaria';
+                document.getElementById('step2Desc').innerText = 'Razón Social, RUT y Representante Legal de la sociedad que fija su domicilio tributario ante el SII.';
+                document.getElementById('lbl_parte_b_nombre').innerText = 'Razón Social o Nombre de la Empresa *';
+                document.getElementById('f_parte_b_nombre').value = 'Servicios y Tecnologías SpA';
+                document.getElementById('f_parte_b_rut').value = '76.987.654-3';
+                document.getElementById('f_parte_b_civil').value = 'Giro: Consultoría en TI y Desarrollo de Software';
+                document.getElementById('f_parte_b_profesion').value = 'Rep. Legal: María José Valenzuela, C.I. 15.444.555-6';
+                document.getElementById('f_parte_b_domicilio').value = 'Av. Providencia 1234, Depto 402';
+                document.getElementById('f_parte_b_comuna').value = 'Providencia, Santiago';
+            }
             let fieldsHtml = '';
 
             switch (CURRENT_TEMPLATE.slug) {
@@ -1588,26 +1648,78 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                 case 'autorizacion-domicilio-tributario-sii':
                     fieldsHtml = `
-                        <div class="form-group">
-                            <label>Dirección del Inmueble Cedido como Domicilio Tributario *</label>
-                            <input type="text" id="f_sii_direccion" class="form-control" value="Av. Andrés Bello 2711, Piso 8, Las Condes, Santiago">
+                        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#166534;">
+                            <i class="fas fa-landmark"></i> <strong>Acreditación de Domicilio Tributario ante el SII (Circular N° 31/2007 SII)</strong>:
+                            Autorización formal del inmueble para inicio de actividades, timbraje, facturación electrónica y verificación de actividad.
                         </div>
+
+                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad de Acreditación ante el SII *</label>
+                            <select id="f_sii_modalidad" class="form-control" onchange="toggleSiiFields()" style="font-weight:600; border-color:#059669;">
+                                <option value="opcion_a" selected>Opción A: Comodato Gratuito Inmobiliario - Formato Estándar SII Art. 2174 CC (5 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Autorización por Subarrendamiento / Espacio Co-Work (6 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: Declaración Jurada Simple Unipersonal del Propietario (4 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="sii_modalidad_help">Contrato bilateral de comodato precario gratuito conforme al Art. 2174 del Código Civil, aceptado por el SII.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Dirección Exacta del Inmueble (Calle, Número, Oficina/Depto, Comuna y Ciudad) *</label>
+                            <input type="text" id="f_sii_direccion" class="form-control" value="Av. Andrés Bello 2711, Piso 8, Oficina 802, Las Condes, Santiago">
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Rol de Avalúo Fiscal del Inmueble (SII) *</label>
                                 <input type="text" id="f_sii_rol" class="form-control" value="1234-56 de Las Condes">
                             </div>
                             <div class="form-group">
-                                <label>Razón Social y RUT de la Empresa Autorizada *</label>
-                                <input type="text" id="f_sii_empresa" class="form-control" value="Inversiones & Consultorías SpA - RUT 77.888.999-0">
+                                <label>Destino o Finalidad Autorizada *</label>
+                                <input type="text" id="f_sii_destino" class="form-control" value="Domicilio tributario, comercial, postal y administrativo exclusivo">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Modalidad de Autorización ante el SII *</label>
-                            <select id="f_sii_modalidad" class="form-control">
-                                <option value="Comodato de uso gratuito de inmueble (Art. 2174 Código Civil)" selected>Comodato Gratuito (Préstamo de uso sin renta - Art. 2174 CC)</option>
-                                <option value="Autorización expresa del arrendador para subarriendo o cesión de oficina">Autorización del Arrendador para Domicilio Tributario</option>
-                            </select>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Vigencia de la Autorización *</label>
+                                <select id="f_sii_vigencia" class="form-control">
+                                    <option value="Indefinida mientras subsista el giro de la sociedad" selected>Indefinida (estándar para inicio de actividades)</option>
+                                    <option value="1 año renovable tácita y automáticamente">1 Año renovable automáticamente</option>
+                                    <option value="2 años renovables">2 Años renovables</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Procedimiento de Revocación / Restitución *</label>
+                                <input type="text" id="f_sii_restitucion" class="form-control" value="Aviso escrito previo de 60 días corridos para que la empresa traslade su domicilio tributario en el SII">
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción B (Co-Work / Subarrendamiento) -->
+                        <div id="wrap_sii_opcion_b" style="display:none; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#1E40AF; margin-bottom:0.5rem;">
+                                <i class="fas fa-building"></i> Datos de la Administración del Co-Work / Centro de Negocios
+                            </h5>
+                            <div class="form-row" style="margin-bottom:0;">
+                                <div class="form-group">
+                                    <label>Facultad Expresa de Ceder Domicilio Tributario *</label>
+                                    <input type="text" id="f_sii_facultad_cowork" class="form-control" value="Facultad expresa según contrato de arrendamiento matriz y estatutos del centro de negocios">
+                                </div>
+                                <div class="form-group">
+                                    <label>Servicios de Oficina Virtual Incluidos *</label>
+                                    <input type="text" id="f_sii_servicios_virtual" class="form-control" value="Recepción de correspondencia postal, notificación del SII y uso de salas de reuniones">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción C (Declaración Unipersonal Propietario) -->
+                        <div id="wrap_sii_opcion_c" style="display:none; background:#FEFCE8; border:1px solid #FEF08A; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#854D0E; margin-bottom:0.5rem;">
+                                <i class="fas fa-file-signature"></i> Declaración Solemne Unipersonal ante el SII
+                            </h5>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Apercibimiento Penal por Falsedad (Art. 210 Código Penal) *</label>
+                                <input type="text" id="f_sii_apercibimiento" class="form-control" value="Bajo fe de juramento y apercibimiento del Art. 210 del Código Penal en caso de falsedad en declaración jurada ante la autoridad tributaria">
+                            </div>
                         </div>
                     `;
                     break;
@@ -1706,17 +1818,6 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         <p>Que percibe legítimamente ingresos de carácter independiente derivados de <span class="highlight-var">${escapeHtml(activ)}</span> por un promedio mensual de <span class="highlight-var">$${ingFmt} CLP</span>, careciendo de relación de dependencia laboral subordinada.</p>
                         <div class="preview-clause-title">DESTINO Y RESPONSABILIDAD PENAL</div>
                         <p>La presente declaración se extiende para <span class="highlight-var">${escapeHtml(destIng)}</span>, asumiendo el declarante la responsabilidad civil y penal derivada del Art. 210 del Código Penal en caso de falsedad.</p>
-                    `;
-                } else if (CURRENT_TEMPLATE.slug === 'autorizacion-domicilio-tributario-sii') {
-                    const siiDir = document.getElementById('f_sii_direccion')?.value || domA;
-                    const siiRol = document.getElementById('f_sii_rol')?.value || 'Rol de Avalúo SII';
-                    const siiEmp = document.getElementById('f_sii_empresa')?.value || 'Empresa autorizada';
-                    const siiMod = document.getElementById('f_sii_modalidad')?.value || 'Comodato de uso gratuito';
-                    html += `
-                        <div class="preview-clause-title">CLÁUSULA PRIMERA: Inmueble y Rol de Avalúo Fiscal</div>
-                        <p>El Compareciente declara ser legítimo poseedor del inmueble de <span class="highlight-var">${escapeHtml(siiDir)}</span>, Rol de Avalúo SII N° <span class="highlight-var">${escapeHtml(siiRol)}</span>.</p>
-                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Autorización Expresa de Domicilio Tributario</div>
-                        <p>En este acto otorga expresa y suficiente autorización para que <span class="highlight-var">${escapeHtml(siiEmp)}</span> fije y acredite su domicilio tributario, comercial y postal ante el Servicio de Impuestos Internos (SII) bajo la modalidad de <span class="highlight-var">${escapeHtml(siiMod)}</span>.</p>
                     `;
                 }
             } else {
@@ -2435,6 +2536,113 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                             <p>Para todos los efectos legales y judiciales emanados del presente contrato, las partes fijan su domicilio en la comuna y ciudad de Santiago y prorrogan competencia en sus Tribunales Ordinarios de Justicia en lo Civil, renunciando a cualquier otro fuero.</p>
                         `;
                     }
+                } else if (CURRENT_TEMPLATE.slug === 'autorizacion-domicilio-tributario-sii') {
+                    const modSii = document.getElementById('f_sii_modalidad')?.value || 'opcion_a';
+                    const siiDir = document.getElementById('f_sii_direccion')?.value || 'Av. Andrés Bello 2711, Piso 8, Oficina 802, Las Condes, Santiago';
+                    const siiRol = document.getElementById('f_sii_rol')?.value || '1234-56 de Las Condes';
+                    const siiDest = document.getElementById('f_sii_destino')?.value || 'Domicilio tributario, comercial, postal y administrativo exclusivo';
+                    const siiVig = document.getElementById('f_sii_vigencia')?.value || 'Indefinida mientras subsista el giro de la sociedad';
+                    const siiRest = document.getElementById('f_sii_restitucion')?.value || 'Aviso escrito previo de 60 días corridos para que la empresa traslade su domicilio tributario en el SII';
+
+                    if (modSii === 'opcion_c') {
+                        // Opción C: Declaración Jurada Simple Unipersonal del Propietario (4 Cláusulas)
+                        const apercib = document.getElementById('f_sii_apercibimiento')?.value || 'Bajo fe de juramento y apercibimiento del Art. 210 del Código Penal en caso de falsedad en declaración jurada ante la autoridad tributaria';
+                        
+                        html = `
+                            <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                                DECLARACIÓN JURADA SIMPLE DE AUTORIZACIÓN DE DOMICILIO TRIBUTARIO (SII)
+                            </div>
+                            <p>En la ciudad de <strong>${escapeHtml(comA || 'Santiago')}</strong>, República de Chile, a <strong>${new Date().toLocaleDateString('es-CL')}</strong>, comparece:</p>
+                            
+                            <p style="margin-top:0.6rem;">
+                                <strong>EL PROPIETARIO DECLARANTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutA)}</span>, de nacionalidad y estado civil <span class="highlight-var">${escapeHtml(civilA)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profA)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, quien en pleno uso de sus facultades civiles viene en formular la siguiente declaración solemne ante el Servicio de Impuestos Internos (SII):
+                            </p>
+
+                            <div class="preview-clause-title">DECLARACIÓN PRIMERA: CALIDAD DE PROPIETARIO Y ROL DE AVALÚO FISCAL</div>
+                            <p>El declarante declara bajo fe de juramento ser el exclusivo y legítimo propietario del bien raíz ubicado en <span class="highlight-var" style="font-weight:600;">${escapeHtml(siiDir)}</span>, enrolado para efectos fiscales ante el Servicio de Impuestos Internos bajo el <strong>Rol N° <span class="highlight-var">${escapeHtml(siiRol)}</span></strong>.</p>
+
+                            <div class="preview-clause-title">DECLARACIÓN SEGUNDA: AUTORIZACIÓN EXPRESA DE USO Y DESTINO TRIBUTARIO</div>
+                            <p>Por el presente instrumento, autoriza en forma libre, expresa e irrevocable para los trámites tributarios pertinentes, que la persona jurídica o contribuyente <span class="highlight-var" style="font-weight:700; color:#0F2A4A;">${escapeHtml(nomB)}</span> (RUT N° <span class="highlight-var">${escapeHtml(rutB)}</span>) fije, acredite y mantenga su <strong>domicilio tributario, comercial y administrativo</strong> en el inmueble singularizado precedentemente, para efectos de inicio de actividades, verificación de actividad, timbraje y emisión de documentos tributarios electrónicos (DTE).</p>
+
+                            <div class="preview-clause-title">DECLARACIÓN TERCERA: DESTINO EXCLUSIVO Y VIGENCIA</div>
+                            <p>Se deja constancia de que la autorización se otorga con carácter de: <span class="highlight-var">${escapeHtml(siiDest)}</span>, con una vigencia de <span class="highlight-var">${escapeHtml(siiVig)}</span>, no existiendo gravamen, prohibición ni impedimento contractual alguno que limite la presente autorización.</p>
+
+                            <div class="preview-clause-title">DECLARACIÓN CUARTA: APERCIBIMIENTO LEGAL Y RESPONSABILIDAD PENAL (ART. 210 CP)</div>
+                            <p>El declarante asume plena responsabilidad legal sobre la autenticidad de lo manifestado, declarando expresamente conocer las sanciones prescritas en el artículo 210 del Código Penal en relación al perjurio y falsedad en declaraciones formuladas ante la autoridad pública y tributaria: <span class="highlight-var" style="color:#B45309; font-weight:600;">${escapeHtml(apercib)}</span>.</p>
+                        `;
+                    } else if (modSii === 'opcion_b') {
+                        // Opción B: Autorización por Subarrendamiento / Espacio Co-Work (6 Cláusulas)
+                        const facCowork = document.getElementById('f_sii_facultad_cowork')?.value || 'Facultad expresa según contrato de arrendamiento matriz y estatutos del centro de negocios';
+                        const servVirt = document.getElementById('f_sii_servicios_virtual')?.value || 'Recepción de correspondencia postal, notificación del SII y uso de salas de reuniones';
+
+                        html = `
+                            <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                                CONTRATO DE AUTORIZACIÓN DE DOMICILIO TRIBUTARIO Y OFICINA VIRTUAL (CO-WORK)
+                            </div>
+                            <p>En la ciudad de <strong>${escapeHtml(comA || 'Santiago')}</strong>, República de Chile, a <strong>${new Date().toLocaleDateString('es-CL')}</strong>, comparecen:</p>
+                            
+                            <p style="margin-top:0.6rem;">
+                                <strong>POR UNA PARTE:</strong> La entidad administradora y operadora del centro de negocios / espacio de trabajo colaborativo <span class="highlight-var">${escapeHtml(nomA)}</span>, RUT N° <span class="highlight-var">${escapeHtml(rutA)}</span>, Actividad / Giro: <span class="highlight-var">${escapeHtml(civilA)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domA)}</span>, debidamente representada por su Representante Legal <span class="highlight-var">${escapeHtml(profA)}</span>, en adelante el <strong>«Autorizante / Operador Co-Work»</strong>; y
+                            </p>
+                            
+                            <p style="margin-top:0.6rem;">
+                                <strong>POR LA OTRA PARTE:</strong> La sociedad o contribuyente <span class="highlight-var">${escapeHtml(nomB)}</span>, RUT N° <span class="highlight-var">${escapeHtml(rutB)}</span>, debidamente representada por don/doña <span class="highlight-var">${escapeHtml(profB)}</span>, cédula de identidad N° <span class="highlight-var">${escapeHtml(civilB)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domB)}</span>, comuna de <span class="highlight-var">${escapeHtml(comB)}</span>, en adelante el <strong>«Usuario / Contribuyente»</strong>.
+                            </p>
+
+                            <p style="margin-top:0.6rem;">Las partes comparecientes convienen en celebrar el presente contrato de autorización y cesión de domicilio al tenor de las siguientes 6 estipulaciones:</p>
+
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: INMUEBLE, INSTALACIONES Y ROL DE AVALÚO FISCAL</div>
+                            <p>El Operador Co-Work es legítimo poseedor y administrador del inmueble y dependencias comerciales ubicadas en <span class="highlight-var" style="font-weight:600;">${escapeHtml(siiDir)}</span>, enrolado en el Servicio de Impuestos Internos bajo el <strong>Rol N° <span class="highlight-var">${escapeHtml(siiRol)}</span></strong>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: FACULTADES EXPRESAS DE CESIÓN Y SUBARRENDAMIENTO</div>
+                            <p>El Operador declara y acredita contar con las debidas facultades legales y contractuales para autorizar el uso de domicilio tributario a terceros: <span class="highlight-var">${escapeHtml(facCowork)}</span>, cumpliendo cabalmente con las exigencias impartidas por el SII en su Circular N° 31 de 2007.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: SERVICIOS DE OFICINA VIRTUAL Y RECEPCIÓN TRIBUTARIA</div>
+                            <p>El Operador autoriza formalmente al Usuario para fijar en el inmueble su domicilio tributario, comercial y postal oficial ante el SII y la Municipalidad respectiva, incluyendo los siguientes servicios anexos: <span class="highlight-var">${escapeHtml(servVirt)}</span>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: DESTINO EXCLUSIVO Y FISCALIZACIÓN DEL SII</div>
+                            <p>El inmueble será utilizado única y exclusivamente como: <span class="highlight-var">${escapeHtml(siiDest)}</span>. El Usuario se obliga a mantener disponible en el domicilio su documentación tributaria, patente comercial y autorizaciones sectoriales para facilitar las inspecciones y visitas de verificación de actividad de funcionarios del SII.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: VIGENCIA, PRÓRROGA Y TRASLADO DE DOMICILIO</div>
+                            <p>La presente autorización tendrá una vigencia de <span class="highlight-var">${escapeHtml(siiVig)}</span>. Al término del contrato, regirá el siguiente procedimiento: <span class="highlight-var">${escapeHtml(siiRest)}</span>, debiendo acreditar el Usuario dicho cambio con el certificado respectivo emitido por el SII.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEXTA: DOMICILIO CONVENCIONAL Y JURISDICCIÓN</div>
+                            <p>Para todos los efectos derivados de este contrato, las partes fijan domicilio convencional en la comuna y ciudad de Santiago y se someten a sus tribunales ordinarios de justicia.</p>
+                        `;
+                    } else {
+                        // Opción A: Comodato Gratuito Inmobiliario - Formato Estándar SII Art. 2174 CC (5 Cláusulas - Recomendado)
+                        html = `
+                            <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                                CONTRATO DE COMODATO GRATUITO PARA DOMICILIO TRIBUTARIO (SII)
+                            </div>
+                            <p>En la ciudad de <strong>${escapeHtml(comA || 'Santiago')}</strong>, República de Chile, a <strong>${new Date().toLocaleDateString('es-CL')}</strong>, comparecen:</p>
+                            
+                            <p style="margin-top:0.6rem;">
+                                <strong>POR UNA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutA)}</span>, de nacionalidad y estado civil <span class="highlight-var">${escapeHtml(civilA)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profA)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, en adelante el <strong>«Comodante / Propietario»</strong>; y
+                            </p>
+                            
+                            <p style="margin-top:0.6rem;">
+                                <strong>POR LA OTRA PARTE:</strong> La entidad o sociedad <span class="highlight-var">${escapeHtml(nomB)}</span>, RUT N° <span class="highlight-var">${escapeHtml(rutB)}</span>, debidamente representada por su Representante Legal don/doña <span class="highlight-var">${escapeHtml(profB)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(civilB)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domB)}</span>, comuna de <span class="highlight-var">${escapeHtml(comB)}</span>, en adelante la <strong>«Comodataria / Empresa»</strong>.
+                            </p>
+
+                            <p style="margin-top:0.6rem;">Las partes mayores de edad convienen en celebrar el siguiente contrato de comodato o préstamo de uso al amparo del Artículo 2174 y siguientes del Código Civil y Circular N° 31 de 2007 del SII, sujeto a las siguientes 5 estipulaciones:</p>
+
+                            <div class="preview-clause-title">CLÁUSULA PRIMERA: INDIVIDUALIZACIÓN DEL INMUEBLE Y ROL DE AVALÚO FISCAL</div>
+                            <p>El Comodante declara ser el único y legítimo dueño del bien raíz ubicado en <span class="highlight-var" style="font-weight:600;">${escapeHtml(siiDir)}</span>, individualizado ante el Servicio de Impuestos Internos con el <strong>Rol de Avalúo Fiscal N° <span class="highlight-var">${escapeHtml(siiRol)}</span></strong>.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA SEGUNDA: OTORGAMIENTO DE COMODATO GRATUITO (ART. 2174 CÓDIGO CIVIL)</div>
+                            <p>Por este instrumento, el Comodante entrega en comodato o préstamo de uso a título enteramente gratuito a la Comodataria, quien acepta para sí, el uso y goce de una parte determinada o de la totalidad del inmueble singularizado precedentemente, autorizándola de modo expreso a señalarlo, acreditarlo y registrarlo como su <strong>domicilio tributario, comercial, postal y legal</strong> ante el Servicio de Impuestos Internos (SII), Municipalidades, Tesorería General de la República y organismos públicos pertinentes.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA TERCERA: DESTINO EXCLUSIVO Y PROHIBICIÓN DE CESIÓN</div>
+                            <p>El inmueble prestado en comodato se destinará exclusivamente a: <span class="highlight-var">${escapeHtml(siiDest)}</span>. Queda expresamente prohibido a la Comodataria subarrendar, ceder o transferir a terceros, a cualquier título, el uso del inmueble o del domicilio tributario conferido sin la expresa y previa autorización escrita del Comodante.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA CUARTA: VIGENCIA Y PROCEDIMIENTO DE RESTITUCIÓN / REVOCACIÓN</div>
+                            <p>El presente comodato tendrá una duración de: <span class="highlight-var">${escapeHtml(siiVig)}</span>. No obstante lo anterior, el Comodante podrá requerir la restitución del inmueble y el cese del domicilio tributario conforme al siguiente procedimiento: <span class="highlight-var">${escapeHtml(siiRest)}</span>, debiendo la Comodataria tramitar y acreditar ante el Comodante el cambio oficial de domicilio ante el SII.</p>
+
+                            <div class="preview-clause-title">CLÁUSULA QUINTA: DOMICILIO CONVENCIONAL Y PRÓRROGA DE COMPETENCIA</div>
+                            <p>Para todos los efectos legales que emanen del presente contrato, las partes fijan su domicilio convencional en la comuna y ciudad de Santiago, República de Chile, y prorrogan expresamente jurisdicción ante sus Tribunales Ordinarios de Justicia en lo Civil.</p>
+                        `;
+                    }
                 }
             }
 
@@ -2521,9 +2729,11 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando borrador criptográfico...';
 
+            const isActuallyUnipersonal = isUnipersonal || (CURRENT_TEMPLATE.slug === 'autorizacion-domicilio-tributario-sii' && document.getElementById('f_sii_modalidad')?.value === 'opcion_c');
+
             const signers = [
                 {
-                    rol: isUnipersonal ? 'DECLARANTE' : 'PARTE_A',
+                    rol: isActuallyUnipersonal ? 'DECLARANTE' : 'PARTE_A',
                     nombre: document.getElementById('f_parte_a_nombre').value,
                     rut: document.getElementById('f_parte_a_rut').value,
                     email: document.getElementById('f_parte_a_email').value,
@@ -2531,7 +2741,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                 }
             ];
 
-            if (!isUnipersonal) {
+            if (!isActuallyUnipersonal) {
                 signers.push({
                     rol: 'PARTE_B',
                     nombre: document.getElementById('f_parte_b_nombre').value,
@@ -2550,7 +2760,16 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     parte_a_email: document.getElementById('f_parte_a_email').value,
                     parte_a_tel: document.getElementById('f_parte_a_tel').value,
                     parte_a_domicilio: document.getElementById('f_parte_a_domicilio').value,
-                    parte_a_comuna: document.getElementById('f_parte_a_comuna').value
+                    parte_a_comuna: document.getElementById('f_parte_a_comuna').value,
+                    f_sii_modalidad: document.getElementById('f_sii_modalidad')?.value,
+                    f_sii_direccion: document.getElementById('f_sii_direccion')?.value,
+                    f_sii_rol: document.getElementById('f_sii_rol')?.value,
+                    f_sii_destino: document.getElementById('f_sii_destino')?.value,
+                    f_sii_vigencia: document.getElementById('f_sii_vigencia')?.value,
+                    f_sii_restitucion: document.getElementById('f_sii_restitucion')?.value,
+                    f_sii_facultad_cowork: document.getElementById('f_sii_facultad_cowork')?.value,
+                    f_sii_servicios_virtual: document.getElementById('f_sii_servicios_virtual')?.value,
+                    f_sii_apercibimiento: document.getElementById('f_sii_apercibimiento')?.value
                 }
             };
 

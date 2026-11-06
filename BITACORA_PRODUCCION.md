@@ -1,5 +1,29 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-06 15:37 UTC-3] - SOL-0034
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0034`
+- **Alcance de los Cambios:**
+  - **Autorización de Domicilio Tributario ante el SII (Circular N° 31/2007 SII):**
+    1. **Paso 1 y 2 Adaptativos:**
+       - Paso 1 configurado para "Propietario / Autorizante" (Nombre, RUT, Profesión y Domicilio).
+       - Paso 2 dinámico: adaptado para "Empresa / Sociedad Contribuyente" en Opciones A y B; y ocultado automáticamente en formulario y visualizador si se selecciona la Opción C (Declaración Unipersonal).
+    2. **Paso 3 con Selector Interactivo de las 3 Modalidades:**
+       - *Opción A: Comodato Gratuito Inmobiliario - Formato Estándar SII Art. 2174 CC (5 Cláusulas - Recomendado).* Comparecencia bilateral (Dueño y Representante Legal de la empresa), individualización del inmueble y Rol de Avalúo Fiscal SII, entrega formal en comodato precario gratuito sin renta (Art. 2174 Código Civil), destino exclusivo (comercial, tributario, postal y administrativo), vigencia (indefinida o anual) y procedimiento de restitución con aviso previo de 60 días corridos para que la empresa traslade su domicilio tributario ante el SII.
+       - *Opción B: Autorización por Subarrendamiento / Espacio Co-Work (6 Cláusulas).* Diseñado para centros de negocios y espacios de co-working: comparecencia del operador y acreditación de facultades de subarriendo o cesión de espacios según contrato matriz y estatutos, provisión de servicios de oficina virtual (recepción postal del SII y salas de reuniones), destino tributario, inspección de funcionarios del SII (verificación de actividad) y rescisión con traslado.
+       - *Opción C: Declaración Jurada Simple Unipersonal del Propietario (4 Cláusulas).* Redacción en formato solemne unipersonal del dueño del inmueble, individualización del Rol de Avalúo Fiscal, autorización libre e irrevocable a favor de la empresa para trámites en el portal web del SII (Mi SII) bajo fe de juramento y expreso apercibimiento de responsabilidad penal por perjurio conforme al Artículo 210 del Código Penal.
+    3. **Motor PDF Criptográfico (`DocumentPdfService.php`):**
+       - Sincronización del método `renderClauses()` para emitir las 5, 6 o 4 cláusulas/declaraciones según la modalidad elegida, con QR dinámico y Hash SHA-256 en Cloudflare R2.
+    4. **Emisión de Borradores (`create_draft`):**
+       - Ajuste del discriminador `isActuallyUnipersonal` para que en Opción C se envíe un solo firmante (declarante), y en A/B se envíen ambas partes. Inclusión de metadatos del inmueble y modalidad en el payload.
+    5. **Cache-Busting:** Bump a `?v=20261106_12`.
+- **Pruebas Validadas:**
+  - PHP Lint remoto en Hostinger: 0 errores de sintaxis en `redactar.php` y `DocumentPdfService.php`.
+  - Smoke test HTTP en producción: `curl -I "https://sinnotario.cl/redactar.php?slug=autorizacion-domicilio-tributario-sii"` -> `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
 ### [2026-11-06 15:30 UTC-3] - SOL-0033
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
