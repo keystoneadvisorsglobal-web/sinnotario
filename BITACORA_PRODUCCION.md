@@ -111,3 +111,21 @@
   - PHP Lint: 0 errores de sintaxis en el servidor remoto.
   - Smoke tests verificados con HTTP 200 OK en las 13 variantes de URL en producción.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
+
+### [2026-11-06 03:39 UTC-3] - SOL-0015 & SOL-0016
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0015` & `SOL-0016`
+- **Componentes Desplegados:**
+  - `src/Services/DocumentPdfService.php`: Motor en PHP puro (FPDF + PHP QR Code) que construye el PDF oficial del contrato con:
+    - Encabezado formal con folio alfanumérico único (`SN-XXXX-XXXX`).
+    - Código QR dinámico de alta resolución incrustado al pie izquierdo de cada página (apunta a la URL de validación oficial).
+    - Sellado de tiempo y cálculo criptográfico de Hash SHA-256 sobre el binario.
+    - Cuadro de estampa de firmas digitales de cada compareciente con fecha y método.
+  - Subida directa en milisegundos a la bóveda Cloudflare R2 (`sinnotario-vault-prod`) vía `StorageR2Adapter`.
+  - Integración nativa en `api/index.php?action=create_draft`.
+  - **Módulo 12 (Diseño Funcional y Word):** Área Privada de Clientes (`/mi-cuenta`), Login con Gmail/Google OAuth 2.0, registro con correo y código OTP, ClaveÚnica y Bóveda Personal de contratos.
+- **Pruebas Validadas:**
+  - Emisión de prueba: Documento `SN-C17A-CE54` generado y vaulting verificado en Cloudflare R2 con Hash SHA-256 `58b3e2cc57a4b02ab260c2570b7210f172d54dcf8232838119fb21185f632b76` (`r2_uploaded: true`).
+  - Consulta en `/api/index.php?action=verify_document&code=SN-C17A-CE54` retornando HTTP 200 OK y todos los metadatos de custodia.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
