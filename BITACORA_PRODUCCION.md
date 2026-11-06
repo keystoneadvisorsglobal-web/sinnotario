@@ -94,3 +94,20 @@
 - **Pruebas Validadas:**
   - CSS Lint & Smoke test en producción (`https://sinnotario.cl`).
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
+
+### [2026-11-06 03:20 UTC-3] - SOL-0014
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl/redactar.php`)
+- **Identificador de Solución:** `SOL-0014`
+- **Alcance del Despliegue:**
+  - Se extendió el motor de `redactar.php` a una **arquitectura universal polimórfica** que cubre las 13 plantillas del catálogo legal:
+    1. **Contratos Inmobiliarios:** Arriendo Ley 21.461, Promesa de Compraventa (arras, UF, plazos) y Acta de Entrega de Llaves.
+    2. **Contratos Laborales:** Finiquito por Mutuo Acuerdo (causales legales, montos y liquidación) y Contrato Individual de Trabajo.
+    3. **Contratos Comerciales:** Reconocimiento de Deuda / Pagaré privado, Acuerdo de Confidencialidad (NDA) y Prestación de Servicios a Honorarios.
+    4. **Declaraciones y Trámites Unipersonales:** Declaración de Residencia, Declaración de Ingresos, Salvoconducto de Mudanza Ley 20.227, Poder Especial y Domicilio Tributario SII (oculta automáticamente los campos de contraparte innecesarios).
+  - El **Live Document Preview** a la derecha (40%) renderiza en tiempo real las cláusulas y variables específicas del tipo de documento seleccionado con marca de agua *"BORRADOR"*.
+  - Validación de RUT Módulo 11 en tiempo real para todas las partes comparecientes.
+- **Pruebas Validadas:**
+  - PHP Lint: 0 errores de sintaxis en el servidor remoto.
+  - Smoke tests verificados con HTTP 200 OK en las 13 variantes de URL en producción.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
