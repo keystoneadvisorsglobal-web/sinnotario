@@ -925,7 +925,8 @@ flowchart TD
     A --> D["3. Monitor de Documentos & Trazabilidad"]
     A --> E["4. Configuración de Pasarelas & APIs"]
     A --> F["5. Gestión de Clientes B2B & Instancias WhatsApp"]
-    A --> G["6. Bóveda Cloudflare R2 & Registros de Auditoría"]
+    A --> G["6. Monitor de Telemetría UX, Clics & Embudo de Compra"]
+    A --> H["7. Bóveda Cloudflare R2 & Registros de Auditoría"]
 ```
 
 #### 1. Roles y Permisos de Acceso al Backend
@@ -990,7 +991,37 @@ El backend administrativo implementa control de acceso basado en roles (**RBAC**
   * **Parámetros de Correos Transaccionales (SMTP):** Configuración de servidor de correo saliente, remitente oficial (`notificaciones@sinnotario.cl`) y plantillas HTML con marca blanca.
   * **Tarifario Dinámico B2B:** Configuración de escalones de descuento por volumen (Tier 1: 1 a 50 firmas; Tier 2: 51 a 200 firmas; Tier 3: 201+ firmas).
 
-##### F. Registro Forense de Auditoría (`/admin/audit-logs`)
+##### F. Monitor de Telemetría UX, Mapas de Clics y Embudo de Conversión (`/admin/analytics-ux`)
+
+Para optimizar de forma continua la tasa de conversión, detectar puntos de fricción o abandono y entender exactamente el comportamiento de los clientes, **SinNotario.cl** incorpora un **motor de telemetría propio, privado y liviano (sin cookies de terceros ni degradación de velocidad)**:
+
+```mermaid
+flowchart LR
+    A["Cliente navega en sinnotario.cl"] -->|Eventos asíncronos vía Beacon/Fetch| B["/api/index.php?action=track_event"]
+    B --> C[("Tabla SQLite / MariaDB: ux_telemetry_events")]
+    C --> D["/admin/analytics-ux (Consola de Analítica)"]
+    D --> E["Métricas de Embudo (Drop-off)"]
+    D --> F["Zonas Calientes de Clics"]
+    D --> G["Intención vs. Éxito de Compra"]
+```
+
+* **Eventos Monitoreados Automáticamente:**
+  1. **Trazabilidad de Clics e Interacciones:** Registro anónimo del elemento pulsado (botón `Crear`, selector de categoría, enlaces de WhatsApp, botón de validar documento).
+  2. **Términos de Búsqueda Frecuentes y Trámites Fallidos:** Registro de lo que los usuarios escriben en la barra inteligente (ej: qué porcentaje busca contratos de arriendo vs. finiquitos o trámites notariales exclusivos).
+  3. **Medición de Intención de Compra (*Purchase Intent*):**
+     * Apertura del modal rápido o inicio del Wizard 60/40 (`intent_contract_started`).
+     * Avance por pasos: Paso 1 (Arrendador) ➔ Paso 2 (Arrendatario) ➔ Paso 3 (Inmueble) ➔ Paso 4 (Renta) ➔ Paso 5 (Checkout).
+  4. **Tasa de Abandono por Paso (*Drop-off Rate*):** Identificación visual de en qué campo exacto o paso los usuarios abandonan el proceso (por ejemplo, si el abandono ocurre al solicitar el RUT del Aval o al llegar a la pasarela de pago).
+  5. **Éxito de Compra (*Conversion Complete*):** Confirmación de pago exitoso vía Webpay/Fintoc y emisión efectiva del borrador cifrado.
+  6. **Dispositivo y Rendimiento:** Resolución de pantalla, tipo de dispositivo (Móvil vs. Escritorio), navegador y tiempo promedio de completitud por trámite.
+
+* **Visualizaciones en la Consola Administrativa (`/admin/analytics-ux`):**
+  * **Gráfico de Embudo Interactivo (*Funnel Chart*):** Visitantes ➔ Búsqueda ➔ Selección de Plantilla ➔ Formulario Iniciado ➔ Datos Completos ➔ Pago Exitoso.
+  * **Top 10 de Elementos Más Clickeados:** Listado jerárquico de botones y enlaces con su respectivo conteo y porcentaje.
+  * **Ratio Intención vs. Éxito:** Porcentaje de usuarios que iniciaron un trámite y lograron finalizarlo con pago (KPI objetivo > 65%).
+  * **Reporte de Búsquedas sin Coincidencia:** Alerta de trámites que los clientes buscan pero que aún no están disponibles en el catálogo para evaluar su creación.
+
+##### G. Registro Forense de Auditoría (`/admin/audit-logs`)
 * Bitácora inalterable de todos los eventos del sistema:
   * Intentos de inicio de sesión administrativo.
   * Cambios de configuración o precios.
