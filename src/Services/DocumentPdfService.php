@@ -381,18 +381,36 @@ class DocumentPdfService {
                 break;
 
             case 'contrato-individual-trabajo':
+                $modJornada = $formData['f_trab_modalidad_jornada'] ?? 'ordinaria';
                 $cargo = $formData['cargo'] ?? ($formData['f_trab_cargo'] ?? 'Desarrollador Full Stack / Consultor TI');
                 $lugar = $formData['lugar'] ?? ($formData['f_trab_lugar'] ?? 'Las Condes, Santiago');
                 $sueldo = !empty($formData['sueldo']) ? '$' . number_format($formData['sueldo'], 0, ',', '.') . ' CLP' : '$1.200.000 CLP';
-                $grat = $formData['gratificacion'] ?? 'Artículo 50 (25% mensual con tope 4,75 IMM)';
+                $grat = $formData['gratificacion'] ?? ($formData['f_trab_gratificacion'] ?? 'Artículo 50 (25% mensual con tope 4,75 IMM)');
                 $colacion = !empty($formData['colacion']) ? '$' . number_format($formData['colacion'], 0, ',', '.') . ' CLP' : '$60.000 CLP';
                 $movil = !empty($formData['movilizacion']) ? '$' . number_format($formData['movilizacion'], 0, ',', '.') . ' CLP' : '$40.000 CLP';
-                $jornada = $formData['jornada'] ?? '40 horas semanales distribuidas de lunes a viernes';
-                $duracion = $formData['duracion'] ?? 'Indefinida';
+                $jornada = $formData['jornada'] ?? ($formData['f_trab_horas_sem'] ?? '40 horas semanales distribuidas de lunes a viernes');
+                $colacionTiempo = $formData['f_trab_colacion_tiempo'] ?? '60 minutos diarios';
+                $asistenciaSist = $formData['f_trab_asistencia_sist'] ?? 'Reloj control digital con registro biometrico autorizado por la DT';
+                $duracion = $formData['duracion'] ?? ($formData['f_trab_duracion_tipo'] ?? 'Indefinida');
 
                 self::printClause($pdf, 'PRIMERO: NATURALEZA DE LOS SERVICIOS Y CARGO', "El Trabajador se compromete a prestar servicios personales y subordinados para el Empleador desempenando el cargo de {$cargo}. Las funciones comprenden el diseno, ejecucion y mantenimiento operativo de tareas inherentes al cargo, y aquellas tareas conexas y complementarias que resulten necesarias para su adecuada ejecucion.");
                 self::printClause($pdf, 'SEGUNDO: LUGAR DE PRESTACION DE SERVICIOS (ART. 12 COD. DEL TRABAJO)', "El Trabajador prestara sus servicios en las dependencias ubicadas en {$lugar}. De conformidad con el articulo 12 del Codigo del Trabajo, el Empleador podra alterar la naturaleza de los servicios o el recinto laboral siempre que se trate de labores similares y dentro de la misma localidad sin menoscabo para el Trabajador.");
-                self::printClause($pdf, 'TERCERO: JORNADA DE TRABAJO (LEY N° 21.561 DE 40 HORAS)', "La jornada ordinaria de trabajo sera de {$jornada}, con descanso diario para colacion no imputable a la jornada. El control de asistencia y determinacion de horas laboradas se efectuara mediante sistema digital autorizado por la Direccion del Trabajo.");
+
+                if ($modJornada === 'art22') {
+                    // Opción B: Exento de Jornada Art. 22 Inciso 2° CdT (11 Cláusulas)
+                    self::printClause($pdf, 'TERCERO: EXCLUSION DE JORNADA (ARTICULO 22 INCISO 2° CODIGO DEL TRABAJO)', "El Trabajador queda formalmente excluido de la limitacion de jornada ordinaria de trabajo de conformidad con lo preceptuado en el inciso segundo del articulo 22 del Codigo del Trabajo, por prestar servicios en razon de la naturaleza de sus funciones y sin fiscalizacion superior inmediata.");
+                } else if ($modJornada === 'teletrabajo') {
+                    // Opción C: Teletrabajo / Híbrido Ley N° 21.220 con Derecho a Desconexión (13 Cláusulas)
+                    $teleDist = $formData['f_trab_teletrabajo_dist'] ?? 'Modalidad hibrida: 3 dias remotos y 2 dias presenciales';
+                    $teleCosto = $formData['f_trab_teletrabajo_costo'] ?? '$35.000 CLP mensuales por concepto de asignacion de teletrabajo';
+                    $teleDescon = $formData['f_trab_teletrabajo_desconexion'] ?? 'Desconexion total garantizada de al menos 12 horas continuas entre jornadas';
+
+                    self::printClause($pdf, 'TERCERO: JORNADA Y TRABAJO A DISTANCIA (LEY N° 21.220 Y ART. 152 QUATER)', "Las partes acuerdan que las labores se ejecutaran bajo modalidad de trabajo a distancia o teletrabajo regulada por el Capitulo IX del Titulo II del Libro I del Codigo del Trabajo, con distribucion: {$teleDist}. La jornada semanal se regira por {$jornada} con control de conexion digital y colacion diaria de {$colacionTiempo}.");
+                } else {
+                    // Opción A: Jornada Ordinaria Ley 40 Horas (12 Cláusulas - Recomendado)
+                    self::printClause($pdf, 'TERCERO: JORNADA DE TRABAJO (LEY N° 21.561 DE 40 HORAS)', "La jornada ordinaria semanal sera de {$jornada}. El Trabajador dispondra de un tiempo diario para colacion de {$colacionTiempo}, no imputable a la jornada. El control de asistencia y computo de horas se efectuara mediante {$asistenciaSist}.");
+                }
+
                 self::printClause($pdf, 'CUARTO: REMUNERACION Y BENEFICIOS', "El Empleador pagara al Trabajador: a) Sueldo Base mensual de {$sueldo}; b) Gratificacion Legal segun modalidad de {$grat}; c) Asignacion no remuneracional de colacion de {$colacion}; d) Asignacion no remuneracional de movilizacion de {$movil}. Las remuneraciones se pagaran mensualmente mediante transferencia bancaria.");
                 self::printClause($pdf, 'QUINTO: DESCUENTOS LEGALES Y SEGURIDAD SOCIAL', "De las remuneraciones se deduciran los impuestos aplicables, las cotizaciones previsionales de AFP, salud (FONASA/ISAPRE), Seguro de Cesantia (Ley N° 19.728) y demas autorizados por el articulo 58 del Codigo del Trabajo.");
                 self::printClause($pdf, 'SEXTO: DURACION DEL CONTRATO', "El presente contrato tendra una duracion de modalidad {$duracion}, rigiendo con plena vigencia a contar de la fecha de incorporacion efectiva.");
@@ -402,6 +420,10 @@ class DocumentPdfService {
                 self::printClause($pdf, 'DECIMO: TERMINACION DEL CONTRATO', "El contrato terminara por las causales legales estipuladas en los articulos 159, 160 y 161 del Codigo del Trabajo, cumpliendo con las formalidades del articulo 162.");
                 self::printClause($pdf, 'DECIMO PRIMERO: DOMICILIO Y JURISDICCION', "Para todos los efectos legales, las partes fijan su domicilio en la ciudad del lugar de prestacion de servicios y se someten a la competencia de los Juzgados de Letras del Trabajo correspondientes.");
                 self::printClause($pdf, 'DECIMO SEGUNDO: REGISTRO ELECTRONICO LABORAL (REL) Y EJEMPLARES', "El Empleador registrara el presente contrato en el portal electronico Mi DT de la Direccion del Trabajo (Art. 9 Cod. del Trabajo y Ley 21.327). El documento se suscribe con firma electronica conforme a la Ley N° 19.799.");
+
+                if ($modJornada === 'teletrabajo') {
+                    self::printClause($pdf, 'DECIMO TERCERO: DERECHO A DESCONEXION DIGITAL Y COSTOS OPERACIONALES (LEY 21.220)', "1. Conforme al Art. 152 quater J del Codigo del Trabajo, el Trabajador gozara de: {$teleDescon}. 2. El Empleador proporcionara herramientas operativas y pagara asignacion mensual compensatoria de {$teleCosto} por internet y electricidad.");
+                }
                 break;
 
             case 'reconocimiento-deuda-pagare-privado':

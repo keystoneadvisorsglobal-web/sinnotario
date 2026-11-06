@@ -556,3 +556,17 @@
     - Verificación sintáctica remota (`php -l redactar.php` -> 0 errores).
     - Carga directa con HTTP/2 200 OK en `https://sinnotario.cl/redactar.php?slug=promesa-compraventa-inmueble`.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
+
+---
+
+### Registro: 2026-11-06 20:46 UTC (17:46 CLT)
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario (`sinnotario.cl`)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0038`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Se promovió el Selector de Modalidad / Variante de Plantilla al **Paso 1 («Titular / Primer Compareciente»)** dentro del Wizard Universal 60/40 en `redactar.php`, permitiendo al usuario definir de inmediato el enfoque dogmático de su documento antes de cargar la individualización de las partes. Esta mejora aplica a los 10 tipos de contratos y declaraciones con opciones múltiples: Contrato de Prestación de Servicios Profesionales (Opciones A, B, C), Contrato Individual de Trabajo (Jornada Ordinaria 40h, Art. 22 inc. 2° Exenta, y Teletrabajo/Híbrido Ley 21.220 con desconexión y asignación), Finiquito Laboral (3 opciones), Reconocimiento de Deuda (3 opciones), Acta de Entrega e Inventario (3 opciones), Autorización Domicilio SII (3 opciones), Salvoconducto Mudanza (3 opciones), Poder Especial (3 opciones), Declaración de Residencia (3 opciones) y Declaración de Ingresos (3 opciones). Se eliminaron selectores duplicados en el Paso 3 para evitar colisiones de ID, manteniendo los campos de detalle condicionales en el Paso 3 y sincronizando instantáneamente las cláusulas en la vista previa 60/40 y en el motor PDF `DocumentPdfService.php`.
+- **Pruebas Validadas:**
+  - Verificación sintáctica remota (`php -l` en `redactar.php` y `DocumentPdfService.php`) retornando 0 errores de sintaxis.
+  - Smoke tests HTTP/2 200 OK en `https://sinnotario.cl/redactar.php?doc=prestacion-servicios-honorarios` y `https://sinnotario.cl/redactar.php?doc=contrato-individual-trabajo`.
+  - Cache-busting actualizado a `?v=20261106_16`.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.

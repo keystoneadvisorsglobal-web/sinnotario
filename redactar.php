@@ -325,6 +325,9 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         Ingresa los datos de identificación oficial. Se validará con RUT Módulo 11 para la firma electrónica.
                     </p>
 
+                    <!-- CONTENEDOR DINÁMICO DEL SELECTOR DE MODALIDAD / VARIANTE DE PLANTILLA (PASO 1) -->
+                    <div id="step1ModalidadSelectorWrap" style="display:none; margin-bottom:1.5rem;"></div>
+
                     <div class="form-row">
                         <div class="form-group">
                             <label id="lbl_parte_a_nombre">Nombre Completo *</label>
@@ -557,7 +560,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js?v=20261106_15"></script>
+    <script src="assets/js/app.js?v=20261106_16"></script>
     <script>
         // Funciones auxiliares seguras locales
         function escapeHtml(text) {
@@ -612,6 +615,27 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     help.innerText = 'Modelo de blindaje patronal: incluye acreditación de cotizaciones (Ley Bustos N° 19.631) y declaración de no accidentes laborales (9 cláusulas).';
                 } else if (val === 'opcion_c') {
                     help.innerText = 'Modelo transaccional extrajudicial (Art. 2446 Código Civil) con acápite formal de reserva de derechos según jurisprudencia de la Corte Suprema.';
+                }
+            }
+            updateUniversalPreview();
+        }
+
+                function toggleTrabajoFields() {
+            const sel = document.getElementById('f_trab_modalidad_jornada');
+            if (!sel) return;
+            const val = sel.value;
+            const wrapC = document.getElementById('wrap_trab_opcion_c');
+            const help = document.getElementById('trab_modalidad_help');
+
+            if (wrapC) wrapC.style.display = (val === 'teletrabajo') ? 'block' : 'none';
+
+            if (help) {
+                if (val === 'ordinaria') {
+                    help.innerText = 'Jornada ordinaria semanal sujeta a control de asistencia y límite legal de la Ley N° 21.561 (40 Horas).';
+                } else if (val === 'art22') {
+                    help.innerText = 'Exclusión de limitación horaria conforme al Art. 22 inc. 2° del Código del Trabajo (sin fiscalización inmediata).';
+                } else if (val === 'teletrabajo') {
+                    help.innerText = 'Modalidad a distancia o híbrida conforme a la Ley N° 21.220 con asignación de costos y derecho a desconexión digital.';
                 }
             }
             updateUniversalPreview();
@@ -794,6 +818,211 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                 }
             }
             updateUniversalPreview();
+        }
+
+        function renderStep1ModalidadSelector() {
+            const wrap = document.getElementById('step1ModalidadSelectorWrap');
+            if (!wrap) return;
+
+            let html = '';
+
+            switch (CURRENT_TEMPLATE.slug) {
+                case 'contrato-individual-trabajo':
+                    html = `
+                        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                                <i class="fas fa-briefcase" style="color:#059669;"></i> Modalidad del Contrato de Trabajo (Código del Trabajo) *
+                            </label>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:0.6rem;">
+                                Selecciona el régimen legal de jornada y modalidad laboral para estructurar las cláusulas del contrato:
+                            </p>
+                            <select id="f_trab_modalidad_jornada" class="form-control" onchange="toggleTrabajoFields()" style="font-weight:700; border-color:#059669; color:#0F2A4A; font-size:0.92rem;">
+                                <option value="ordinaria" selected>Opción A: Jornada Ordinaria Ley 40 Horas (12 Cláusulas - Recomendado)</option>
+                                <option value="art22">Opción B: Exento de Jornada Art. 22 Inciso 2° CdT (11 Cláusulas)</option>
+                                <option value="teletrabajo">Opción C: Teletrabajo / Híbrido Ley N° 21.220 con Derecho a Desconexión (13 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="trab_modalidad_help" style="display:block; margin-top:0.4rem; font-size:0.78rem;">Jornada ordinaria semanal sujeta a control de asistencia y límite legal de la Ley N° 21.561 (40 Horas).</small>
+                        </div>
+                    `;
+                    break;
+                case 'prestacion-servicios-honorarios':
+                    html = `
+                        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                                <i class="fas fa-briefcase" style="color:#059669;"></i> Modalidad del Contrato de Servicios *
+                            </label>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:0.6rem;">
+                                Selecciona el enfoque contractual para ajustar la comparecencia y las cláusulas en la vista previa:
+                            </p>
+                            <select id="f_serv_modalidad" class="form-control" onchange="toggleServiciosFields()" style="font-weight:700; border-color:#059669; color:#0F2A4A; font-size:0.92rem;">
+                                <option value="opcion_a" selected>Opción A: Civil Profesional con Blindaje Anti-Laboralidad (8 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Por Hito / Proyecto Cerrado (7 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: SLA Corporativo / Servicios Continuos con Penalizaciones (9 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="serv_modalidad_help" style="display:block; margin-top:0.4rem; font-size:0.78rem;">Exclusión probatoria de relación laboral: autonomía técnica, libertad de horarios y sin subordinación.</small>
+                        </div>
+                    `;
+                    break;
+
+                case 'finiquito-laboral-mutuo-acuerdo':
+                    html = `
+                        <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                                <i class="fas fa-file-contract" style="color:#2563EB;"></i> Modalidad del Finiquito Laboral *
+                            </label>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:0.6rem;">
+                                Selecciona el formato legal para la liquidación y ratificación ante ministro de fe:
+                            </p>
+                            <select id="f_fini_modalidad" class="form-control" onchange="toggleFiniquitoFields()" style="font-weight:700; border-color:#2563EB; color:#0F2A4A; font-size:0.92rem;">
+                                <option value="opcion_a" selected>Opción 1: Estándar Dirección del Trabajo (Portal Mi DT - 6 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción 2: Blindaje Corporativo Patronal con Ley Bustos (9 Cláusulas)</option>
+                                <option value="opcion_c">Opción 3: Transaccional Extrajudicial con Reserva de Derechos (8 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="fini_modalidad_help" style="display:block; margin-top:0.4rem; font-size:0.78rem;">Modelo homologado por la Dirección del Trabajo para ratificación electrónica con ClaveÚnica.</small>
+                        </div>
+                    `;
+                    break;
+
+                case 'reconocimiento-deuda-pagare-privado':
+                    html = `
+                        <div style="background:#FEFCE8; border:1px solid #FEF08A; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                                <i class="fas fa-coins" style="color:#D97706;"></i> Modalidad de Reconocimiento de Deuda *
+                            </label>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:0.6rem;">
+                                Selecciona el amparo legal de cobro y garantías asociadas (Ley N° 18.010):
+                            </p>
+                            <select id="f_deuda_modalidad" class="form-control" onchange="toggleDeudaFields()" style="font-weight:700; border-color:#D97706; color:#0F2A4A; font-size:0.92rem;">
+                                <option value="opcion_a" selected>Opción A: Notarial Bancario con Cláusula de Aceleración y Pagaré (6 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Con Codeudor Solidario / Fiador y Aval (8 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: Transaccional Judicial / Pre-Demanda con Confesión de Deuda Art. 434 CPC (7 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="deuda_modalidad_help" style="display:block; margin-top:0.4rem; font-size:0.78rem;">Reconocimiento puro y simple con exigibilidad inmediata y pagaré en garantía ante simple retardo.</small>
+                        </div>
+                    `;
+                    break;
+
+                case 'acta-entrega-llaves-e-inventario':
+                    html = `
+                        <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                                <i class="fas fa-key" style="color:#2563EB;"></i> Modalidad del Acta de Entrega / Restitución *
+                            </label>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:0.6rem;">
+                                Selecciona el estado de la entrega para configurar inventario o liquidación de garantía:
+                            </p>
+                            <select id="f_acta_modalidad" class="form-control" onchange="toggleActaFields()" style="font-weight:700; border-color:#2563EB; color:#0F2A4A; font-size:0.92rem;">
+                                <option value="opcion_a" selected>Opción A: Notarial Inmobiliaria Exhaustiva (6 Secciones - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Recepción Provisoria con Lista de Observaciones / "Snag List" (5 Secciones)</option>
+                                <option value="opcion_c">Opción C: Acta de Desocupación y Restitución Final con Liquidación de Garantía (5 Secciones)</option>
+                            </select>
+                            <small class="form-text text-muted" id="acta_modalidad_help" style="display:block; margin-top:0.4rem; font-size:0.78rem;">Constancia fehaciente de llaves, lecturas exactas de servicios básicos, inventario y conservación por recintos.</small>
+                        </div>
+                    `;
+                    break;
+
+                case 'autorizacion-domicilio-tributario-sii':
+                    html = `
+                        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                                <i class="fas fa-landmark" style="color:#059669;"></i> Modalidad de Acreditación ante el SII *
+                            </label>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:0.6rem;">
+                                Selecciona la figura legal aceptada según Circular N° 31/2007 del SII:
+                            </p>
+                            <select id="f_sii_modalidad" class="form-control" onchange="toggleSiiFields()" style="font-weight:700; border-color:#059669; color:#0F2A4A; font-size:0.92rem;">
+                                <option value="opcion_a" selected>Opción A: Comodato Gratuito Inmobiliario - Formato Estándar SII Art. 2174 CC (5 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Autorización por Subarrendamiento / Espacio Co-Work (6 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: Declaración Jurada Simple Unipersonal del Propietario (4 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="sii_modalidad_help" style="display:block; margin-top:0.4rem; font-size:0.78rem;">Contrato bilateral de comodato precario gratuito conforme al Art. 2174 del Código Civil, aceptado por el SII.</small>
+                        </div>
+                    `;
+                    break;
+
+                case 'salvoconducto-mudanza':
+                    html = `
+                        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                                <i class="fas fa-truck-moving" style="color:#059669;"></i> Modalidad de Traslado / Mudanza (Ley N° 20.227) *
+                            </label>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:0.6rem;">
+                                Selecciona el alcance del traslado para exhibir ante Carabineros y controles carreteros:
+                            </p>
+                            <select id="f_mud_modalidad" class="form-control" onchange="toggleMudanzaFields()" style="font-weight:700; border-color:#059669; color:#0F2A4A; font-size:0.92rem;">
+                                <option value="opcion_a" selected>Opción A: Formato Ley 20.227 con Acreditación de Dominio / No Impedimento (5 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Interregional de Larga Distancia con Declaración de Carga (6 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: Mudanza Corporativa / Traslado de Oficinas y Bienes de Capital (5 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="mud_modalidad_help" style="display:block; margin-top:0.4rem; font-size:0.78rem;">Formato estándar Ley N° 20.227 con declaración de dominio o arriendo al día, datos de vehículo y chofer, sin impedimentos.</small>
+                        </div>
+                    `;
+                    break;
+
+                case 'poder-especial-privado':
+                    html = `
+                        <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                                <i class="fas fa-file-signature" style="color:#2563EB;"></i> Modalidad del Poder Especial (Código Civil) *
+                            </label>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:0.6rem;">
+                                Selecciona el ámbito de representación legal a otorgar:
+                            </p>
+                            <select id="f_poder_modalidad" class="form-control" onchange="togglePoderFields()" style="font-weight:700; border-color:#2563EB; color:#0F2A4A; font-size:0.92rem;">
+                                <option value="opcion_a" selected>Opción A: Mandato Administrativo / Trámites y Encomiendas (5 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Poder para Representación en Asambleas de Copropietarios (Ley 21.442 - 4 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: Poder para Trámites de Vehículos Motorizados (Registro Civil / PRT - 5 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="poder_modalidad_help" style="display:block; margin-top:0.4rem; font-size:0.78rem;">Mandato civil para gestiones administrativas cotidianas, cobro de vales vista menores, trámites municipales y encomiendas.</small>
+                        </div>
+                    `;
+                    break;
+
+                case 'declaracion-jurada-residencia':
+                    html = `
+                        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                                <i class="fas fa-home" style="color:#059669;"></i> Modalidad de Declaración de Residencia *
+                            </label>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:0.6rem;">
+                                Selecciona la finalidad de acreditación ante la entidad receptora:
+                            </p>
+                            <select id="f_res_modalidad" class="form-control" onchange="toggleDeclJuradaFields('declaracion-jurada-residencia')" style="font-weight:700; border-color:#059669; color:#0F2A4A; font-size:0.92rem;">
+                                <option value="opcion_a" selected>Opción A: Estándar Notarial con Apercibimiento Penal Art. 210 CP (4 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Familiar / Acreditación de Carga para Becas y Asignaciones (5 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: Independiente con Respaldo de Movimientos y Arriendo (5 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="f_res_modalidad_help" style="display:block; margin-top:0.4rem; font-size:0.78rem;">Estándar Notarial con apercibimiento penal expreso del Art. 210 del Código Penal para trámites oficiales generales.</small>
+                        </div>
+                    `;
+                    break;
+
+                case 'declaracion-jurada-ingresos-informales':
+                    html = `
+                        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem; display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                                <i class="fas fa-coins" style="color:#059669;"></i> Modalidad de Declaración de Ingresos *
+                            </label>
+                            <p style="font-size:0.8rem; color:#475569; margin-bottom:0.6rem;">
+                                Selecciona el enfoque de acreditación socioeconómica o patrimonial:
+                            </p>
+                            <select id="f_ing_modalidad" class="form-control" onchange="toggleDeclJuradaFields('declaracion-jurada-ingresos-informales')" style="font-weight:700; border-color:#059669; color:#0F2A4A; font-size:0.92rem;">
+                                <option value="opcion_a" selected>Opción A: Estándar Notarial con Apercibimiento Penal Art. 210 CP (4 Cláusulas - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Familiar / Acreditación de Carga para Becas y Asignaciones (5 Cláusulas)</option>
+                                <option value="opcion_c">Opción C: Independiente con Respaldo de Movimientos y Transferencias (5 Cláusulas)</option>
+                            </select>
+                            <small class="form-text text-muted" id="f_ing_modalidad_help" style="display:block; margin-top:0.4rem; font-size:0.78rem;">Estándar Notarial con apercibimiento penal expreso del Art. 210 del Código Penal para trámites oficiales generales.</small>
+                        </div>
+                    `;
+                    break;
+            }
+
+            if (html) {
+                wrap.innerHTML = html;
+                wrap.style.display = 'block';
+            } else {
+                wrap.style.display = 'none';
+            }
         }
 
         // Ejecución inmediata o diferida según estado del DOM
@@ -992,6 +1221,10 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                 document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
                 document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
             }
+
+            // Inyectar Selector de Modalidad en el Paso 1 para documentos con variantes
+            renderStep1ModalidadSelector();
+
             let fieldsHtml = '';
 
             switch (CURRENT_TEMPLATE.slug) {
@@ -1103,17 +1336,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     fieldsHtml = `
                         <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#1E40AF;">
                             <i class="fas fa-file-contract"></i> <strong>Finiquito de Trabajo y Término de Relación Laboral (Art. 159 y 177 CdT)</strong>:
-                            Selecciona la modalidad deseada para adaptar la dogmática jurídica del instrumento.
-                        </div>
-
-                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
-                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad / Enfoque del Finiquito *</label>
-                            <select id="f_fini_modalidad" class="form-control" onchange="toggleFiniquitoFields()" style="font-weight:600; border-color:#3B82F6;">
-                                <option value="opcion_a" selected>Opción 1: Estándar Dirección del Trabajo (Portal Mi DT - 6 Cláusulas)</option>
-                                <option value="opcion_b">Opción 2: Blindaje Corporativo / Patronal (Ley Bustos + Sin Accidentes - 9 Cláusulas)</option>
-                                <option value="opcion_c">Opción 3: Transaccional Extrajudicial con Reserva de Derechos (Art. 2446 CC)</option>
-                            </select>
-                            <small class="form-text text-muted" id="fini_modalidad_help">Modelo ágil y homologable ante la Dirección del Trabajo (Mi DT) con ClaveÚnica.</small>
+                            Ingresa las fechas de la relación laboral y el desglose de haberes e indemnizaciones finales.
                         </div>
 
                         <div class="form-row">
@@ -1266,17 +1489,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     fieldsHtml = `
                         <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#166534;">
                             <i class="fas fa-briefcase"></i> <strong>Contrato Civil de Prestación de Servicios Profesionales (Art. 2006 Código Civil)</strong>:
-                            Regulado por el derecho civil y mercantil. Selecciona la modalidad para adecuar los hitos, el blindaje anti-laboral o los acuerdos SLA.
-                        </div>
-
-                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
-                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad del Contrato de Servicios *</label>
-                            <select id="f_serv_modalidad" class="form-control" onchange="toggleServiciosFields()" style="font-weight:600; border-color:#10B981;">
-                                <option value="opcion_a" selected>Opción A: Civil Profesional con Blindaje Anti-Laboralidad (8 Cláusulas - Recomendado)</option>
-                                <option value="opcion_b">Opción B: Por Hito / Proyecto Cerrado (7 Cláusulas)</option>
-                                <option value="opcion_c">Opción C: SLA Corporativo / Servicios Continuos con Penalizaciones (9 Cláusulas)</option>
-                            </select>
-                            <small class="form-text text-muted" id="serv_modalidad_help">Exclusión probatoria de relación laboral: autonomía técnica, libertad de horarios y sin subordinación.</small>
+                            Regulado por el derecho civil y mercantil. Completa los honorarios y especificaciones acordadas para el encargo profesional.
                         </div>
 
                         <div class="form-group">
@@ -1358,16 +1571,6 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                             Acreditación oficial de domicilio habitual bajo solemnidad legal y responsabilidad penal del declarante.
                         </div>
 
-                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
-                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad de Declaración de Residencia *</label>
-                            <select id="f_res_modalidad" class="form-control" onchange="toggleDeclJuradaFields('declaracion-jurada-residencia')" style="font-weight:600; border-color:#059669;">
-                                <option value="opcion_a" selected>Opción A: Estándar Notarial con Apercibimiento Penal Art. 210 CP (4 Cláusulas - Recomendado)</option>
-                                <option value="opcion_b">Opción B: Familiar / Acreditación de Carga para Becas y Asignaciones (5 Cláusulas)</option>
-                                <option value="opcion_c">Opción C: Independiente con Respaldo de Movimientos y Arriendo (5 Cláusulas)</option>
-                            </select>
-                            <small class="form-text text-muted" id="f_res_modalidad_help">Estándar Notarial con apercibimiento penal expreso del Art. 210 del Código Penal para trámites oficiales generales (4 cláusulas solemnes).</small>
-                        </div>
-
                         <div class="form-group">
                             <label>Dirección Exacta del Domicilio Declarado (Calle, Número, Depto, Comuna y Ciudad) *</label>
                             <input type="text" id="f_decl_domicilio" class="form-control" value="Pasaje Los Copihues 456, Maipú, Santiago">
@@ -1425,16 +1628,6 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#166534;">
                             <i class="fas fa-truck-moving"></i> <strong>Declaración Jurada de Traslado de Enseres / Mudanza (Ley N° 20.227)</strong>:
                             Documento legal obligatorio para el transporte de muebles y enseres domésticos o corporativos, acreditable ante Carabineros de Chile y controles carreteros.
-                        </div>
-
-                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
-                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad de Traslado / Mudanza *</label>
-                            <select id="f_mud_modalidad" class="form-control" onchange="toggleMudanzaFields()" style="font-weight:600; border-color:#059669;">
-                                <option value="opcion_a" selected>Opción A: Formato Ley 20.227 con Acreditación de Dominio / No Impedimento (5 Cláusulas - Recomendado)</option>
-                                <option value="opcion_b">Opción B: Interregional de Larga Distancia con Declaración de Carga (6 Cláusulas)</option>
-                                <option value="opcion_c">Opción C: Mudanza Corporativa / Traslado de Oficinas y Bienes de Capital (5 Cláusulas)</option>
-                            </select>
-                            <small class="form-text text-muted" id="mud_modalidad_help">Formato estándar Ley N° 20.227 con declaración de dominio o arriendo al día, datos de vehículo y chofer, sin impedimentos (5 cláusulas).</small>
                         </div>
 
                         <div class="form-row">
@@ -1528,16 +1721,6 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#1E40AF;">
                             <i class="fas fa-key"></i> <strong>Acta de Entrega Material, Inventario y Estado del Inmueble</strong>:
                             Constancia fehaciente para contratos de arriendo o compraventa. Selecciona la modalidad para adecuar las secciones y liquidaciones.
-                        </div>
-
-                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
-                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad del Acta *</label>
-                            <select id="f_acta_modalidad" class="form-control" onchange="toggleActaFields()" style="font-weight:600; border-color:#2563EB;">
-                                <option value="opcion_a" selected>Opción A: Notarial Inmobiliaria Exhaustiva (6 Secciones - Recomendado)</option>
-                                <option value="opcion_b">Opción B: Recepción Provisoria con Lista de Observaciones / "Snag List" (5 Secciones)</option>
-                                <option value="opcion_c">Opción C: Acta de Desocupación y Restitución Final con Liquidación de Garantía (5 Secciones)</option>
-                            </select>
-                            <small class="form-text text-muted" id="acta_modalidad_help">Constancia fehaciente de llaves, lecturas exactas de servicios básicos, inventario y conservación por recintos.</small>
                         </div>
 
                         <div class="form-group">
@@ -1649,29 +1832,41 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         </div>
 
                         <h4 style="font-size:0.95rem; font-weight:700; color:var(--primary); margin:1.25rem 0 0.75rem 0; border-bottom:1px solid #E2E8F0; padding-bottom:0.35rem;">
-                            2. Jornada de Trabajo y Control de Asistencia
+                            2. Jornada de Trabajo y Condiciones Laborales
                         </h4>
                         <div class="form-row">
-                            <div class="form-group">
-                                <label>Modalidad de Jornada de Trabajo *</label>
-                                <select id="f_trab_modalidad_jornada" class="form-control">
-                                    <option value="ordinaria" selected>Jornada Ordinaria con Horario (Ley 40 Horas)</option>
-                                    <option value="art22">Exenta de Jornada (Art. 22 inc. 2° Código del Trabajo)</option>
-                                </select>
-                            </div>
                             <div class="form-group">
                                 <label>Horas Semanales / Distribución *</label>
                                 <input type="text" id="f_trab_horas_sem" class="form-control" value="40 horas semanales distribuidas de Lunes a Viernes de 09:00 a 18:00 horas">
                             </div>
-                        </div>
-                        <div class="form-row">
                             <div class="form-group">
                                 <label>Tiempo de Colación (No imputable a jornada) *</label>
                                 <input type="text" id="f_trab_colacion_tiempo" class="form-control" value="60 minutos diarios">
                             </div>
-                            <div class="form-group">
-                                <label>Sistema de Control de Asistencia *</label>
-                                <input type="text" id="f_trab_asistencia_sist" class="form-control" value="Reloj control digital con registro biométrico autorizado por la DT">
+                        </div>
+                        <div class="form-group">
+                            <label>Sistema de Control de Asistencia *</label>
+                            <input type="text" id="f_trab_asistencia_sist" class="form-control" value="Reloj control digital con registro biométrico autorizado por la DT">
+                        </div>
+
+                        <!-- Campos específicos para Opción C (Teletrabajo / Híbrido Ley 21.220) -->
+                        <div id="wrap_trab_opcion_c" style="display:none; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#1E40AF; margin-bottom:0.5rem;">
+                                <i class="fas fa-laptop-house"></i> Modalidad de Trabajo a Distancia o Teletrabajo (Ley N° 21.220)
+                            </h5>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Distribución Híbrida / Presencial y Remota *</label>
+                                    <input type="text" id="f_trab_teletrabajo_dist" class="form-control" value="Modalidad híbrida: 3 días remotos (teletrabajo) y 2 días presenciales en dependencias de la empresa">
+                                </div>
+                                <div class="form-group">
+                                    <label>Asignación Mensual por Costos de Operación (Internet/Luz) *</label>
+                                    <input type="text" id="f_trab_teletrabajo_costo" class="form-control" value="$35.000 CLP mensuales por concepto de asignación de teletrabajo">
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Mecanismo y Horario del Derecho a Desconexión Digital *</label>
+                                <input type="text" id="f_trab_teletrabajo_desconexion" class="form-control" value="Desconexión total garantizada de al menos 12 horas continuas entre el término de una jornada y el inicio de la siguiente">
                             </div>
                         </div>
 
@@ -1747,16 +1942,6 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         <div style="background:#FEF3C7; border:1px solid #FDE68A; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#92400E;">
                             <i class="fas fa-money-bill-wave"></i> <strong>Reconocimiento de Deuda y Compromiso de Pago (Ley N° 18.010)</strong>:
                             Selecciona la modalidad para estructurar la aceleración de cuotas, el tercero fiador y aval, o la confesión de deuda previa a juicio.
-                        </div>
-
-                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
-                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad / Enfoque del Documento *</label>
-                            <select id="f_deuda_modalidad" class="form-control" onchange="toggleDeudaFields()" style="font-weight:600; border-color:#D97706;">
-                                <option value="opcion_a" selected>Opción A: Notarial Bancario con Cláusula de Aceleración y Pagaré (6 Cláusulas - Recomendado)</option>
-                                <option value="opcion_b">Opción B: Con Codeudor Solidario / Fiador y Aval (8 Cláusulas)</option>
-                                <option value="opcion_c">Opción C: Transaccional Judicial / Pre-Demanda con Confesión de Deuda Art. 434 CPC (7 Cláusulas)</option>
-                            </select>
-                            <small class="form-text text-muted" id="deuda_modalidad_help">Obligación pura y simple, aceleración ipso facto e intereses penales al máximo legal permitido.</small>
                         </div>
 
                         <div class="form-row">
@@ -1846,16 +2031,6 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                             Acreditación patrimonial de ingresos lícitos percibidos de forma autónoma o sin contrato laboral dependiente, con fe de juramento y apercibimiento penal.
                         </div>
 
-                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
-                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad de Declaración de Ingresos *</label>
-                            <select id="f_ing_modalidad" class="form-control" onchange="toggleDeclJuradaFields('declaracion-jurada-ingresos-informales')" style="font-weight:600; border-color:#059669;">
-                                <option value="opcion_a" selected>Opción A: Estándar Notarial con Apercibimiento Penal Art. 210 CP (4 Cláusulas - Recomendado)</option>
-                                <option value="opcion_b">Opción B: Familiar / Acreditación de Carga para Becas y Asignaciones (5 Cláusulas)</option>
-                                <option value="opcion_c">Opción C: Independiente con Respaldo de Movimientos y Transferencias (5 Cláusulas)</option>
-                            </select>
-                            <small class="form-text text-muted" id="f_ing_modalidad_help">Estándar Notarial con apercibimiento penal expreso del Art. 210 del Código Penal para trámites oficiales generales (4 cláusulas solemnes).</small>
-                        </div>
-
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Actividad, Oficio o Rubro Generador de Ingresos *</label>
@@ -1919,16 +2094,6 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#1E40AF;">
                             <i class="fas fa-file-signature"></i> <strong>Mandato y Poder Especial Privado (Arts. 2116 y ss. del Código Civil)</strong>:
                             Delegación solemne de representación legal con fijación de facultades delimitadas y vigencia acotada para trámites administrativos, vecinales o vehiculares.
-                        </div>
-
-                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
-                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad del Poder Especial *</label>
-                            <select id="f_poder_modalidad" class="form-control" onchange="togglePoderFields()" style="font-weight:600; border-color:#2563EB;">
-                                <option value="opcion_a" selected>Opción A: Mandato Administrativo / Trámites y Encomiendas (5 Cláusulas - Recomendado)</option>
-                                <option value="opcion_b">Opción B: Poder para Representación en Asambleas de Copropietarios (Ley 21.442 - 4 Cláusulas)</option>
-                                <option value="opcion_c">Opción C: Poder para Trámites de Vehículos Motorizados (Registro Civil / PRT - 5 Cláusulas)</option>
-                            </select>
-                            <small class="form-text text-muted" id="poder_modalidad_help">Mandato civil para gestiones administrativas cotidianas, cobro de vales vista menores, trámites municipales y encomiendas (5 cláusulas).</small>
                         </div>
 
                         <div class="form-group">
@@ -2009,16 +2174,6 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#166534;">
                             <i class="fas fa-landmark"></i> <strong>Acreditación de Domicilio Tributario ante el SII (Circular N° 31/2007 SII)</strong>:
                             Autorización formal del inmueble para inicio de actividades, timbraje, facturación electrónica y verificación de actividad.
-                        </div>
-
-                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
-                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad de Acreditación ante el SII *</label>
-                            <select id="f_sii_modalidad" class="form-control" onchange="toggleSiiFields()" style="font-weight:600; border-color:#059669;">
-                                <option value="opcion_a" selected>Opción A: Comodato Gratuito Inmobiliario - Formato Estándar SII Art. 2174 CC (5 Cláusulas - Recomendado)</option>
-                                <option value="opcion_b">Opción B: Autorización por Subarrendamiento / Espacio Co-Work (6 Cláusulas)</option>
-                                <option value="opcion_c">Opción C: Declaración Jurada Simple Unipersonal del Propietario (4 Cláusulas)</option>
-                            </select>
-                            <small class="form-text text-muted" id="sii_modalidad_help">Contrato bilateral de comodato precario gratuito conforme al Art. 2174 del Código Civil, aceptado por el SII.</small>
                         </div>
 
                         <div class="form-group">
@@ -2780,16 +2935,33 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     const colacionFmt = new Intl.NumberFormat('es-CL').format(colacionMonto);
                     const movilFmt = new Intl.NumberFormat('es-CL').format(movilizacionMonto);
 
+                    const teleDist = document.getElementById('f_trab_teletrabajo_dist')?.value || '3 días remotos y 2 presenciales';
+                    const teleCosto = document.getElementById('f_trab_teletrabajo_costo')?.value || '$35.000 CLP mensuales por asignación de teletrabajo';
+                    const teleDescon = document.getElementById('f_trab_teletrabajo_desconexion')?.value || 'Desconexión de al menos 12 horas continuas entre jornadas';
+
                     let jornadaClausulaHtml = '';
+                    let extraTeletrabajoHtml = '';
+
                     if (modJornada === 'art22') {
                         jornadaClausulaHtml = `
                             <p><strong>Modalidad Exenta de Jornada (Art. 22 inciso 2° del Código del Trabajo):</strong><br>
-                            El Trabajador queda excluido de la limitación de jornada ordinaria de trabajo de conformidad con lo preceptuado en el inciso segundo del artículo 22 del Código del Trabajo, por prestar servicios en razón de la naturaleza de las funciones desempeñadas y sin fiscalización superior inmediata.</p>
+                            El Trabajador queda formalmente excluido de la limitación de jornada ordinaria de trabajo de conformidad con lo preceptuado en el inciso segundo del artículo 22 del Código del Trabajo, por prestar servicios en razón de la naturaleza de las funciones de confianza y dirección técnica desempeñadas, y sin fiscalización superior inmediata.</p>
+                        `;
+                    } else if (modJornada === 'teletrabajo') {
+                        jornadaClausulaHtml = `
+                            <p><strong>Modalidad de Teletrabajo / Trabajo a Distancia (Ley N° 21.220):</strong><br>
+                            Las partes pactan que la prestación de servicios se desarrollará bajo la modalidad de trabajo a distancia o teletrabajo regulada por el Capítulo IX del Título II del Libro I del Código del Trabajo, con la siguiente distribución: <span class="highlight-var">${escapeHtml(teleDist)}</span>.<br>
+                            La jornada máxima semanal se ceñirá a las <span class="highlight-var">${escapeHtml(horasSem)}</span> con control de conexión digital y colación diaria de <span class="highlight-var">${escapeHtml(colacionTiempo)}</span>.</p>
+                        `;
+                        extraTeletrabajoHtml = `
+                            <div class="preview-clause-title">DÉCIMO TERCERO: DERECHO A DESCONEXIÓN Y ASIGNACIÓN DE COSTOS (LEY 21.220)</div>
+                            <p>1. <strong>Derecho a Desconexión Digital:</strong> En estricto cumplimiento del artículo 152 quáter J del Código del Trabajo, el Trabajador tendrá derecho a desconexión digital garantizada consistente en: <span class="highlight-var">${escapeHtml(teleDescon)}</span>, tiempo durante el cual no estará obligado a responder correos, llamados ni mensajes.<br>
+                            2. <strong>Asignación y Equipamiento:</strong> El Empleador proporcionará los equipos necesarios y pagará una asignación mensual compensatoria no remuneracional de <span class="highlight-var">${escapeHtml(teleCosto)}</span> por los mayores costos de energía eléctrica y conectividad a internet incurridos con ocasión del trabajo remoto.</p>
                         `;
                     } else {
                         jornadaClausulaHtml = `
-                            <p><strong>Modalidad con sujeción a horario ordinario:</strong><br>
-                            La jornada ordinaria semanal será de <span class="highlight-var">${escapeHtml(horasSem)}</span>.<br>
+                            <p><strong>Modalidad de Jornada Ordinaria (Ley N° 21.561 de 40 Horas):</strong><br>
+                            La jornada ordinaria semanal será de <span class="highlight-var">${escapeHtml(horasSem)}</span> distribuidas de conformidad con el límite legal de 40 horas.<br>
                             El Trabajador dispondrá de un tiempo de colación diario de <span class="highlight-var">${escapeHtml(colacionTiempo)}</span>, el cual no será imputable a la jornada de trabajo.<br>
                             El control de asistencia y determinación de horas de trabajo se efectuará mediante <span class="highlight-var">${escapeHtml(sistAsistencia)}</span>.</p>
                         `;
@@ -2860,6 +3032,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                         <div class="preview-clause-title">DÉCIMO SEGUNDO: REGISTRO ELECTRÓNICO LABORAL (REL) Y EJEMPLARES</div>
                         <p>De conformidad con el artículo 9° del Código del Trabajo y la Ley N° 21.327, el Empleador registrará el presente contrato en el sitio electrónico de la Dirección del Trabajo (portal Mi DT) dentro de los plazos legales establecidos. El presente contrato se firma electrónicamente mediante firma digital con valor probatorio pleno (Ley N° 19.799), quedando copia íntegra y fehaciente a disposición de cada una de las partes en la plataforma SinNotario.cl.</p>
+                        ${extraTeletrabajoHtml}
                     `;
                 } else if (CURRENT_TEMPLATE.slug === 'reconocimiento-deuda-pagare-privado') {
                     const modDeuda = document.getElementById('f_deuda_modalidad')?.value || 'opcion_a';
