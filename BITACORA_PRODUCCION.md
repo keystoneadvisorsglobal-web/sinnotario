@@ -83,3 +83,14 @@
   - PHP Lint: 0 errores de sintaxis en `index.php`.
   - Smoke test: HTTP 200 OK en producción.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
+
+### [2026-11-06 03:05 UTC-3] - SOL-0013
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0013`
+- **Alcance del Cambio:**
+  - Se modificó la regla `.filter-btn.active` en `assets/css/style.css`.
+  - Ahora, al seleccionar cualquiera de los botones de filtro de categorías (*Todos*, *Inmobiliario*, *Laboral*, *Comercial*, *Declaraciones*), el botón adopta el color amarillo institucional / dorado legal exacto de la plataforma (`#D4AF37`) con texto oscuro (`#0A1C33`), generando un contraste perfecto frente al fondo azul marino del Hero.
+- **Pruebas Validadas:**
+  - CSS Lint & Smoke test en producción (`https://sinnotario.cl`).
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y Git.
