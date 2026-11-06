@@ -19,6 +19,7 @@
    - [3.2 Módulo 2: Circuito de Firmas e Integración de Identidad Digital](#32-módulo-2-circuito-de-firmas-e-integración-de-identidad-digital)
    - [3.3 Módulo 3: Pasarela de Pagos y Notificaciones Omnicanal](#33-módulo-3-pasarela-de-pagos-y-notificaciones-omnicanal)
    - [3.4 Módulo 4: Verificación Pública y Trazabilidad](#34-módulo-4-verificación-pública-y-trazabilidad)
+   - [3.5 Módulo 5: Backend Administrativo y Consola de Configuración de la Plataforma](#35-módulo-5-backend-administrativo-y-consola-de-configuración-de-la-plataforma)
 4. [Modelo Híbrido: Plataforma Digital + Oficina Física](#4-modelo-híbrido-plataforma-digital--oficina-física)
    - [4.1 Por qué una Oficina Física (Resolución de Brechas)](#41-por-qué-una-oficina-física-resolución-de-brechas)
    - [4.2 Servicios de la Oficina Física](#42-servicios-de-la-oficina-física)
@@ -910,6 +911,83 @@ Una vez confirmado el pago, el usuario no queda en el aire; la pantalla se trans
 * **Resultado de la Validación:**
   * 🟢 **Tarjeta Verde de Autenticidad:** *"Documento Válido e Íntegro conforme a la Ley N° 19.799"*.
   * Detalle de sellos de tiempo TSA, certificador acreditado IDOK y listado de comparecientes anonimizado con desafío de seguridad (ingreso de últimos dígitos del RUT) para descarga del PDF original.
+
+---
+
+### 3.11 Módulo 11: Backend Administrativo y Consola de Configuración de la Plataforma (`/admin`)
+
+Para garantizar la total independencia operativa, seguridad, auditoría de ingresos y gobernanza del negocio sin depender de modificaciones directas en base de datos o despliegues de código, **SinNotario.cl** incorpora una **Consola de Administración y Configuración Centralizada (`/admin`)**:
+
+```mermaid
+flowchart TD
+    A["/admin (Acceso Restringido 2FA)"] --> B["1. Dashboard Operativo & Financiero"]
+    A --> C["2. Gestor de Plantillas y Precios"]
+    A --> D["3. Monitor de Documentos & Trazabilidad"]
+    A --> E["4. Configuración de Pasarelas & APIs"]
+    A --> F["5. Gestión de Clientes B2B & Instancias WhatsApp"]
+    A --> G["6. Bóveda Cloudflare R2 & Registros de Auditoría"]
+```
+
+#### 1. Roles y Permisos de Acceso al Backend
+El backend administrativo implementa control de acceso basado en roles (**RBAC**):
+* **SuperAdmin (Keystone Directores):** Acceso total a finanzas, configuración de APIs, pasarelas de pago, llaves de cifrado y base de datos.
+* **LegalAdmin (Equipo Jurídico):** Edición de cláusulas de plantillas, alertas legales, semáforos notariales y revisión de contratos observados.
+* **Operaciones / Soporte:** Visualización de estado de documentos, reenvío manual de notificaciones WhatsApp/Email a firmantes y validación de órdenes de pago.
+* **Auditor Externo / DT:** Acceso en modo solo lectura a logs forenses de firmas y sellos criptográficos.
+
+---
+
+#### 2. Módulos de la Consola de Configuración
+
+##### A. Dashboard de Métricas en Tiempo Real (`/admin/dashboard`)
+* **KPIs Clave:**
+  * Facturación diaria/mensual acumulada (CLP).
+  * Documentos emitidos vs. firmados vs. abandonados.
+  * Tasa de conversión del embudo web.
+  * Balance de firmas disponibles en el proveedor PSC (IDOK / FirmaYa).
+  * Estado de conectividad de servicios externos (Cloudflare R2, Evolution API, Transbank/Flow).
+
+##### B. Gestor de Catálogo, Precios y Plantillas (`/admin/templates`)
+* **Editor Visual de Plantillas:**
+  * Modificación de variables dinámicas (`{{ARRENDADOR_NOMBRE}}`, `{{CANON_ARRIENDO_CLP}}`, etc.).
+  * Ajuste de precios base por documento y recargos por firmantes adicionales.
+  * Activación / desactivación de plantillas con un solo clic.
+  * Configuración del **Semáforo Legal** y textos de advertencia para usuarios.
+  * Actualización del diccionario del **Detector Negativo de Trámites Exclusivos de Notaría** (palabras clave prohibidas y respuestas pedagógicas).
+
+##### C. Monitor de Documentos y Bóveda Criptográfica (`/admin/documents`)
+* Tabla maestra de todos los contratos y declaraciones procesadas:
+  * Folio único (`SN-XXXX-XXXX`), Estado (`BORRADOR`, `PENDIENTE_PAGO`, `EN_FIRMAS`, `COMPLETADO`).
+  * Enlace de descarga directa del PDF sellado desde Cloudflare R2 con verificación de hash SHA-256.
+  * Botón de **Reenvío Express de Enlace de Firma** por WhatsApp o Correo en caso de que un firmante no lo haya recibido.
+  * Registro de intentos de firma, direcciones IP, navegadores y estampas de tiempo TSA.
+
+##### D. Configuración Global de Pasarelas y APIs (`/admin/settings`)
+* **Pasarelas de Pago:**
+  * Alternador de modo Sandbox / Producción para Transbank Webpay Plus y Flow.
+  * Modificación segura de Códigos de Comercio y Secret Keys sin tocar archivos de servidor.
+* **Proveedor de Firma Electrónica (PSC):**
+  * Credenciales de API IDOK / Prestador acreditado.
+  * Selección de tipo de firma por defecto: *Firma Electrónica Simple (FES con OTP)* o *Firma Electrónica Avanzada (FEA con ClaveÚnica)*.
+* **Bóveda Cloudflare R2:**
+  * Monitoreo de espacio utilizado en el bucket `sinnotario-vault-prod`.
+  * Verificación de credenciales de API v4 y regeneración de llaves.
+* **Gateway WhatsApp (Evolution API):**
+  * Estado del contenedor de WhatsApp en `http://5.183.9.148:8080`.
+  * Configuración de plantillas de mensajes interactivos con botones (ej: *"Presiona aquí para firmar tu contrato"*).
+
+##### E. Consola de Clientes B2B / Empresas (`/admin/companies`)
+* Administración de cuentas corporativas de empresas (RRHH y Corredoras):
+  * Asignación de bolsas de firmas prepagadas o contratos post-pago mensual.
+  * Monitor del estado de conexión de la instancia de WhatsApp dedicada de cada cliente.
+  * Reportes consolidados de contratos de trabajo para la Dirección del Trabajo (DT).
+
+##### F. Registro Forense de Auditoría (`/admin/audit-logs`)
+* Bitácora inalterable de todos los eventos del sistema:
+  * Intentos de inicio de sesión administrativo.
+  * Cambios de configuración o precios.
+  * Consultas públicas al validador `/verificar`.
+  * Alertas de seguridad por intentos de fuerza bruta o discrepancia en sumas de verificación.
 
 ---
 
