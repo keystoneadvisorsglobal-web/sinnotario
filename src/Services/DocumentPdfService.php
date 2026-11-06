@@ -253,9 +253,27 @@ class DocumentPdfService {
                 break;
 
             case 'contrato-individual-trabajo':
-                self::printClause($pdf, 'PRIMERO: SERVICIOS Y JORNADA (LEY 21.561 40 HORAS)', "El Trabajador se obliga a desempeñar las funciones convenidas, sujetándose a una jornada ordinaria conforme a la Ley N° 21.561, con descanso diario de colación y registro oficial en el Libro Digital de la DT.");
-                self::printClause($pdf, 'SEGUNDO: REMUNERACIONES Y BENEFICIOS', "El Empleador pagará la remuneración base convenida por mesadas vencidas, más las asignaciones y gratificación legal correspondiente según los Artículos 47 y 50 del Código del Trabajo.");
-                self::printClause($pdf, 'TERCERO: OBLIGACIONES Y REGISTRO DT', "El contrato se rige íntegramente por el Código del Trabajo y el Reglamento Interno, obligándose el Empleador a registrarlo oportunamente en el portal digital de la Dirección del Trabajo (REL).");
+                $cargo = $formData['cargo'] ?? ($formData['f_trab_cargo'] ?? 'Desarrollador Full Stack / Consultor TI');
+                $lugar = $formData['lugar'] ?? ($formData['f_trab_lugar'] ?? 'Las Condes, Santiago');
+                $sueldo = !empty($formData['sueldo']) ? '$' . number_format($formData['sueldo'], 0, ',', '.') . ' CLP' : '$1.200.000 CLP';
+                $grat = $formData['gratificacion'] ?? 'Artículo 50 (25% mensual con tope 4,75 IMM)';
+                $colacion = !empty($formData['colacion']) ? '$' . number_format($formData['colacion'], 0, ',', '.') . ' CLP' : '$60.000 CLP';
+                $movil = !empty($formData['movilizacion']) ? '$' . number_format($formData['movilizacion'], 0, ',', '.') . ' CLP' : '$40.000 CLP';
+                $jornada = $formData['jornada'] ?? '40 horas semanales distribuidas de lunes a viernes';
+                $duracion = $formData['duracion'] ?? 'Indefinida';
+
+                self::printClause($pdf, 'PRIMERO: NATURALEZA DE LOS SERVICIOS Y CARGO', "El Trabajador se compromete a prestar servicios personales y subordinados para el Empleador desempenando el cargo de {$cargo}. Las funciones comprenden el diseno, ejecucion y mantenimiento operativo de tareas inherentes al cargo, y aquellas tareas conexas y complementarias que resulten necesarias para su adecuada ejecucion.");
+                self::printClause($pdf, 'SEGUNDO: LUGAR DE PRESTACION DE SERVICIOS (ART. 12 COD. DEL TRABAJO)', "El Trabajador prestara sus servicios en las dependencias ubicadas en {$lugar}. De conformidad con el articulo 12 del Codigo del Trabajo, el Empleador podra alterar la naturaleza de los servicios o el recinto laboral siempre que se trate de labores similares y dentro de la misma localidad sin menoscabo para el Trabajador.");
+                self::printClause($pdf, 'TERCERO: JORNADA DE TRABAJO (LEY N° 21.561 DE 40 HORAS)', "La jornada ordinaria de trabajo sera de {$jornada}, con descanso diario para colacion no imputable a la jornada. El control de asistencia y determinacion de horas laboradas se efectuara mediante sistema digital autorizado por la Direccion del Trabajo.");
+                self::printClause($pdf, 'CUARTO: REMUNERACION Y BENEFICIOS', "El Empleador pagara al Trabajador: a) Sueldo Base mensual de {$sueldo}; b) Gratificacion Legal segun modalidad de {$grat}; c) Asignacion no remuneracional de colacion de {$colacion}; d) Asignacion no remuneracional de movilizacion de {$movil}. Las remuneraciones se pagaran mensualmente mediante transferencia bancaria.");
+                self::printClause($pdf, 'QUINTO: DESCUENTOS LEGALES Y SEGURIDAD SOCIAL', "De las remuneraciones se deduciran los impuestos aplicables, las cotizaciones previsionales de AFP, salud (FONASA/ISAPRE), Seguro de Cesantia (Ley N° 19.728) y demas autorizados por el articulo 58 del Codigo del Trabajo.");
+                self::printClause($pdf, 'SEXTO: DURACION DEL CONTRATO', "El presente contrato tendra una duracion de modalidad {$duracion}, rigiendo con plena vigencia a contar de la fecha de incorporacion efectiva.");
+                self::printClause($pdf, 'SEPTIMO: OBLIGACIONES Y PROHIBICIONES', "El Trabajador se compromete a desempenar sus labores con probidad, lealtad y cuidado, acatando las ordenes del Empleador, el Reglamento Interno de Orden, Higiene y Seguridad, y las normas de prevencion de riesgos y EPP.");
+                self::printClause($pdf, 'OCTAVO: CONFIDENCIALIDAD Y PROPIEDAD INTELECTUAL', "El Trabajador mantendra estricta reserva de toda informacion tecnica, comercial o confidencial. Toda obra intelectual, invencion o programa computacional desarrollado correspondera exclusivamente al Empleador (Leyes 17.336 y 19.039).");
+                self::printClause($pdf, 'NOVENO: PREVENCION, ACOSO Y CONVIVENCIA LABORAL', "Las partes adhieren a una politica de tolerancia cero frente al acoso laboral, sexual y violencia en el trabajo, rigiendose por los protocolos legales y reglamentarios vigentes.");
+                self::printClause($pdf, 'DECIMO: TERMINACION DEL CONTRATO', "El contrato terminara por las causales legales estipuladas en los articulos 159, 160 y 161 del Codigo del Trabajo, cumpliendo con las formalidades del articulo 162.");
+                self::printClause($pdf, 'DECIMO PRIMERO: DOMICILIO Y JURISDICCION', "Para todos los efectos legales, las partes fijan su domicilio en la ciudad del lugar de prestacion de servicios y se someten a la competencia de los Juzgados de Letras del Trabajo correspondientes.");
+                self::printClause($pdf, 'DECIMO SEGUNDO: REGISTRO ELECTRONICO LABORAL (REL) Y EJEMPLARES', "El Empleador registrara el presente contrato en el portal electronico Mi DT de la Direccion del Trabajo (Art. 9 Cod. del Trabajo y Ley 21.327). El documento se suscribe con firma electronica conforme a la Ley N° 19.799.");
                 break;
 
             case 'reconocimiento-deuda-pagare-privado':

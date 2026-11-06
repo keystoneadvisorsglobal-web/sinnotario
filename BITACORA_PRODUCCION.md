@@ -1,5 +1,43 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-06 14:38 UTC-3] - SOL-0029
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0029`
+- **Alcance de los Cambios:**
+  - **Plantilla Oficial de Contrato Individual de Trabajo (Art. 10 Código del Trabajo de Chile):**
+    1. **Wizard 60/40 Dinámico (`redactar.php`):**
+       - Paso 1 personalizado para "Empleador / Representante Legal" (Razón Social, RUT empresa, Giro, Domicilio, Comuna y Representante Legal).
+       - Paso 2 personalizado para "Trabajador" (Nombre, RUT Módulo 11, Nacionalidad, Estado Civil, Fecha Nacimiento, Profesión, Domicilio, Email y Teléfono).
+       - Paso 3 estructurado en 4 secciones funcionales:
+         a) Cargo, funciones principales del puesto (enunciativas) y lugar específico de prestación de servicios.
+         b) Jornada de trabajo: Ordinaria con sujeción a horario (Ley de 40 Horas / Ley N° 21.561, minutos de colación y sistema de control de asistencia digital/biométrico autorizado por la DT) vs. Exenta de jornada (Art. 22 inc. 2° del Código del Trabajo).
+         c) Remuneraciones y beneficios: Sueldo base en $ CLP, gratificación legal (Artículo 50 con tope de 4,75 IMM vs. Artículo 47 con 30% utilidad líquida), asignación no remuneracional de colación, asignación no remuneracional de movilización, fecha/día de pago de remuneraciones y datos bancarios para transferencia.
+         d) Previsión, salud y duración: Institución previsional (AFP), institución de salud (FONASA / ISAPRE), modalidad de duración (Indefinida, Plazo Fijo o Faena) y fecha de inicio de labores.
+    2. **Previsualizador en Vivo (40%):**
+       - Renderizado dogmático con las 12 cláusulas contractuales completas con variables dinámicas resaltadas en vivo:
+         - PRIMERO: Naturaleza de los servicios y cargo (funciones principales).
+         - SEGUNDO: Lugar de prestación de servicios y aplicación del ius variandi (Art. 12 Código del Trabajo).
+         - TERCERO: Jornada de trabajo (40 horas ordinarias con colación y control DT vs. Exención Art. 22 inc. 2°).
+         - CUARTO: Remuneración y beneficios (sueldo base, gratificación Art. 50/47, colación, movilización y cuenta bancaria).
+         - QUINTO: Descuentos legales y previsionales (AFP, FONASA/ISAPRE, Seguro de Cesantía Ley 19.728 y Art. 58).
+         - SEXTO: Duración del contrato (Indefinida, Plazo Fijo o Faena).
+         - SÉPTIMO: Obligaciones y prohibiciones (lealtad, reglamento interno, EPP).
+         - OCTAVO: Confidencialidad, propiedad intelectual/industrial (Leyes 17.336 y 19.039) y protección de datos personales.
+         - NOVENO: Prevención, acoso y convivencia laboral (tolerancia cero).
+         - DÉCIMO: Terminación del contrato (Artículos 159, 160 y 161).
+         - DÉCIMO PRIMERO: Domicilio y jurisdicción (Tribunales del Trabajo competentes).
+         - DÉCIMO SEGUNDO: Registro Electrónico Laboral (REL en portal Mi DT / Ley 21.327) y validez probatoria de firma electrónica (Ley 19.799).
+    3. **Motor de Generación PDF y Bóveda Cifrada R2 (`src/Services/DocumentPdfService.php`):**
+       - Emisión estructurada de las 12 cláusulas completas para el PDF oficial con código QR y Hash SHA-256.
+    4. **Cache-Busting:**
+       - Actualizado a `?v=20261106_7` para forzar refresco inmediato en navegadores.
+- **Pruebas Validadas:**
+  - Verificación remota PHP Lint en Hostinger: `No syntax errors detected in domains/sinnotario.cl/public_html/redactar.php` y `No syntax errors detected in domains/sinnotario.cl/public_html/src/Services/DocumentPdfService.php`.
+  - Smoke test HTTP en producción: `curl -I "https://sinnotario.cl/redactar.php?slug=contrato-individual-trabajo"` -> `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
 ### [2026-11-06 02:22 UTC-3] - SOL-0005
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

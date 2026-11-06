@@ -557,7 +557,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js?v=20261106_6"></script>
+    <script src="assets/js/app.js?v=20261106_7"></script>
     <script>
         // Funciones auxiliares seguras locales
         function escapeHtml(text) {
@@ -615,6 +615,29 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                 document.getElementById('lblStep1').innerText = 'Declarante';
                 document.getElementById('lblStep2').innerText = 'Tipo Trámite';
                 document.getElementById('step1Title').innerText = 'Paso 1: Datos del Declarante';
+            } else if (CURRENT_TEMPLATE.slug === 'contrato-individual-trabajo') {
+                // Personalización para Contrato Individual de Trabajo (Código del Trabajo Art. 10)
+                document.getElementById('lblStep1').innerText = 'Empleador';
+                document.getElementById('lblStep2').innerText = 'Trabajador';
+                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Empleador y Representante Legal';
+                document.getElementById('step1Desc').innerText = 'Individualización de la empresa empleadora (Razón Social, RUT, Giro, Domicilio) y su Representante Legal.';
+                document.getElementById('lbl_parte_a_nombre').innerText = 'Razón Social o Nombre del Empleador *';
+                document.getElementById('f_parte_a_nombre').value = 'Servicios Tecnológicos SpA';
+                document.getElementById('f_parte_a_rut').value = '76.987.654-3';
+                document.getElementById('f_parte_a_civil').value = 'Giro: Consultoría en TI y Desarrollo de Software';
+                document.getElementById('f_parte_a_profesion').value = 'Rep. Legal: Juan Andrés Pérez González, C.I. 12.345.678-5';
+                document.getElementById('f_parte_a_domicilio').value = 'Av. Andrés Bello 2711, Piso 14';
+                document.getElementById('f_parte_a_comuna').value = 'Las Condes, Santiago';
+
+                document.getElementById('step2Title').innerText = 'Paso 2: Datos del Trabajador';
+                document.getElementById('step2Desc').innerText = 'Individualización completa del trabajador para el contrato y su registro en la Dirección del Trabajo (REL).';
+                document.getElementById('lbl_parte_b_nombre').innerText = 'Nombre Completo del Trabajador *';
+                document.getElementById('f_parte_b_nombre').value = 'María José Valenzuela Soto';
+                document.getElementById('f_parte_b_rut').value = '15.444.555-6';
+                document.getElementById('f_parte_b_civil').value = 'chilena, soltera, Nac. 15/04/1992';
+                document.getElementById('f_parte_b_profesion').value = 'Ingeniera en Informática';
+                document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
+                document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
             }
 
             // Campos específicos según slug
@@ -871,45 +894,120 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                 case 'contrato-individual-trabajo':
                     fieldsHtml = `
+                        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#166534;">
+                            <i class="fas fa-balance-scale"></i> <strong>Contrato Legal Art. 10 Código del Trabajo y Ley 40 Horas (Ley 21.561)</strong>:
+                            Estipulaciones obligatorias, jornada de trabajo, régimen de gratificaciones y registro obligatorio en el portal Mi DT.
+                        </div>
+
+                        <h4 style="font-size:0.95rem; font-weight:700; color:var(--primary); margin-bottom:0.75rem; border-bottom:1px solid #E2E8F0; padding-bottom:0.35rem;">
+                            1. Cargo, Funciones y Lugar de Prestación
+                        </h4>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Cargo o Función a Desempeñar *</label>
+                                <label>Cargo o Título del Puesto *</label>
                                 <input type="text" id="f_trab_cargo" class="form-control" value="Desarrollador Full Stack / Consultor TI">
                             </div>
                             <div class="form-group">
-                                <label>Jornada Semanal (Ley 40 Horas - Ley 21.561) *</label>
-                                <select id="f_trab_jornada" class="form-control">
-                                    <option value="40 horas semanales distribuidas de lunes a viernes" selected>40 Horas Semanales (Lunes a Viernes)</option>
-                                    <option value="42 horas semanales en régimen de transición">42 Horas Semanales (Transición 2026)</option>
-                                    <option value="Artículo 22 inciso 2° sin fiscalización superior">Artículo 22 inc. 2° (Excluido de fiscalización)</option>
+                                <label>Lugar Específico de Prestación de Servicios *</label>
+                                <input type="text" id="f_trab_lugar" class="form-control" value="Av. Andrés Bello 2711, Piso 14, Las Condes, Santiago">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Funciones Principales del Cargo (Enunciativas) *</label>
+                            <textarea id="f_trab_funciones" class="form-control" rows="3">1. Desarrollo, arquitectura y mantención de sistemas y plataformas de software.
+2. Integración de APIs, servicios en la nube y pruebas de aseguramiento de calidad (QA).
+3. Documentación técnica y soporte a las unidades operativas de la empresa.</textarea>
+                        </div>
+
+                        <h4 style="font-size:0.95rem; font-weight:700; color:var(--primary); margin:1.25rem 0 0.75rem 0; border-bottom:1px solid #E2E8F0; padding-bottom:0.35rem;">
+                            2. Jornada de Trabajo y Control de Asistencia
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Modalidad de Jornada de Trabajo *</label>
+                                <select id="f_trab_modalidad_jornada" class="form-control">
+                                    <option value="ordinaria" selected>Jornada Ordinaria con Horario (Ley 40 Horas)</option>
+                                    <option value="art22">Exenta de Jornada (Art. 22 inc. 2° Código del Trabajo)</option>
                                 </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Horas Semanales / Distribución *</label>
+                                <input type="text" id="f_trab_horas_sem" class="form-control" value="40 horas semanales distribuidas de Lunes a Viernes de 09:00 a 18:00 horas">
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Sueldo Base Mensual Bruto ($ CLP) *</label>
+                                <label>Tiempo de Colación (No imputable a jornada) *</label>
+                                <input type="text" id="f_trab_colacion_tiempo" class="form-control" value="60 minutos diarios">
+                            </div>
+                            <div class="form-group">
+                                <label>Sistema de Control de Asistencia *</label>
+                                <input type="text" id="f_trab_asistencia_sist" class="form-control" value="Reloj control digital con registro biométrico autorizado por la DT">
+                            </div>
+                        </div>
+
+                        <h4 style="font-size:0.95rem; font-weight:700; color:var(--primary); margin:1.25rem 0 0.75rem 0; border-bottom:1px solid #E2E8F0; padding-bottom:0.35rem;">
+                            3. Remuneración, Beneficios y Cuenta de Pago
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Sueldo Base Mensual ($ CLP) *</label>
                                 <input type="number" id="f_trab_sueldo" class="form-control" value="1200000">
                             </div>
                             <div class="form-group">
                                 <label>Gratificación Legal *</label>
                                 <select id="f_trab_gratificacion" class="form-control">
-                                    <option value="25% según Art. 47 y 50 del Código del Trabajo (tope 4.75 IMM)" selected>Art. 50 (25% con tope 4,75 IMM)</option>
-                                    <option value="Prorrateada según utilidades líquidas del ejercicio">Según utilidades anuales Art. 47</option>
+                                    <option value="Artículo 50 (25% mensual con tope legal de 4,75 IMM)" selected>Artículo 50 (25% mensual con tope 4,75 IMM)</option>
+                                    <option value="Artículo 47 (30% de la utilidad líquida del ejercicio anual)">Artículo 47 (30% de la utilidad líquida)</option>
                                 </select>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Comuna y Lugar de Prestación de Servicios *</label>
-                                <input type="text" id="f_trab_lugar" class="form-control" value="Las Condes, Santiago (modalidad híbrida / teletrabajo)">
+                                <label>Asignación de Colación ($ CLP no remuneracional) *</label>
+                                <input type="number" id="f_trab_colacion_monto" class="form-control" value="60000">
                             </div>
                             <div class="form-group">
-                                <label>Tipo de Contrato *</label>
-                                <select id="f_trab_tipo" class="form-control">
-                                    <option value="Indefinido" selected>Plazo Indefinido</option>
-                                    <option value="Plazo Fijo de 3 meses">Plazo Fijo (3 meses)</option>
-                                    <option value="Plazo Fijo de 1 año">Plazo Fijo (1 año)</option>
+                                <label>Asignación de Movilización ($ CLP no remuneracional) *</label>
+                                <input type="number" id="f_trab_movilizacion_monto" class="form-control" value="40000">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Día de Pago de Remuneraciones *</label>
+                                <input type="text" id="f_trab_dia_pago" class="form-control" value="Último día hábil de cada mes">
+                            </div>
+                            <div class="form-group">
+                                <label>Datos Bancarios del Trabajador para Transferencia *</label>
+                                <input type="text" id="f_trab_banco_datos" class="form-control" value="Banco de Chile - Cuenta Corriente N° 123-45678-90">
+                            </div>
+                        </div>
+
+                        <h4 style="font-size:0.95rem; font-weight:700; color:var(--primary); margin:1.25rem 0 0.75rem 0; border-bottom:1px solid #E2E8F0; padding-bottom:0.35rem;">
+                            4. Previsión, Salud y Duración del Contrato
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Institución Previsional (AFP) *</label>
+                                <input type="text" id="f_trab_afp" class="form-control" value="AFP Habitat">
+                            </div>
+                            <div class="form-group">
+                                <label>Institución de Salud (FONASA / ISAPRE) *</label>
+                                <input type="text" id="f_trab_salud" class="form-control" value="FONASA Tramo D">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Modalidad de Duración *</label>
+                                <select id="f_trab_duracion_tipo" class="form-control">
+                                    <option value="Indefinida" selected>Indefinida</option>
+                                    <option value="Plazo Fijo">Plazo Fijo</option>
+                                    <option value="Por Obra o Faena">Por Obra o Faena Determinada</option>
                                 </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha de Inicio de Labores *</label>
+                                <input type="date" id="f_trab_fecha_inicio" class="form-control">
                             </div>
                         </div>
                     `;
@@ -1229,20 +1327,108 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         <p>Se deja constancia del estado: <span class="highlight-var">${escapeHtml(estado)}</span>. Lecturas de servicios: Electricidad: <span class="highlight-var">${escapeHtml(luz)}</span> | Agua: <span class="highlight-var">${escapeHtml(agua)}</span>. Bienes incorporados: <span class="highlight-var">${escapeHtml(inv)}</span>.</p>
                     `;
                 } else if (CURRENT_TEMPLATE.slug === 'contrato-individual-trabajo') {
-                    const cargo = document.getElementById('f_trab_cargo')?.value || 'Cargo';
-                    const jornada = document.getElementById('f_trab_jornada')?.value || '40 horas semanales';
+                    const cargo = document.getElementById('f_trab_cargo')?.value || 'Desarrollador Full Stack';
+                    const lugar = document.getElementById('f_trab_lugar')?.value || 'Av. Andrés Bello 2711, Las Condes';
+                    const funciones = document.getElementById('f_trab_funciones')?.value || 'Funciones asignadas al cargo';
+                    const modJornada = document.getElementById('f_trab_modalidad_jornada')?.value || 'ordinaria';
+                    const horasSem = document.getElementById('f_trab_horas_sem')?.value || '40 horas semanales';
+                    const colacionTiempo = document.getElementById('f_trab_colacion_tiempo')?.value || '60 minutos diarios';
+                    const sistAsistencia = document.getElementById('f_trab_asistencia_sist')?.value || 'Reloj control digital con registro biométrico';
                     const sueldo = document.getElementById('f_trab_sueldo')?.value || '1200000';
-                    const grat = document.getElementById('f_trab_gratificacion')?.value || 'Art. 50';
-                    const lugar = document.getElementById('f_trab_lugar')?.value || 'Santiago';
-                    const tipo = document.getElementById('f_trab_tipo')?.value || 'Indefinido';
+                    const grat = document.getElementById('f_trab_gratificacion')?.value || 'Artículo 50';
+                    const colacionMonto = document.getElementById('f_trab_colacion_monto')?.value || '60000';
+                    const movilizacionMonto = document.getElementById('f_trab_movilizacion_monto')?.value || '40000';
+                    const diaPago = document.getElementById('f_trab_dia_pago')?.value || 'Último día hábil de cada mes';
+                    const bancoDatos = document.getElementById('f_trab_banco_datos')?.value || 'Banco de Chile - Cta Corriente';
+                    const afp = document.getElementById('f_trab_afp')?.value || 'AFP Habitat';
+                    const salud = document.getElementById('f_trab_salud')?.value || 'FONASA';
+                    const durTipo = document.getElementById('f_trab_duracion_tipo')?.value || 'Indefinida';
+                    const fechaInicio = document.getElementById('f_trab_fecha_inicio')?.value || new Date().toISOString().split('T')[0];
+
                     const sueldoFmt = new Intl.NumberFormat('es-CL').format(sueldo);
-                    html += `
-                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Servicios y Lugar de Desempeño</div>
-                        <p>El Trabajador se compromete a prestar servicios en el cargo de <span class="highlight-var">${escapeHtml(cargo)}</span> en <span class="highlight-var">${escapeHtml(lugar)}</span> bajo contrato de duración <span class="highlight-var">${escapeHtml(tipo)}</span>.</p>
-                        <div class="preview-clause-title">CLÁUSULA TERCERA: Jornada de Trabajo (Ley 40 Horas - Ley 21.561)</div>
-                        <p>La jornada ordinaria será de <span class="highlight-var">${escapeHtml(jornada)}</span> con debido descanso para colación y registro de asistencia conforme a la DT.</p>
-                        <div class="preview-clause-title">CLÁUSULA CUARTA: Remuneraciones y Gratificación</div>
-                        <p>El Empleador pagará un sueldo base de <span class="highlight-var">$${sueldoFmt} CLP</span> mensuales brutos, más gratificación legal según modalidad de <span class="highlight-var">${escapeHtml(grat)}</span>.</p>
+                    const colacionFmt = new Intl.NumberFormat('es-CL').format(colacionMonto);
+                    const movilFmt = new Intl.NumberFormat('es-CL').format(movilizacionMonto);
+
+                    let jornadaClausulaHtml = '';
+                    if (modJornada === 'art22') {
+                        jornadaClausulaHtml = `
+                            <p><strong>Modalidad Exenta de Jornada (Art. 22 inciso 2° del Código del Trabajo):</strong><br>
+                            El Trabajador queda excluido de la limitación de jornada ordinaria de trabajo de conformidad con lo preceptuado en el inciso segundo del artículo 22 del Código del Trabajo, por prestar servicios en razón de la naturaleza de las funciones desempeñadas y sin fiscalización superior inmediata.</p>
+                        `;
+                    } else {
+                        jornadaClausulaHtml = `
+                            <p><strong>Modalidad con sujeción a horario ordinario:</strong><br>
+                            La jornada ordinaria semanal será de <span class="highlight-var">${escapeHtml(horasSem)}</span>.<br>
+                            El Trabajador dispondrá de un tiempo de colación diario de <span class="highlight-var">${escapeHtml(colacionTiempo)}</span>, el cual no será imputable a la jornada de trabajo.<br>
+                            El control de asistencia y determinación de horas de trabajo se efectuará mediante <span class="highlight-var">${escapeHtml(sistAsistencia)}</span>.</p>
+                        `;
+                    }
+
+                    html = `
+                        <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                            CONTRATO INDIVIDUAL DE TRABAJO
+                        </div>
+                        <p>En la ciudad de <strong>${escapeHtml(comA || 'Santiago')}</strong>, a <strong>${new Date().toLocaleDateString('es-CL')}</strong>, entre:</p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>EMPLEADOR:</strong> Razón Social / Nombre: <span class="highlight-var">${escapeHtml(nomA)}</span>, RUT: <span class="highlight-var">${escapeHtml(rutA)}</span>, Actividad / Giro: <span class="highlight-var">${escapeHtml(civilA)}</span>, Domicilio: <span class="highlight-var">${escapeHtml(domA)}</span>, Comuna y Ciudad: <span class="highlight-var">${escapeHtml(comA)}</span>, Representante Legal: <span class="highlight-var">${escapeHtml(profA)}</span>, en adelante el <strong>«Empleador»</strong>; y
+                        </p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>TRABAJADOR:</strong> Nombre Completo: <span class="highlight-var">${escapeHtml(nomB)}</span>, Cédula Nacional de Identidad: <span class="highlight-var">${escapeHtml(rutB)}</span>, Antecedentes: <span class="highlight-var">${escapeHtml(civilB)}</span>, Profesión: <span class="highlight-var">${escapeHtml(profB)}</span>, Domicilio: <span class="highlight-var">${escapeHtml(domB)}</span>, Comuna y Ciudad: <span class="highlight-var">${escapeHtml(comB)}</span>, Correo Electrónico: <span class="highlight-var">${escapeHtml(emailB)}</span>, Teléfono: <span class="highlight-var">${escapeHtml(telB)}</span>, en adelante el <strong>«Trabajador»</strong>.
+                        </p>
+
+                        <p style="margin-top:0.6rem;">
+                            Las partes han convenido celebrar el siguiente Contrato Individual de Trabajo, sujeto a las disposiciones del Código del Trabajo de la República de Chile y a las estipulaciones siguientes:
+                        </p>
+
+                        <div class="preview-clause-title">PRIMERO: NATURALEZA DE LOS SERVICIOS Y CARGO</div>
+                        <p>El Trabajador se compromete a prestar servicios personales y subordinados para el Empleador desempeñando el cargo de: <strong><span class="highlight-var">${escapeHtml(cargo)}</span></strong>.<br>
+                        Las funciones principales, sin que la enumeración sea taxativa sino meramente enunciativa, comprenden:<br>
+                        <span class="highlight-var" style="white-space:pre-line;">${escapeHtml(funciones)}</span><br>
+                        Asimismo, realizará todas aquellas tareas conexas, complementarias y accesorias que resulten necesarias e inherentes a la adecuada ejecución de sus funciones principales.</p>
+
+                        <div class="preview-clause-title">SEGUNDO: LUGAR DE PRESTACIÓN DE SERVICIOS</div>
+                        <p>El Trabajador prestará sus servicios en las dependencias ubicadas en <span class="highlight-var">${escapeHtml(lugar)}</span>.<br>
+                        De conformidad con lo dispuesto en el artículo 12 del Código del Trabajo, el Empleador podrá alterar la naturaleza de los servicios o el sitio o recinto en que ellos deban prestarse, a condición de que se trate de labores similares, que el nuevo sitio o recinto quede dentro de la misma localidad o ciudad, sin que ello importe menoscabo para el Trabajador.</p>
+
+                        <div class="preview-clause-title">TERCERO: JORNADA DE TRABAJO (LEY N° 21.561)</div>
+                        ${jornadaClausulaHtml}
+
+                        <div class="preview-clause-title">CUARTO: REMUNERACIÓN Y BENEFICIOS</div>
+                        <p>El Empleador pagará al Trabajador las siguientes prestaciones por concepto de remuneración y asignaciones no remuneracionales:<br>
+                        1. <strong>Sueldo Base:</strong> Una suma mensual fija de <span class="highlight-var">$${sueldoFmt} CLP</span>, pagadera por períodos mensuales vencidos.<br>
+                        2. <strong>Gratificación Legal:</strong> Se conviene el pago de gratificación legal conforme a la modalidad de <span class="highlight-var">${escapeHtml(grat)}</span> del Código del Trabajo.<br>
+                        3. <strong>Asignación de Colación (No Remuneracional):</strong> Una asignación mensual de <span class="highlight-var">$${colacionFmt} CLP</span> por concepto de reembolso de gastos de alimentación (Art. 41 del Código del Trabajo).<br>
+                        4. <strong>Asignación de Movilización (No Remuneracional):</strong> Una asignación mensual de <span class="highlight-var">$${movilFmt} CLP</span> por concepto de traslado entre el domicilio y el lugar de trabajo.<br>
+                        <strong>Forma y Fecha de Pago:</strong> Las remuneraciones se pagarán el <span class="highlight-var">${escapeHtml(diaPago)}</span> mediante transferencia bancaria a la cuenta personal del Trabajador: <span class="highlight-var">${escapeHtml(bancoDatos)}</span>.</p>
+
+                        <div class="preview-clause-title">QUINTO: DESCUENTOS LEGALES Y PREVISIONALES</div>
+                        <p>De las remuneraciones a pagar, el Empleador deducirá los impuestos que las graven, las cotizaciones de seguridad social (AFP, FONASA/ISAPRE, y Seguro de Cesantía de la Ley N° 19.728), y demás descuentos legalmente obligatorios o expresamente autorizados por escrito por el Trabajador en conformidad con el artículo 58 del Código del Trabajo.<br>
+                        * Institución Previsional: <span class="highlight-var">${escapeHtml(afp)}</span> | Institución de Salud: <span class="highlight-var">${escapeHtml(salud)}</span>.</p>
+
+                        <div class="preview-clause-title">SEXTO: DURACIÓN DEL CONTRATO</div>
+                        <p>El presente contrato tendrá una duración de modalidad: <strong><span class="highlight-var">${escapeHtml(durTipo)}</span></strong>, a contar del día <span class="highlight-var">${escapeHtml(fechaInicio)}</span>.</p>
+
+                        <div class="preview-clause-title">SÉPTIMO: OBLIGACIONES Y PROHIBICIONES</div>
+                        <p>El Trabajador se compromete a: desempeñar sus labores con la debida diligencia, lealtad y cuidado; cumplir estrictamente con las órdenes e instrucciones que imparta el Empleador o sus representantes; observar rigurosamente el Reglamento Interno de Orden, Higiene y Seguridad de la empresa; y cumplir con las normativas sobre prevención de riesgos y uso de elementos de protección personal (EPP).</p>
+
+                        <div class="preview-clause-title">OCTAVO: CONFIDENCIALIDAD, PROPIEDAD INTELECTUAL Y DATOS PERSONALES</div>
+                        <p>1. <strong>Confidencialidad:</strong> El Trabajador guardará estricta reserva y secreto profesional respecto de toda información técnica, financiera, comercial o secretos del negocio del Empleador.<br>
+                        2. <strong>Propiedad Intelectual / Industrial:</strong> Todas las creaciones, desarrollos o programas computacionales generados pertenecerán al Empleador conforme a las Leyes 17.336 y 19.039.<br>
+                        3. <strong>Protección de Datos Personales:</strong> El Empleador tratará los datos personales exclusivamente para los fines de la relación laboral y cumplimiento legal.</p>
+
+                        <div class="preview-clause-title">NOVENO: PREVENCIÓN, ACOSO Y CONVIVENCIA LABORAL</div>
+                        <p>La empresa mantiene un compromiso de tolerancia cero frente a toda conducta de acoso laboral, acoso sexual o violencia en el trabajo. Las partes se comprometen a respetar los protocolos de prevención y de investigación de la normativa legal vigente.</p>
+
+                        <div class="preview-clause-title">DÉCIMO: TERMINACIÓN DEL CONTRATO</div>
+                        <p>El presente contrato terminará por cualquiera de las causales señaladas en los artículos 159, 160 y 161 del Código del Trabajo, rigiendo los plazos, formalidades y comunicaciones prescritos en el artículo 162 del mismo cuerpo legal.</p>
+
+                        <div class="preview-clause-title">DÉCIMO PRIMERO: DOMICILIO Y JURISDICCIÓN</div>
+                        <p>Para todos los efectos legales derivados del presente contrato, las partes fijan su domicilio en la ciudad y comuna del lugar de prestación de servicios y se someten a la jurisdicción de los Juzgados de Letras del Trabajo competentes.</p>
+
+                        <div class="preview-clause-title">DÉCIMO SEGUNDO: REGISTRO ELECTRÓNICO LABORAL (REL) Y EJEMPLARES</div>
+                        <p>De conformidad con el artículo 9° del Código del Trabajo y la Ley N° 21.327, el Empleador registrará el presente contrato en el sitio electrónico de la Dirección del Trabajo (portal Mi DT) dentro de los plazos legales establecidos. El presente contrato se firma electrónicamente mediante firma digital con valor probatorio pleno (Ley N° 19.799), quedando copia íntegra y fehaciente a disposición de cada una de las partes en la plataforma SinNotario.cl.</p>
                     `;
                 } else if (CURRENT_TEMPLATE.slug === 'reconocimiento-deuda-pagare-privado') {
                     const deuda = document.getElementById('f_deuda_total')?.value || '3500000';
