@@ -56,8 +56,8 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
                 <i class="fas fa-balance-scale"></i> Plena Validez Jurídica | Ley N° 19.799 y Ley N° 21.461
             </div>
             <h1 class="hero-title">
-                Tus contratos y trámites legales <br>
-                <span class="highlight">100% online y sin pisar una notaría</span>
+                TUS CONTRATOS Y TRÁMITES LEGALES <br>
+                <span class="highlight">100% ONLINE Y SIN PISAR UNA NOTARÍA</span>
             </h1>
             <p class="hero-subtitle">
                 Firma contratos de arriendo express, declaraciones juradas, promesas y finiquitos desde tu celular o computador con firma electrónica avanzada y certificación digital inmediata.
