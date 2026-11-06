@@ -434,6 +434,48 @@ Al final de cada informe de diagnóstico legal de la IA, el sistema incluye un b
 
 ---
 
+### 3.6.2 Motor de Creación de Documentos Libres Asistido por IA ("Smart Legal Drafter IA - Libre Albedrío")
+
+Además del diagnóstico de contratos preexistentes y del catálogo de plantillas estándar, **SinNotario.cl** incorpora un **Motor Generador de Documentos a Medida bajo Libre Albedrío**:
+
+```mermaid
+flowchart TD
+    A["Cliente describe su necesidad en lenguaje natural<br/>(ej: 'Necesito un acuerdo para prestarle una máquina a mi vecino por 3 meses...')"] --> B["Smart Legal Drafter (Gemini API)"]
+    B --> C{"Filtro de Viabilidad Notarial"}
+    C -->|Solemnidad Exclusiva (Compraventa Casa/Hipotecas)| D["🛑 Alerta Roja: Trámite Exclusivo de Notaría"]
+    C -->|Acto Privado Válido (Autonomía de la Voluntad Art. 1437 CC)| E["Preguntas Guiadas de Precisión (3 a 5 preguntas clave)"]
+    E --> F["Generación de Borrador Personalizado con Cláusulas de Blindaje"]
+    F --> G["Live Preview en Pantalla + Edición Colaborativa"]
+    G --> H["Checkout y Circuito de Firma Electrónica Avanzada"]
+```
+
+#### 1. Principio Jurídico: La Autonomía de la Voluntad (Código Civil Chileno)
+En el derecho civil patrimonial chileno rige el principio fundamental de la **Autonomía de la Voluntad (Art. 12, 1437, 1445 y 1545 del Código Civil)**: *«Todo lo que no está expresamente prohibido por la ley, está permitido»* y *«Todo contrato legalmente celebrado es una ley para los contratantes»*.
+Esto permite que dos o más personas celebren válidamente cualquier clase de convención o acuerdo atípico o innominado (convenios de uso, comodatos de bienes muebles, reconocimientos mutuos, acuerdos familiares no solemnes, pactos de socios preliminares, cesiones de derechos litigiosos o convenios de pago flexibles), sin necesidad de encasillarse en una plantilla rígida.
+
+#### 2. Flujo Operativo del Asistente de Redacción Libre:
+* **Entrada en Lenguaje Cotidiano (Prompt del Usuario):**
+  * El usuario no necesita saber términos jurídicos. Puede escribir o dictar por voz:
+    > *"Necesito prestarle mi generador eléctrico y una soldadora a un contratista amigo durante 60 días para una obra en Rancagua, cobrándole $300.000 y que si se rompen me pague el valor nuevo de reposición"*.
+* **Interrogatorio Inteligente de Precisión (3 a 4 preguntas interactivas):**
+  * La IA detecta la figura (Comodato / Arrendamiento de cosas muebles) y pregunta en lenguaje simple:
+    1. *¿Quién asumirá los costos de transporte de las máquinas?*
+    2. *¿Se exige una garantía previa en dinero?*
+    3. *¿En qué fecha exacta deben ser devueltas?*
+* **Estructuración Jurídica Automática:**
+  * El motor redacta automáticamente el contrato con la estructura solemne de un instrumento privado válido en Chile:
+    * Comparecencia de las partes (RUT Módulo 11 y domicilios).
+    * Objeto detallado e inventario.
+    * Obligaciones y canon/precio.
+    * Cláusula Penal evaluada conforme al Art. 1535 del Código Civil.
+    * Sometimiento a la Ley N° 19.799 y fijación de domicilio convencional.
+* **Control y Gobernanza en el Backend (`/admin`):**
+  * Registro de todos los prompts y acuerdos generados bajo la modalidad libre.
+  * Consumo de tokens de IA y costo por generación.
+  * Alertas de seguridad si un usuario intenta generar acuerdos contrarios a las buenas costumbres, la moral o el orden público (Art. 1461 Código Civil).
+
+---
+
 ### 3.7 Módulo 7: Arquitectura de Almacenamiento Criptográfico, Retención Legal y Control de Acceso Cero-Confianza (Zero-Knowledge)
 
 La custodia de contratos legales y declaraciones juradas firmadas electrónicamente involucra dos desafíos críticos:
