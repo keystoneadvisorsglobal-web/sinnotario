@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once __DIR__ . '/../database/Database.php';
 require_once __DIR__ . '/adapters/StorageR2Adapter.php';
 require_once __DIR__ . '/../src/Services/DocumentPdfService.php';
+require_once __DIR__ . '/../src/Services/GeminiLegalService.php';
 
 $pdo = Database::getInstance();
 $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -153,7 +154,31 @@ try {
             ]);
             break;
 
-        // 5. Estado de salud / Check
+        // 5. Diagnóstico de contrato con IA (Smart Legal Check)
+        case 'ai_audit_contract':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(false, null, 'Método no permitido', 405);
+            $payload = json_decode(file_get_contents('php://input'), true);
+            $text = trim($payload['contract_text'] ?? '');
+            if (empty($text)) jsonResponse(false, null, 'Texto del contrato no proporcionado', 400);
+
+            $aiService = new GeminiLegalService();
+            $result = $aiService->analyzeContractText($text);
+            jsonResponse(true, $result);
+            break;
+
+        // 6. Redacción libre de contrato con IA (Smart Drafter)
+        case 'ai_draft_contract':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(false, null, 'Método no permitido', 405);
+            $payload = json_decode(file_get_contents('php://input'), true);
+            $prompt = trim($payload['prompt'] ?? '');
+            if (empty($prompt)) jsonResponse(false, null, 'Instrucción o prompt no proporcionado', 400);
+
+            $aiService = new GeminiLegalService();
+            $result = $aiService->draftContractFromPrompt($prompt, $payload['parameters'] ?? []);
+            jsonResponse(true, $result);
+            break;
+
+        // 7. Estado de salud / Check
         case 'health':
             $r2 = new StorageR2Adapter();
             $r2Configured = !empty($r2->accountId) && !empty($r2->apiToken);

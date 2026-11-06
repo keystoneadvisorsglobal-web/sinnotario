@@ -257,3 +257,4 @@ class DocumentPdfService {
         return $meses[$mesNum] ?? 'mes';
     }
 }
+
