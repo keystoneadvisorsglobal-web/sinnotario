@@ -7,7 +7,7 @@
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/database/Database.php';
 
-$slug = isset($_GET['slug']) ? trim($_GET['slug']) : 'contrato-arriendo-ley-21461';
+$slug = isset($_GET['slug']) ? trim($_GET['slug']) : (isset($_GET['doc']) ? trim($_GET['doc']) : 'contrato-arriendo-ley-21461');
 $pdo = Database::getInstance();
 
 $stmt = $pdo->prepare("SELECT * FROM templates WHERE slug = ?");
@@ -2288,6 +2288,10 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
             const profB = document.getElementById('f_parte_b_profesion')?.value || 'Abogada';
             const domB = document.getElementById('f_parte_b_domicilio')?.value || 'Av. Apoquindo 4500, Depto 801, Las Condes';
             const comB = document.getElementById('f_parte_b_comuna')?.value || 'Las Condes, Santiago';
+            const emailA = document.getElementById('f_parte_a_email')?.value || 'contacto@empresa.cl';
+            const telA = document.getElementById('f_parte_a_tel')?.value || '+56 9 1234 5678';
+            const emailB = document.getElementById('f_parte_b_email')?.value || 'trabajador@correo.cl';
+            const telB = document.getElementById('f_parte_b_tel')?.value || '+56 9 8765 4321';
 
             // Actualizar firmas visuales
             const pvSignA = document.getElementById('pv_sign_parte_a');

@@ -570,3 +570,20 @@
   - Smoke tests HTTP/2 200 OK en `https://sinnotario.cl/redactar.php?doc=prestacion-servicios-honorarios` y `https://sinnotario.cl/redactar.php?doc=contrato-individual-trabajo`.
   - Cache-busting actualizado a `?v=20261106_16`.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
+
+---
+
+### Registro: 2026-11-06 20:55 UTC (17:55 CLT)
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario (`sinnotario.cl`)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0039`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Se diagnosticó y resolvió el motivo por el cual la previsualización del Contrato Individual de Trabajo quedaba vacía en pantalla:
+  1) `redactar.php` únicamente leía el parámetro `$_GET['slug']`. Al acceder mediante `?doc=contrato-individual-trabajo`, el servidor aplicaba fallback hacia la primera plantilla de arriendo mientras que el encabezado visual mostraba el nombre del trámite consultado, generando desfase en la inicialización de `CURRENT_TEMPLATE`. Se incorporó soporte nativo dual para `$_GET['slug']` y `$_GET['doc']`.
+  2) Se removió una definición duplicada de la función `renderStep1ModalidadSelector()` en el script JavaScript de `redactar.php`.
+  3) Se incorporaron las variables `emailA`, `telA`, `emailB` y `telB` con fallbacks defensivos en la función `updateUniversalPreview()` para evitar interrupciones de renderizado.
+- **Pruebas Validadas:**
+  - Verificación sintáctica remota (`php -l redactar.php` -> 0 errores).
+  - Smoke tests HTTP/2 200 OK tanto en `https://sinnotario.cl/redactar.php?slug=contrato-individual-trabajo` como en `https://sinnotario.cl/redactar.php?doc=contrato-individual-trabajo`.
+  - Prueba de evaluación de runtime en Node.js confirmando renderizado exitoso de más de 10.000 caracteres de contenido contractual en la vista previa.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
