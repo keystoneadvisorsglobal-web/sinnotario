@@ -1,5 +1,27 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-06 15:30 UTC-3] - SOL-0033
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0033`
+- **Alcance de los Cambios:**
+  - **Acta de Entrega Material e Inventario de Inmuebles:**
+    1. **Paso 1 y 2 Personalizados:**
+       - Paso 1 adaptado para "Propietario / Arrendador" (Nombre, RUT, Profesión y Domicilio).
+       - Paso 2 adaptado para "Arrendatario / Receptor" (Nombre, RUT, Profesión y Domicilio).
+    2. **Paso 3 con Selector Dinámico de las 3 Modalidades:**
+       - *Opción A: Notarial Inmobiliaria Exhaustiva (6 Secciones - Recomendado).* Entrega física de llaves (principales, bodega, portón), lecturas oficiales de medidores (electricidad kWh, agua potable m3 y gas), inspección detallada por recintos (muros, pisos, pintura y grifería), tabla de inventario de artefactos y bienes muebles, deber legal de custodia y firma de plena conformidad probatoria.
+       - *Opción B: Recepción Provisoria con Lista de Observaciones / "Snag List" (5 Secciones).* Recepción en calidad provisoria, lectura de medidores y entrega de llaves, tabla estructurada de observaciones menores pendientes por subsanar, plazo perentorio de reparación a cargo del propietario (ej: 10 días corridos) y conversión de pleno derecho en recepción definitiva.
+       - *Opción C: Desocupación y Restitución Final con Liquidación de Garantía (5 Secciones).* Restitución material formal desocupada de moradores, devolución de llaves y consumos de salida, inspección física de estado de entrega, liquidación matemática de garantía (Garantía original entregada - Descuentos por reparaciones/cuentas = Saldo Líquido a devolver al arrendatario), plazo de pago y finiquito recíproco y liberatorio del contrato de arriendo.
+    3. **Motor PDF Criptográfico (`DocumentPdfService.php`):**
+       - Sincronización para emitir las cláusulas y secciones específicas de cada una de las 3 modalidades en el PDF final con código QR y Hash SHA-256 en Cloudflare R2.
+    4. **Cache-Busting:** Bump a `?v=20261106_11`.
+- **Pruebas Validadas:**
+  - PHP Lint remoto en Hostinger: 0 errores de sintaxis en `redactar.php` y `DocumentPdfService.php`.
+  - Smoke test HTTP en producción: `curl -I "https://sinnotario.cl/redactar.php?slug=acta-entrega-llaves-e-inventario"` -> `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
 ### [2026-11-06 15:26 UTC-3] - SOL-0032
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

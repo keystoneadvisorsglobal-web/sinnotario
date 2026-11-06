@@ -234,6 +234,46 @@ class DocumentPdfService {
                 self::printClause($pdf, 'CUARTO: CLÁUSULA PENAL Y RESGUARDO', "Si cualquiera de las partes se desistiera injustificadamente o no compareciere a otorgar la escritura definitiva, pagará a título de indemnización de perjuicios tasada y convencional la multa pactada en las condiciones del trámite.");
                 break;
 
+            case 'acta-entrega-llaves-e-inventario':
+                $modActa = $formData['f_acta_modalidad'] ?? 'opcion_a';
+                $dirActa = $formData['direccion'] ?? ($formData['f_acta_direccion'] ?? 'Av. Providencia 1234, Depto 402, Santiago');
+                $llaves = $formData['llaves'] ?? ($formData['f_acta_llaves'] ?? '3 juegos de llaves');
+                $luz = $formData['luz'] ?? ($formData['f_acta_luz'] ?? '14.850 kWh');
+                $agua = $formData['agua'] ?? ($formData['f_acta_agua'] ?? '1.230 m3');
+                $gas = $formData['gas'] ?? ($formData['f_acta_gas'] ?? '450 m3');
+                $estado = $formData['estado'] ?? ($formData['f_acta_estado'] ?? 'Buen estado de conservacion general');
+                $inv = $formData['inventario'] ?? ($formData['f_acta_inventario'] ?? 'Artefactos y bienes incluidos');
+
+                self::printClause($pdf, 'SECCION PRIMERA: CONSTANCIA MATERIAL DEL INMUEBLE', "Las partes dejan constancia de la comparecencia y entrega material del inmueble de {$dirActa}.");
+                self::printClause($pdf, 'SECCION SEGUNDA: LLAVES Y LECTURAS DE SUMINISTROS', "Entrega de llaves: {$llaves}. Lecturas oficiales: Electricidad: {$luz} | Agua Potable: {$agua} | Gas: {$gas}. Consumos anteriores cancelados.");
+
+                if ($modActa === 'opcion_b') {
+                    // Opción B: Recepción Provisoria con Snag List (5 Secciones)
+                    $snag = $formData['snag_list'] ?? ($formData['f_acta_snag_list'] ?? 'Observaciones menores registradas');
+                    $plazoSub = $formData['plazo_subsanar'] ?? ($formData['f_acta_plazo_subsanar'] ?? '10 dias corridos');
+
+                    self::printClause($pdf, 'SECCION TERCERA: LISTA DETALLADA DE OBSERVACIONES (SNAG LIST)', "Se constatan de mutuo acuerdo los siguientes detalles menores pendientes de subsanar: {$snag}.");
+                    self::printClause($pdf, 'SECCION CUARTA: COMPROMISO Y PLAZO DE SUBSANACION', "El Propietario se compromete a reparar a su costo los detalles indicados dentro de {$plazoSub}.");
+                    self::printClause($pdf, 'SECCION QUINTA: CONVERSION EN RECEPCION DEFINITIVA', "Subsanadas las observaciones a conformidad, la recepcion se entendera definitiva de pleno derecho.");
+                } else if ($modActa === 'opcion_c') {
+                    // Opción C: Desocupación y Restitución Final con Liquidación de Garantía (5 Secciones)
+                    $garOrig = !empty($formData['garantia_original']) ? '$' . number_format($formData['garantia_original'], 0, ',', '.') . ' CLP' : '$650.000 CLP';
+                    $descMonto = !empty($formData['descuentos_monto']) ? '$' . number_format($formData['descuentos_monto'], 0, ',', '.') . ' CLP' : '$50.000 CLP';
+                    $saldoGar = !empty($formData['saldo_garantia']) ? '$' . number_format($formData['saldo_garantia'], 0, ',', '.') . ' CLP' : '$600.000 CLP';
+                    $plazoDev = $formData['plazo_devolucion'] ?? ($formData['f_acta_plazo_devolucion'] ?? 'Dentro de 15 dias habiles');
+
+                    self::printClause($pdf, 'SECCION TERCERA: ESTADO DE SALIDA Y DESOCUPACION', "Se constata la restitucion material del bien desocupado de moradores. Estado de salida: {$estado}. Inventario: {$inv}.");
+                    self::printClause($pdf, 'SECCION CUARTA: LIQUIDACION DE GARANTIA DE ARRIENDO', "Garantia original: {$garOrig}. Descuentos acordados por cuentas o reparaciones: {$descMonto}. SALDO LIQUIDO A RESTITUIR AL ARRENDATARIO: {$saldoGar}. Plazo: {$plazoDev}.");
+                    self::printClause($pdf, 'SECCION QUINTA: FINIQUITO RECIPROCO DE ARRENDAMIENTO', "Con el pago del saldo de garantia y la restitucion, las partes se otorgan mutuo finiquito liberatorio de toda obligacion derivada del arriendo.");
+                } else {
+                    // Opción A: Notarial Inmobiliaria Exhaustiva (6 Secciones - Recomendado)
+                    self::printClause($pdf, 'SECCION TERCERA: ESTADO DE CONSERVACION DETALLADO POR RECINTOS', "Inspeccion por recintos (living, dormitorios, banos, cocina y pisos): {$estado}.");
+                    self::printClause($pdf, 'SECCION CUARTA: TABLA DE INVENTARIO DE ARTEFACTOS Y BIENES', "Bienes muebles y electrodomesticos incluidos en perfecto estado de funcionamiento: {$inv}.");
+                    self::printClause($pdf, 'SECCION QUINTA: DEBER DE CUSTODIA Y MANTENCION', "El Arrendatario se compromete al cuidado diligente y reparaciones locativas que legalmente procedan.");
+                    self::printClause($pdf, 'SECCION SEXTA: FIRMA DE CONFORMIDAD Y VALIDEZ LEGAL', "Las partes suscriben la presente acta en senal de plena conformidad como anexo vinculante del contrato de arrendamiento (Ley N° 19.799).");
+                }
+                break;
+
             case 'finiquito-laboral-mutuo-acuerdo':
                 $modFini = $formData['f_fini_modalidad'] ?? 'opcion_a';
                 $cargo = $formData['cargo'] ?? ($formData['f_cargo'] ?? 'Analista de Operaciones');

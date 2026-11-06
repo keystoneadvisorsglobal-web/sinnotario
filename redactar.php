@@ -557,7 +557,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js?v=20261106_10"></script>
+    <script src="assets/js/app.js?v=20261106_11"></script>
     <script>
         // Funciones auxiliares seguras locales
         function escapeHtml(text) {
@@ -658,6 +658,29 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     help.innerText = 'Fianza, aval y codeuda solidaria: comparece un tercero obligado principal a todas las cuotas (8 cláusulas).';
                 } else if (val === 'opcion_c') {
                     help.innerText = 'Transaccional extrajudicial previa a juicio: confesión judicial de deuda y pacto procesal Art. 434 N° 5 CPC (7 cláusulas).';
+                }
+            }
+            updateUniversalPreview();
+        }
+
+        function toggleActaFields() {
+            const sel = document.getElementById('f_acta_modalidad');
+            if (!sel) return;
+            const val = sel.value;
+            const wrapB = document.getElementById('wrap_acta_opcion_b');
+            const wrapC = document.getElementById('wrap_acta_opcion_c');
+            const help = document.getElementById('acta_modalidad_help');
+
+            if (wrapB) wrapB.style.display = (val === 'opcion_b') ? 'block' : 'none';
+            if (wrapC) wrapC.style.display = (val === 'opcion_c') ? 'block' : 'none';
+
+            if (help) {
+                if (val === 'opcion_a') {
+                    help.innerText = 'Acta definitiva: llaves, lecturas completas de medidores, inventario y conservación por recintos (6 secciones).';
+                } else if (val === 'opcion_b') {
+                    help.innerText = 'Recepción provisoria: inventario, lecturas y lista de observaciones menores con plazo de subsanación (5 secciones).';
+                } else if (val === 'opcion_c') {
+                    help.innerText = 'Desocupación final y restitución: constata estado de salida, descuentos y saldo líquido de garantía a restituir (5 secciones).';
                 }
             }
             updateUniversalPreview();
@@ -778,6 +801,28 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                 document.getElementById('f_parte_b_rut').value = '15.444.555-6';
                 document.getElementById('f_parte_b_civil').value = 'chilena, soltera';
                 document.getElementById('f_parte_b_profesion').value = 'Comerciante Independiente';
+                document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
+                document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
+            } else if (CURRENT_TEMPLATE.slug === 'acta-entrega-llaves-e-inventario') {
+                document.getElementById('lblStep1').innerText = 'Arrendador';
+                document.getElementById('lblStep2').innerText = 'Arrendatario';
+                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Propietario / Arrendador';
+                document.getElementById('step1Desc').innerText = 'Identificación de la parte propietaria que entrega o restituye formalmente el inmueble.';
+                document.getElementById('lbl_parte_a_nombre').innerText = 'Nombre Completo del Arrendador *';
+                document.getElementById('f_parte_a_nombre').value = 'Juan Andrés Pérez González';
+                document.getElementById('f_parte_a_rut').value = '12.345.678-5';
+                document.getElementById('f_parte_a_civil').value = 'chileno, soltero';
+                document.getElementById('f_parte_a_profesion').value = 'Ingeniero Comercial';
+                document.getElementById('f_parte_a_domicilio').value = 'Av. Providencia 1234, Depto 402';
+                document.getElementById('f_parte_a_comuna').value = 'Providencia, Santiago';
+
+                document.getElementById('step2Title').innerText = 'Paso 2: Datos del Arrendatario';
+                document.getElementById('step2Desc').innerText = 'Identificación de la parte arrendataria que recibe o desocupa la propiedad.';
+                document.getElementById('lbl_parte_b_nombre').innerText = 'Nombre Completo del Arrendatario *';
+                document.getElementById('f_parte_b_nombre').value = 'María José Valenzuela Soto';
+                document.getElementById('f_parte_b_rut').value = '15.444.555-6';
+                document.getElementById('f_parte_b_civil').value = 'chilena, soltera';
+                document.getElementById('f_parte_b_profesion').value = 'Abogada';
                 document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
                 document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
             }
@@ -1182,31 +1227,98 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                 case 'acta-entrega-llaves-e-inventario':
                     fieldsHtml = `
-                        <div class="form-group">
-                            <label>Dirección del Inmueble Entregado *</label>
-                            <input type="text" id="f_acta_direccion" class="form-control" value="Av. Providencia 1234, Depto 402, Providencia">
+                        <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:6px; padding:0.8rem; margin-bottom:1.2rem; font-size:0.85rem; color:#1E40AF;">
+                            <i class="fas fa-key"></i> <strong>Acta de Entrega Material, Inventario y Estado del Inmueble</strong>:
+                            Constancia fehaciente para contratos de arriendo o compraventa. Selecciona la modalidad para adecuar las secciones y liquidaciones.
                         </div>
+
+                        <div class="form-group" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:6px; padding:0.85rem; margin-bottom:1.2rem;">
+                            <label style="font-weight:700; color:#0F2A4A; font-size:0.95rem;">Modalidad del Acta *</label>
+                            <select id="f_acta_modalidad" class="form-control" onchange="toggleActaFields()" style="font-weight:600; border-color:#2563EB;">
+                                <option value="opcion_a" selected>Opción A: Notarial Inmobiliaria Exhaustiva (6 Secciones - Recomendado)</option>
+                                <option value="opcion_b">Opción B: Recepción Provisoria con Lista de Observaciones / "Snag List" (5 Secciones)</option>
+                                <option value="opcion_c">Opción C: Acta de Desocupación y Restitución Final con Liquidación de Garantía (5 Secciones)</option>
+                            </select>
+                            <small class="form-text text-muted" id="acta_modalidad_help">Constancia fehaciente de llaves, lecturas exactas de servicios básicos, inventario y conservación por recintos.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Dirección Exacta del Inmueble (Depto / Casa, Comuna y Ciudad) *</label>
+                            <input type="text" id="f_acta_direccion" class="form-control" value="Av. Providencia 1234, Depto 402, Providencia, Santiago">
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Cantidad de Juegos de Llaves Entregados *</label>
-                                <input type="number" id="f_acta_llaves" class="form-control" value="3" min="1">
+                                <label>Cantidad y Detalle de Juegos de Llaves Entregados *</label>
+                                <input type="text" id="f_acta_llaves" class="form-control" value="3 juegos completos (chapas principales, bodega y portón de acceso)">
                             </div>
                             <div class="form-group">
                                 <label>Lectura Medidor Eléctrico (kWh) *</label>
                                 <input type="text" id="f_acta_luz" class="form-control" value="14.850 kWh">
                             </div>
+                        </div>
+
+                        <div class="form-row">
                             <div class="form-group">
-                                <label>Lectura Medidor Agua (m³) *</label>
+                                <label>Lectura Medidor de Agua Potable (m³) *</label>
                                 <input type="text" id="f_acta_agua" class="form-control" value="1.230 m³">
                             </div>
+                            <div class="form-group">
+                                <label>Lectura Medidor / Suministro de Gas *</label>
+                                <input type="text" id="f_acta_gas" class="form-control" value="450 m³ (Gas por cañería Metrogas al día)">
+                            </div>
                         </div>
+
                         <div class="form-group">
-                            <label>Estado de Pintura, Muros e Instalaciones *</label>
-                            <input type="text" id="f_acta_estado" class="form-control" value="Pintura en buen estado general, sin daños estructurales, grifería y artefactos operativos">
+                            <label>Estado de Conservación por Recintos (Pintura, Muros, Pisos y Grifería) *</label>
+                            <textarea id="f_acta_estado" class="form-control" rows="2">Living y dormitorios con pintura látex en perfecto estado sin perforaciones; pisos flotantes limpios sin desniveles; baños y cocina con grifería operativa, sellos de silicona limpios y sin fugas.</textarea>
                         </div>
+
                         <div class="form-group">
-                            <label>Inventario de Bienes Muebles y Artefactos Incluidos</label>
-                            <textarea id="f_acta_inventario" class="form-control" rows="2">Cocina encimera 4 platos, horno eléctrico empotrado, campana extractora, cortinas roller en living y dormitorios.</textarea>
+                            <label>Inventario de Artefactos y Bienes Muebles Incluidos *</label>
+                            <textarea id="f_acta_inventario" class="form-control" rows="2">Cocina encimera 4 platos vitrocerámica, horno empotrado, campana retráctil, cortinas roller dúo en ventanas, lámparas plafón LED instaladas en todos los recintos.</textarea>
+                        </div>
+
+                        <!-- Campos específicos para Opción B (Snag List / Plazo de Subsanación) -->
+                        <div id="wrap_acta_opcion_b" style="display:none; background:#FEFCE8; border:1px solid #FEF08A; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#854D0E; margin-bottom:0.5rem;">
+                                <i class="fas fa-clipboard-list"></i> Lista de Observaciones y Plazo Perentorio de Reparación
+                            </h5>
+                            <div class="form-group">
+                                <label>Detalle de Observaciones Menores Detectadas *</label>
+                                <textarea id="f_acta_snag_list" class="form-control" rows="2">1. Ajuste de cerradura puerta dormitorio principal. 2. Cambio de goma de sellado en desagüe lavamanos baño secundario.</textarea>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Plazo Acordado para Subsanación por el Propietario *</label>
+                                <input type="text" id="f_acta_plazo_subsanar" class="form-control" value="10 días corridos contados desde la firma de la presente acta provisoria">
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos para Opción C (Restitución Final y Liquidación Garantía) -->
+                        <div id="wrap_acta_opcion_c" style="display:none; background:#FAF5FF; border:1px solid #E9D5FF; border-radius:6px; padding:0.85rem; margin-top:1rem;">
+                            <h5 style="font-size:0.9rem; font-weight:700; color:#6B21A8; margin-bottom:0.5rem;">
+                                <i class="fas fa-receipt"></i> Desocupación Final y Liquidación de Garantía de Arriendo
+                            </h5>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Monto de la Garantía Original ($ CLP) *</label>
+                                    <input type="number" id="f_acta_garantia_monto" class="form-control" value="650000">
+                                </div>
+                                <div class="form-group">
+                                    <label>Descuentos por Cuentas o Reparaciones ($ CLP) *</label>
+                                    <input type="number" id="f_acta_descuentos_monto" class="form-control" value="50000">
+                                </div>
+                            </div>
+                            <div class="form-row" style="margin-bottom:0;">
+                                <div class="form-group">
+                                    <label>Saldo Líquido a Devolver al Arrendatario ($ CLP) *</label>
+                                    <input type="number" id="f_acta_saldo_garantia" class="form-control" value="600000" readonly style="background:#F1F5F9; font-weight:700;">
+                                </div>
+                                <div class="form-group">
+                                    <label>Plazo y Medio de Devolución de Garantía *</label>
+                                    <input type="text" id="f_acta_plazo_devolucion" class="form-control" value="Dentro de 15 días hábiles mediante transferencia bancaria">
+                                </div>
+                            </div>
                         </div>
                     `;
                     break;
@@ -1857,18 +1969,125 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         <p>El presente instrumento se rige íntegramente por las leyes de la República de Chile. Para todos los efectos legales que de él emanen, las Partes fijan su domicilio convencional en la comuna y ciudad de Santiago y se someten a la competencia de los <span class="highlight-var">${escapeHtml(tribunales)}</span>.</p>
                     `;
                 } else if (CURRENT_TEMPLATE.slug === 'acta-entrega-llaves-e-inventario') {
+                    const modActa = document.getElementById('f_acta_modalidad')?.value || 'opcion_a';
                     const dirActa = document.getElementById('f_acta_direccion')?.value || domA;
-                    const llaves = document.getElementById('f_acta_llaves')?.value || '3';
+                    const llaves = document.getElementById('f_acta_llaves')?.value || '3 juegos de llaves';
                     const luz = document.getElementById('f_acta_luz')?.value || '14.850 kWh';
                     const agua = document.getElementById('f_acta_agua')?.value || '1.230 m³';
-                    const estado = document.getElementById('f_acta_estado')?.value || 'Buen estado';
-                    const inv = document.getElementById('f_acta_inventario')?.value || 'Sin muebles';
-                    html += `
-                        <div class="preview-clause-title">CLÁUSULA SEGUNDA: Entrega Material y Llaves</div>
-                        <p>Las partes formalizan la entrega y recepción material del inmueble de <span class="highlight-var">${escapeHtml(dirActa)}</span>, haciendo entrega de <span class="highlight-var">${escapeHtml(llaves)} juegos de llaves</span> completos.</p>
-                        <div class="preview-clause-title">CLÁUSULA TERCERA: Estado de Conservación e Inventario</div>
-                        <p>Se deja constancia del estado: <span class="highlight-var">${escapeHtml(estado)}</span>. Lecturas de servicios: Electricidad: <span class="highlight-var">${escapeHtml(luz)}</span> | Agua: <span class="highlight-var">${escapeHtml(agua)}</span>. Bienes incorporados: <span class="highlight-var">${escapeHtml(inv)}</span>.</p>
+                    const gas = document.getElementById('f_acta_gas')?.value || '450 m³';
+                    const estado = document.getElementById('f_acta_estado')?.value || 'Buen estado general';
+                    const inv = document.getElementById('f_acta_inventario')?.value || 'Bienes incluidos en el inmueble';
+
+                    html = `
+                        <div style="text-align:center; font-weight:800; font-size:1.05rem; color:#0F2A4A; margin-bottom:1rem; letter-spacing:0.5px;">
+                            ACTA DE RECEPCIÓN Y ENTREGA MATERIAL DE INMUEBLE
+                        </div>
+                        <p>En la ciudad de <strong>${escapeHtml(comA || 'Santiago')}</strong>, República de Chile, a <strong>${new Date().toLocaleDateString('es-CL')}</strong>, comparecen:</p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>POR UNA PARTE:</strong> Don/Doña / Entidad <span class="highlight-var">${escapeHtml(nomA)}</span>, cédula nacional de identidad / RUT N° <span class="highlight-var">${escapeHtml(rutA)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, en adelante el <strong>«Propietario / Arrendador»</strong>; y
+                        </p>
+                        
+                        <p style="margin-top:0.6rem;">
+                            <strong>POR LA OTRA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomB)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutB)}</span>, antecedentes: <span class="highlight-var">${escapeHtml(civilB)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profB)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domB)}</span>, comuna de <span class="highlight-var">${escapeHtml(comB)}</span>, en adelante el <strong>«Arrendatario / Receptor»</strong>.
+                        </p>
+
+                        <p style="margin-top:0.6rem;">
+                            Las partes dejan formal y fidedigna constancia de la inspección física, recepción y condiciones del inmueble ubicado en <span class="highlight-var" style="font-weight:600;">${escapeHtml(dirActa)}</span>, con arreglo a las siguientes cláusulas y secciones:
+                        </p>
                     `;
+
+                    if (modActa === 'opcion_b') {
+                        // Opción B: Recepción Provisoria con Lista de Observaciones / "Snag List" (5 Secciones)
+                        const snagList = document.getElementById('f_acta_snag_list')?.value || 'Observaciones menores';
+                        const plazoSub = document.getElementById('f_acta_plazo_subsanar')?.value || '10 días corridos';
+
+                        html += `
+                            <div class="preview-clause-title">SECCIÓN PRIMERA: CARÁCTER PROVISORIO DE LA RECEPCIÓN</div>
+                            <p>El Arrendatario recibe materialmente el inmueble en calidad provisoria, sujeto a la verificación y subsanación obligatoria de las observaciones detalladas en la presente acta.</p>
+
+                            <div class="preview-clause-title">SECCIÓN SEGUNDA: ENTREGA DE LLAVES Y LECTURA DE MEDIDORES</div>
+                            <p>Se hace entrega formal de: <span class="highlight-var">${escapeHtml(llaves)}</span>.<br>
+                            Lecturas exactas de servicios a la fecha de entrega:<br>
+                            - Electricidad: <span class="highlight-var">${escapeHtml(luz)}</span> | Agua Potable: <span class="highlight-var">${escapeHtml(agua)}</span> | Gas: <span class="highlight-var">${escapeHtml(gas)}</span>.<br>
+                            Los consumos devengados a partir de esta fecha serán de cargo exclusivo del Arrendatario.</p>
+
+                            <div class="preview-clause-title">SECCIÓN TERCERA: LISTA DETALLADA DE OBSERVACIONES ("SNAG LIST")</div>
+                            <p>Las partes constatan de mutuo acuerdo los siguientes detalles o reparaciones menores pendientes de subsanar por el Propietario:<br>
+                            <span class="highlight-var" style="background:#FEFCE8; color:#854D0E; font-weight:600; white-space:pre-line;">${escapeHtml(snagList)}</span>.</p>
+
+                            <div class="preview-clause-title">SECCIÓN CUARTA: PLAZO PERENTORIO Y COMPROMISO DE REPARACIÓN</div>
+                            <p>El Propietario se compromete formalmente a reparar a su entero costo todos los ítems singularizados en la sección precedente dentro del plazo de <span class="highlight-var">${escapeHtml(plazoSub)}</span>, coordinando previamente las visitas técnicas pertinentes.</p>
+
+                            <div class="preview-clause-title">SECCIÓN QUINTA: CONVERSIÓN EN RECEPCIÓN DEFINITIVA</div>
+                            <p>Subsanadas las observaciones a entera conformidad del Arrendatario, o vencido el plazo sin reclamo fundado, la recepción se entenderá convertida de pleno derecho en definitiva para todos los efectos contractuales y legales.</p>
+                        `;
+                    } else if (modActa === 'opcion_c') {
+                        // Opción C: Acta de Desocupación y Restitución Final con Liquidación de Garantía (5 Secciones)
+                        const garOrig = parseInt(document.getElementById('f_acta_garantia_monto')?.value || '0', 10);
+                        const descMonto = parseInt(document.getElementById('f_acta_descuentos_monto')?.value || '0', 10);
+                        const saldoGar = Math.max(0, garOrig - descMonto);
+                        const plazoDev = document.getElementById('f_acta_plazo_devolucion')?.value || 'Dentro de 15 días hábiles';
+
+                        const garFmt = new Intl.NumberFormat('es-CL').format(garOrig);
+                        const descFmt = new Intl.NumberFormat('es-CL').format(descMonto);
+                        const saldoFmt = new Intl.NumberFormat('es-CL').format(saldoGar);
+
+                        // Sincronizar input readonly
+                        const saldoInput = document.getElementById('f_acta_saldo_garantia');
+                        if (saldoInput) saldoInput.value = saldoGar;
+
+                        html += `
+                            <div class="preview-clause-title">SECCIÓN PRIMERA: RESTITUCIÓN Y DESOCUPACIÓN MATERIAL DEFINITIVA</div>
+                            <p>El Arrendatario hace entrega y restitución material formal de la propiedad al Propietario, completamente desocupada de personas, muebles y enseres que no formen parte del inventario original.</p>
+
+                            <div class="preview-clause-title">SECCIÓN SEGUNDA: DEVOLUCIÓN DE LLAVES Y CONSUMOS DE SALIDA</div>
+                            <p>El Arrendatario devuelve la totalidad de las llaves: <span class="highlight-var">${escapeHtml(llaves)}</span>.<br>
+                            Lecturas finales de servicios a la fecha de restitución:<br>
+                            - Electricidad: <span class="highlight-var">${escapeHtml(luz)}</span> | Agua Potable: <span class="highlight-var">${escapeHtml(agua)}</span> | Gas: <span class="highlight-var">${escapeHtml(gas)}</span>.</p>
+
+                            <div class="preview-clause-title">SECCIÓN TERCERA: INSPECCIÓN FÍSICA Y ESTADO DE SALIDA</div>
+                            <p>El Propietario recibe el inmueble y deja constancia de su estado: <span class="highlight-var">${escapeHtml(estado)}</span>.<br>
+                            Inventario revisado conforme: <span class="highlight-var">${escapeHtml(inv)}</span>.</p>
+
+                            <div class="preview-clause-title">SECCIÓN CUARTA: LIQUIDACIÓN FORMAL DE LA GARANTÍA DE ARRIENDO</div>
+                            <p>Las partes practican la liquidación de la garantía constituida al inicio del contrato:<br>
+                            - Garantía original entregada: <span class="highlight-var">$${garFmt} CLP</span>.<br>
+                            - Descuentos acordados por cuentas pendientes o reparaciones: <span class="highlight-var" style="color:#DC2626;">$${descFmt} CLP</span>.<br>
+                            <strong>SALDO LÍQUIDO A RESTITUIR AL ARRENDATARIO:</strong> <span class="highlight-var" style="font-weight:700; color:#15803D;">$${saldoFmt} CLP</span>.<br>
+                            Plazo y forma de devolución pactada: <span class="highlight-var">${escapeHtml(plazoDev)}</span>.</p>
+
+                            <div class="preview-clause-title">SECCIÓN QUINTA: FINIQUITO RECÍPROCO DEL CONTRATO DE ARRENDAMIENTO</div>
+                            <p>Con el pago del saldo de garantía y la entrega material, las partes se otorgan recíproco y completo finiquito respecto de las obligaciones derivadas del contrato de arriendo, no adeudándose suma alguna posterior.</p>
+                        `;
+                    } else {
+                        // Opción A: Notarial Inmobiliaria Exhaustiva (6 Secciones - Recomendado)
+                        html += `
+                            <div class="preview-clause-title">SECCIÓN PRIMERA: ENTREGA FÍSICA Y JUEGOS DE LLAVES</div>
+                            <p>El Propietario hace entrega real y efectiva al Arrendatario de las llaves correspondientes al inmueble: <span class="highlight-var" style="font-weight:600;">${escapeHtml(llaves)}</span>, declarando el Arrendatario recibirlas a su entera satisfacción.</p>
+
+                            <div class="preview-clause-title">SECCIÓN SEGUNDA: LECTURAS OFICIALES DE MEDIDORES Y SERVICIOS BÁSICOS</div>
+                            <p>Las partes constatan conjuntamente las siguientes lecturas de suministros básicos al momento exacto de la entrega material:<br>
+                            - Medidor de Electricidad: <span class="highlight-var" style="font-weight:600;">${escapeHtml(luz)}</span>.<br>
+                            - Medidor de Agua Potable: <span class="highlight-var" style="font-weight:600;">${escapeHtml(agua)}</span>.<br>
+                            - Suministro de Gas: <span class="highlight-var" style="font-weight:600;">${escapeHtml(gas)}</span>.<br>
+                            El Propietario declara que los consumos anteriores a esta fecha se encuentran completamente pagados o serán de su cargo exclusivo.</p>
+
+                            <div class="preview-clause-title">SECCIÓN TERCERA: ESTADO DE CONSERVACIÓN DETALLADO POR RECINTOS</div>
+                            <p>Las partes inspeccionan minuciosamente cada dependencia del inmueble (living-comedor, dormitorios, baños, cocina, terraza y logia), dejando constancia de su estado: <br>
+                            <span class="highlight-var" style="white-space:pre-line;">${escapeHtml(estado)}</span>.</p>
+
+                            <div class="preview-clause-title">SECCIÓN CUARTA: TABLA DE INVENTARIO DE ARTEFACTOS Y BIENES MUEBLES</div>
+                            <p>Se deja expresa constancia de que el inmueble se entrega con los siguientes artefactos, electrodomésticos y bienes muebles en perfecto estado operativo y de conservación:<br>
+                            <span class="highlight-var" style="white-space:pre-line;">${escapeHtml(inv)}</span>.</p>
+
+                            <div class="preview-clause-title">SECCIÓN QUINTA: DEBER DE CUSTODIA Y MANTENCIÓN</div>
+                            <p>El Arrendatario se compromete a custodiar el inmueble y los bienes inventariados con la diligencia debida, asumiendo las reparaciones locativas que por ley le correspondan y comprometiéndose a restituirlos al término del arriendo en el mismo buen estado recibido, salvo el deterioro legítimo por uso natural y paso del tiempo.</p>
+
+                            <div class="preview-clause-title">SECCIÓN SEXTA: FIRMA DE CONFORMIDAD Y VALIDEZ LEGAL</div>
+                            <p>Las partes firman electrónicamente la presente acta en señal de plena conformidad y veracidad probatoria, quedando incorporada como anexo vinculante al contrato de arrendamiento respectivo.</p>
+                        `;
+                    }
                 } else if (CURRENT_TEMPLATE.slug === 'contrato-individual-trabajo') {
                     const cargo = document.getElementById('f_trab_cargo')?.value || 'Desarrollador Full Stack';
                     const lugar = document.getElementById('f_trab_lugar')?.value || 'Av. Andrés Bello 2711, Las Condes';
