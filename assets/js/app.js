@@ -335,8 +335,13 @@ function initVerifyForm() {
     });
 }
 
-// 6. Asistente / Wizard modal con formateo y validación de RUT
+// 6. Asistente / Wizard modal con redirección directa al Wizard 60/40 para contratos complejos
 function openWizard(slug) {
+    if (slug === 'contrato-arriendo-ley-21461') {
+        window.location.href = `redactar.php?slug=${encodeURIComponent(slug)}`;
+        return;
+    }
+
     const tpl = allTemplates.find(t => t.slug === slug);
     if (!tpl) return;
 
