@@ -1072,6 +1072,52 @@ flowchart LR
 
 ---
 
+### 3.12 Módulo 12: Área Privada de Clientes y Portal de Autenticación (`/mi-cuenta`)
+
+Para fidelizar a los usuarios, permitir el seguimiento de sus trámites en curso, consultar el historial de contratos firmados y descargar copias certificadas en cualquier momento sin costo, **SinNotario.cl** contempla un **Área Privada de Clientes ("Mi Bóveda Legal")**:
+
+```mermaid
+flowchart TD
+    A["Usuario accede a /mi-cuenta/login"] --> B{"Método de Acceso"}
+    B -->|Acceso con 1 Clic| C["Google OAuth (Continuar con Google / Gmail)"]
+    B -->|Registro Tradicional| D["Email + Contraseña Segura (con verificación OTP)"]
+    B -->|Identidad Oficial| E["ClaveÚnica del Estado de Chile (vía PSC)"]
+    
+    C --> F["Área Privada de Cliente (/mi-cuenta)"]
+    D --> F
+    E --> F
+    
+    F --> G["1. Mis Documentos y Contratos (Bóveda Personal Cloudflare R2)"]
+    F --> H["2. Estado de Firmas en Tiempo Real (Pendientes vs Firmados)"]
+    F --> I["3. Datos de Perfil y Domicilios Frecuentes"]
+    F --> J["4. Comprobantes de Pago y Facturación Electrónica"]
+```
+
+#### 1. Métodos de Inicio de Sesión y Alta de Usuario
+* **Google Identity Services (OAuth 2.0 / Login con Google / Gmail):**
+  * Acceso instantáneo en 1 solo clic aprovechando la sesión de Google del usuario.
+  * Captura verificada de nombre, apellido, correo electrónico y foto de perfil.
+  * Vinculación automática con los contratos emitidos previamente bajo ese mismo correo.
+* **Registro Tradicional por Correo Electrónico:**
+  * Formulario seguro con correo, contraseña cifrada con `bcrypt` (cost 12) y validación de correo mediante enlace tokenizado o código OTP de 6 dígitos.
+* **Inicio de Sesión con ClaveÚnica (Acceso Cívico Oficial):**
+  * Para trámites que requieran el máximo nivel de certeza de identidad civil sin necesidad de recordar contraseñas privadas.
+
+#### 2. Funcionalidades del Portal Privado (`/mi-cuenta`):
+* **Bóveda Personal de Contratos:**
+  * Listado completo de documentos suscritos o en proceso, con búsqueda por contraparte, inmueble o fecha.
+  * Botón de **Descarga Directa del PDF Oficial con sellos criptográficos**.
+  * Botón de **Compartir Enlace de Verificación** para enviar a bancos, corredoras o juzgados.
+* **Tracker Activo de Firmas:**
+  * Indicador de quién ha firmado y quién está pendiente.
+  * Botón: `🔔 Reenviar Recordatorio por WhatsApp / Email a la Contraparte`.
+* **Plantillas Guardadas y Reutilización de Datos:**
+  * Permite guardar datos recurrentes (ej: los datos del arrendador o empresa para no reescribirlos cada mes).
+* **Gestión de Boletas y Facturas:**
+  * Historial tributario de los pagos realizados en Webpay o Flow con descarga de comprobante electrónico emitido ante el SII.
+
+---
+
 ## 4. Modelo Híbrido: Plataforma Digital + Oficina Física
 
 ### 4.1 Por qué una Oficina Física (Resolución de Brechas)
