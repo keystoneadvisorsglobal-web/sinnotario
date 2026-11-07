@@ -77,7 +77,7 @@ try {
             }
 
             // Obtener firmantes
-            $stmtSigners = $pdo->prepare("SELECT rol_firmante, rut, nombre_completo, estado_firma, metodo_firma, fecha_firma FROM document_signers WHERE document_id = ?");
+            $stmtSigners = $pdo->prepare("SELECT rol_firmante, rut, tipo_documento, numero_identificacion, pais_emisor, nombre_completo, es_representante, empresa_razon_social, empresa_rut, estado_firma, metodo_firma, fecha_firma FROM document_signers WHERE document_id = ?");
             $stmtSigners->execute([$doc['id']]);
             $signers = $stmtSigners->fetchAll();
 
@@ -107,7 +107,7 @@ try {
             }
 
             // Obtener firmantes
-            $stmtSigners = $pdo->prepare("SELECT rol_firmante, rut, nombre_completo, estado_firma, metodo_firma, fecha_firma FROM document_signers WHERE document_id = ?");
+            $stmtSigners = $pdo->prepare("SELECT rol_firmante, rut, tipo_documento, numero_identificacion, pais_emisor, nombre_completo, es_representante, empresa_razon_social, empresa_rut, estado_firma, metodo_firma, fecha_firma FROM document_signers WHERE document_id = ?");
             $stmtSigners->execute([$doc['id']]);
             $signers = $stmtSigners->fetchAll();
 
@@ -141,6 +141,20 @@ try {
                 jsonResponse(false, null, 'Plantilla inexistente', 404);
             }
 
+            // Obtener configuración de precio extra por firmante
+            $precioExtraPorFirmante = 2990;
+            $stmtExtra = $pdo->prepare("SELECT value FROM system_settings WHERE key = 'precio_firma_extra'");
+            $stmtExtra->execute();
+            $valExtra = $stmtExtra->fetchColumn();
+            if ($valExtra !== false && is_numeric($valExtra)) {
+                $precioExtraPorFirmante = (int)$valExtra;
+            }
+
+            // Cálculo dinámico de precio: Precio base incluye 1 firmante. Cada firmante adicional suma $precioExtraPorFirmante
+            $numFirmantes = count($payload['signers'] ?? []);
+            $firmantesExtra = max(0, $numFirmantes - 1);
+            $montoTotal = (int)$tpl['precio_base'] + ($firmantesExtra * $precioExtraPorFirmante);
+
             // Generar código único de verificación: SN-XXXX-XXXX
             $verifCode = 'SN-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 4)) . '-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 4, 4));
 
@@ -150,21 +164,34 @@ try {
                 $tpl['id'],
                 $tpl['nombre'],
                 json_encode($payload['form_data'] ?? [], JSON_UNESCAPED_UNICODE),
-                $tpl['precio_base']
+                $montoTotal
             ]);
 
             $docId = $pdo->lastInsertId();
 
             // Insertar firmantes si vienen
             if (!empty($payload['signers']) && is_array($payload['signers'])) {
-                $stmtSig = $pdo->prepare("INSERT INTO document_signers (document_id, rol_firmante, rut, nombre_completo, email, telefono, token_acceso) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmtSig = $pdo->prepare("INSERT INTO document_signers (document_id, rol_firmante, rut, tipo_documento, numero_identificacion, pais_emisor, nombre_completo, es_representante, empresa_razon_social, empresa_rut, email, telefono, token_acceso) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 foreach ($payload['signers'] as $s) {
                     $token = bin2hex(random_bytes(24));
+                    $tipoDoc = !empty($s['tipo_documento']) ? strtoupper(trim($s['tipo_documento'])) : 'RUT';
+                    $numId = !empty($s['numero_identificacion']) ? trim($s['numero_identificacion']) : (!empty($s['rut']) ? trim($s['rut']) : '');
+                    $pais = !empty($s['pais_emisor']) ? trim($s['pais_emisor']) : 'Chile';
+                    $esRep = !empty($s['es_representante']) ? 1 : 0;
+                    $empresaRazon = !empty($s['empresa_razon_social']) ? trim($s['empresa_razon_social']) : null;
+                    $empresaRut = !empty($s['empresa_rut']) ? trim($s['empresa_rut']) : null;
+
                     $stmtSig->execute([
                         $docId,
                         $s['rol'] ?? 'PARTE',
-                        $s['rut'] ?? '',
+                        $numId,
+                        $tipoDoc,
+                        $numId,
+                        $pais,
                         $s['nombre'] ?? '',
+                        $esRep,
+                        $empresaRazon,
+                        $empresaRut,
                         $s['email'] ?? '',
                         $s['telefono'] ?? '',
                         $token
@@ -178,7 +205,11 @@ try {
             jsonResponse(true, [
                 'document_id' => $docId,
                 'codigo_verificacion' => $verifCode,
-                'precio' => $tpl['precio_base'],
+                'precio_base' => (int)$tpl['precio_base'],
+                'precio_extra_por_firmante' => $precioExtraPorFirmante,
+                'firmantes_count' => $numFirmantes,
+                'precio_total' => $montoTotal,
+                'precio' => $montoTotal,
                 'pdf_vault' => $pdfResult,
                 'message' => 'Borrador creado y PDF sellado en Cloudflare R2'
             ]);
@@ -233,6 +264,28 @@ try {
             $fileName = !empty($payload['file_name']) ? basename($payload['file_name']) : 'documento_propio.pdf';
             $titulo = trim($payload['titulo']);
 
+            // Obtener configuración de precios para documento propio
+            $precioBaseUpload = 7990;
+            $stmtBaseUpload = $pdo->prepare("SELECT value FROM system_settings WHERE key = 'precio_base_subir_pdf'");
+            $stmtBaseUpload->execute();
+            $valBase = $stmtBaseUpload->fetchColumn();
+            if ($valBase !== false && is_numeric($valBase)) {
+                $precioBaseUpload = (int)$valBase;
+            }
+
+            $precioExtraPorFirmante = 2990;
+            $stmtExtra = $pdo->prepare("SELECT value FROM system_settings WHERE key = 'precio_firma_extra'");
+            $stmtExtra->execute();
+            $valExtra = $stmtExtra->fetchColumn();
+            if ($valExtra !== false && is_numeric($valExtra)) {
+                $precioExtraPorFirmante = (int)$valExtra;
+            }
+
+            $rawSigners = (!empty($payload['signers']) && is_array($payload['signers'])) ? $payload['signers'] : [];
+            $numSigners = count($rawSigners);
+            $extraSigners = max(0, $numSigners - 1);
+            $montoTotal = $precioBaseUpload + ($extraSigners * $precioExtraPorFirmante);
+
             // Generar código único de verificación: SN-XXXX-XXXX
             $verifCode = 'SN-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 4)) . '-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 4, 4));
             $r2Key = "documents/{$verifCode}.pdf";
@@ -242,49 +295,69 @@ try {
             $r2Upload = $r2Adapter->uploadDocument($r2Key, $binaryPdf, 'application/pdf');
 
             // Determinar si hay template o asociar a NULL
-            $stmtInsert = $pdo->prepare("INSERT INTO documents (codigo_verificacion, template_id, titulo, estado, pdf_r2_key, pdf_sha256, datos_formulario, monto_pagado, estado_pago) VALUES (?, NULL, ?, 'PENDIENTE_FIRMAS', ?, ?, ?, 7990, 'PENDIENTE')");
+            $stmtInsert = $pdo->prepare("INSERT INTO documents (codigo_verificacion, template_id, titulo, estado, pdf_r2_key, pdf_sha256, datos_formulario, monto_pagado, estado_pago) VALUES (?, NULL, ?, 'PENDIENTE_FIRMAS', ?, ?, ?, ?, 'PENDIENTE')");
             $formData = [
                 'tipo_origen' => 'DOCUMENTO_PROPIO_PDF',
                 'nombre_archivo_original' => $fileName,
                 'tamano_bytes' => strlen($binaryPdf),
-                'r2_subida_exitosa' => ($r2Upload !== false)
+                'r2_subida_exitosa' => ($r2Upload !== false),
+                'precio_base' => $precioBaseUpload,
+                'precio_extra_por_firmante' => $precioExtraPorFirmante,
+                'firmantes_total' => $numSigners
             ];
             $stmtInsert->execute([
                 $verifCode,
                 $titulo,
                 $r2Key,
                 $sha256,
-                json_encode($formData, JSON_UNESCAPED_UNICODE)
+                json_encode($formData, JSON_UNESCAPED_UNICODE),
+                $montoTotal
             ]);
 
             $docId = $pdo->lastInsertId();
 
-            // Insertar firmantes asociados
+            // Insertar firmantes asociados con soporte de Pasaporte y Representante Legal
             $insertedSigners = [];
-            if (!empty($payload['signers']) && is_array($payload['signers'])) {
-                $stmtSig = $pdo->prepare("INSERT INTO document_signers (document_id, rol_firmante, rut, nombre_completo, email, telefono, token_acceso) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                foreach ($payload['signers'] as $s) {
+            if (!empty($rawSigners)) {
+                $stmtSig = $pdo->prepare("INSERT INTO document_signers (document_id, rol_firmante, rut, tipo_documento, numero_identificacion, pais_emisor, nombre_completo, es_representante, empresa_razon_social, empresa_rut, email, telefono, token_acceso) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                foreach ($rawSigners as $s) {
                     $token = bin2hex(random_bytes(24));
                     $rol = !empty($s['rol']) ? trim($s['rol']) : 'Parte Firmante';
-                    $rut = !empty($s['rut']) ? trim($s['rut']) : '';
+                    $tipoDoc = !empty($s['tipo_documento']) ? strtoupper(trim($s['tipo_documento'])) : 'RUT';
+                    $numId = !empty($s['numero_identificacion']) ? trim($s['numero_identificacion']) : (!empty($s['rut']) ? trim($s['rut']) : '');
+                    $pais = !empty($s['pais_emisor']) ? trim($s['pais_emisor']) : 'Chile';
                     $nombre = !empty($s['nombre']) ? trim($s['nombre']) : '';
                     $email = !empty($s['email']) ? trim($s['email']) : '';
                     $tel = !empty($s['telefono']) ? trim($s['telefono']) : '';
+                    $esRep = !empty($s['es_representante']) ? 1 : 0;
+                    $empresaRazon = !empty($s['empresa_razon_social']) ? trim($s['empresa_razon_social']) : null;
+                    $empresaRut = !empty($s['empresa_rut']) ? trim($s['empresa_rut']) : null;
 
-                    if (!empty($rut) || !empty($nombre)) {
+                    if (!empty($numId) || !empty($nombre)) {
                         $stmtSig->execute([
                             $docId,
                             $rol,
-                            $rut,
+                            $numId,
+                            $tipoDoc,
+                            $numId,
+                            $pais,
                             $nombre,
+                            $esRep,
+                            $empresaRazon,
+                            $empresaRut,
                             $email,
                             $tel,
                             $token
                         ]);
                         $insertedSigners[] = [
                             'rol' => $rol,
-                            'rut' => $rut,
+                            'tipo_documento' => $tipoDoc,
+                            'numero_identificacion' => $numId,
+                            'pais_emisor' => $pais,
                             'nombre' => $nombre,
+                            'es_representante' => (bool)$esRep,
+                            'empresa_razon_social' => $empresaRazon,
+                            'empresa_rut' => $empresaRut,
                             'email' => $email,
                             'telefono' => $tel
                         ];
@@ -298,14 +371,64 @@ try {
                 'titulo' => $titulo,
                 'sha256' => $sha256,
                 'r2_key' => $r2Key,
-                'precio' => 7990,
+                'precio_base' => $precioBaseUpload,
+                'precio_extra_por_firmante' => $precioExtraPorFirmante,
                 'signers_count' => count($insertedSigners),
+                'precio' => $montoTotal,
+                'precio_total' => $montoTotal,
                 'signers' => $insertedSigners,
                 'message' => 'Documento PDF propio recibido, auditado criptográficamente y custodiado en Cloudflare R2'
             ]);
             break;
 
-        // 8. Estado de salud / Check
+        // 8. Obtener configuraciones de precios y tarifas
+        case 'get_pricing_settings':
+            $stmt = $pdo->query("SELECT * FROM system_settings");
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $settings = [];
+            foreach ($rows as $r) {
+                $settings[$r['key']] = $r['value'];
+            }
+            jsonResponse(true, [
+                'precio_firma_extra' => (int)($settings['precio_firma_extra'] ?? 2990),
+                'precio_base_subir_pdf' => (int)($settings['precio_base_subir_pdf'] ?? 7990),
+                'all' => $settings
+            ]);
+            break;
+
+        // 9. Actualizar precio de plantilla o precio de firma extra
+        case 'update_pricing':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+            $payload = json_decode(file_get_contents('php://input'), true);
+            if (!$payload) jsonResponse(false, null, 'Datos inválidos', 400);
+
+            if (isset($payload['precio_firma_extra'])) {
+                $val = (int)$payload['precio_firma_extra'];
+                $stmt = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('precio_firma_extra', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+                $stmt->execute([$val]);
+            }
+
+            if (isset($payload['precio_base_subir_pdf'])) {
+                $val = (int)$payload['precio_base_subir_pdf'];
+                $stmt = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('precio_base_subir_pdf', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+                $stmt->execute([$val]);
+            }
+
+            if (isset($payload['templates']) && is_array($payload['templates'])) {
+                $stmtUpdTpl = $pdo->prepare("UPDATE templates SET precio_base = ? WHERE id = ?");
+                foreach ($payload['templates'] as $t) {
+                    if (isset($t['id']) && isset($t['precio_base'])) {
+                        $stmtUpdTpl->execute([(int)$t['precio_base'], (int)$t['id']]);
+                    }
+                }
+            }
+
+            jsonResponse(true, ['message' => 'Tarifas y precios actualizados exitosamente']);
+            break;
+
+        // 10. Estado de salud / Check
         case 'health':
             $r2 = new StorageR2Adapter();
             $r2Configured = !empty($r2->accountId) && !empty($r2->apiToken);

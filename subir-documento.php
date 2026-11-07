@@ -8,7 +8,16 @@
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/database/Database.php';
 
-$precioFirmaPropia = 7990;
+$pdo = Database::getInstance();
+$stmtSets = $pdo->query("SELECT * FROM system_settings");
+$settingsRows = $stmtSets ? $stmtSets->fetchAll(PDO::FETCH_ASSOC) : [];
+$settings = [];
+foreach ($settingsRows as $sr) {
+    $settings[$sr['key']] = $sr['value'];
+}
+
+$precioFirmaPropia = (int)($settings['precio_base_subir_pdf'] ?? 7990);
+$precioFirmaExtra = (int)($settings['precio_firma_extra'] ?? 2990);
 $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
 ?>
 <!DOCTYPE html>
@@ -424,62 +433,136 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                     <div id="signersListContainer">
                         <!-- Firmante 1 -->
                         <div class="signer-box" id="signer_box_0">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
                                 <span class="badge-firmante">Firmante 1 (Titular / Iniciador)</span>
+                                <label style="font-size:0.8rem; color:#475569; display:flex; align-items:center; gap:0.35rem; cursor:pointer;">
+                                    <input type="checkbox" class="sig-es-rep" onchange="toggleRepresentante(0)">
+                                    <strong>Firma como Representante Legal de Empresa</strong>
+                                </label>
                             </div>
+
+                            <!-- Campos de Empresa (Ocultos por defecto) -->
+                            <div class="rep-company-wrap" id="rep_company_0" style="display:none; background:#F8FAFC; border:1px dashed #CBD5E1; border-radius:8px; padding:0.85rem; margin-bottom:0.85rem;">
+                                <div style="font-size:0.8rem; font-weight:700; color:#0F2A4A; margin-bottom:0.4rem;">
+                                    <i class="fas fa-building"></i> Datos de la Persona Jurídica / Empresa Representada
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Razón Social de la Empresa *</label>
+                                        <input type="text" class="form-control sig-empresa-nombre" placeholder="Ej: Inversiones y Servicios SpA">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>RUT Empresa (Módulo 11) *</label>
+                                        <input type="text" class="form-control sig-empresa-rut" placeholder="76.123.456-7" oninput="RutHelper.format(this.value)">
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label>Nombre Completo *</label>
+                                    <label>Tipo de Documento *</label>
+                                    <select class="form-control sig-tipo-doc" onchange="changeDocType(0)">
+                                        <option value="RUT" selected>Cédula Nacional de Identidad / RUT (Chile)</option>
+                                        <option value="PASAPORTE">Pasaporte Extranjero / Documento Internacional</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="lbl-id-num" id="lbl_id_0">RUT (Módulo 11) *</label>
+                                    <input type="text" class="form-control sig-rut" placeholder="12.345.678-5" value="12.345.678-5">
+                                </div>
+                                <div class="form-group sig-pais-wrap" id="pais_wrap_0" style="display:none;">
+                                    <label>País Emisor del Pasaporte *</label>
+                                    <input type="text" class="form-control sig-pais" placeholder="Ej: Venezuela, Colombia, Perú, España" value="Chile">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nombre Completo del Firmante *</label>
                                     <input type="text" class="form-control sig-nombre" placeholder="Ej: Juan Andrés Pérez González" value="Juan Andrés Pérez González">
                                 </div>
                                 <div class="form-group">
-                                    <label>RUT (Módulo 11) *</label>
-                                    <input type="text" class="form-control sig-rut" placeholder="12.345.678-5" value="12.345.678-5">
+                                    <label>Rol en el Documento *</label>
+                                    <input type="text" class="form-control sig-rol" placeholder="Ej: Arrendador, Contratante, Mandante" value="Parte A">
                                 </div>
                             </div>
+
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label>Correo Electrónico *</label>
+                                    <label>Correo Electrónico (Para recibir enlace de firma) *</label>
                                     <input type="email" class="form-control sig-email" placeholder="juan.perez@ejemplo.cl" value="juan.perez@ejemplo.cl">
                                 </div>
                                 <div class="form-group">
                                     <label>Teléfono WhatsApp *</label>
                                     <input type="tel" class="form-control sig-tel" placeholder="+56 9 1234 5678" value="+56 9 1234 5678">
                                 </div>
-                                <div class="form-group">
-                                    <label>Rol en el Contrato *</label>
-                                    <input type="text" class="form-control sig-rol" placeholder="Ej: Arrendador, Contratante, Mandante" value="Parte A">
-                                </div>
                             </div>
                         </div>
 
                         <!-- Firmante 2 -->
                         <div class="signer-box" id="signer_box_1">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
                                 <span class="badge-firmante" style="background:#FAF5FF; color:#7E22CE;">Firmante 2 (Contraparte)</span>
+                                <label style="font-size:0.8rem; color:#475569; display:flex; align-items:center; gap:0.35rem; cursor:pointer;">
+                                    <input type="checkbox" class="sig-es-rep" onchange="toggleRepresentante(1)">
+                                    <strong>Firma como Representante Legal de Empresa</strong>
+                                </label>
                             </div>
+
+                            <!-- Campos de Empresa (Ocultos por defecto) -->
+                            <div class="rep-company-wrap" id="rep_company_1" style="display:none; background:#F8FAFC; border:1px dashed #CBD5E1; border-radius:8px; padding:0.85rem; margin-bottom:0.85rem;">
+                                <div style="font-size:0.8rem; font-weight:700; color:#0F2A4A; margin-bottom:0.4rem;">
+                                    <i class="fas fa-building"></i> Datos de la Persona Jurídica / Empresa Representada
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Razón Social de la Empresa *</label>
+                                        <input type="text" class="form-control sig-empresa-nombre" placeholder="Ej: Servicios Profesionales SpA">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>RUT Empresa (Módulo 11) *</label>
+                                        <input type="text" class="form-control sig-empresa-rut" placeholder="77.987.654-3" oninput="RutHelper.format(this.value)">
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label>Nombre Completo *</label>
+                                    <label>Tipo de Documento *</label>
+                                    <select class="form-control sig-tipo-doc" onchange="changeDocType(1)">
+                                        <option value="RUT" selected>Cédula Nacional de Identidad / RUT (Chile)</option>
+                                        <option value="PASAPORTE">Pasaporte Extranjero / Documento Internacional</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="lbl-id-num" id="lbl_id_1">RUT (Módulo 11) *</label>
+                                    <input type="text" class="form-control sig-rut" placeholder="15.444.555-6" value="15.444.555-6">
+                                </div>
+                                <div class="form-group sig-pais-wrap" id="pais_wrap_1" style="display:none;">
+                                    <label>País Emisor del Pasaporte *</label>
+                                    <input type="text" class="form-control sig-pais" placeholder="Ej: Venezuela, Colombia, Perú, España" value="Chile">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nombre Completo del Firmante *</label>
                                     <input type="text" class="form-control sig-nombre" placeholder="Ej: María José Valenzuela Soto" value="María José Valenzuela Soto">
                                 </div>
                                 <div class="form-group">
-                                    <label>RUT (Módulo 11) *</label>
-                                    <input type="text" class="form-control sig-rut" placeholder="15.444.555-6" value="15.444.555-6">
+                                    <label>Rol en el Documento *</label>
+                                    <input type="text" class="form-control sig-rol" placeholder="Ej: Arrendatario, Proveedor, Mandatario" value="Parte B">
                                 </div>
                             </div>
+
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label>Correo Electrónico *</label>
+                                    <label>Correo Electrónico (Para recibir enlace de firma) *</label>
                                     <input type="email" class="form-control sig-email" placeholder="mj.valenzuela@ejemplo.cl" value="mj.valenzuela@ejemplo.cl">
                                 </div>
                                 <div class="form-group">
                                     <label>Teléfono WhatsApp *</label>
                                     <input type="tel" class="form-control sig-tel" placeholder="+56 9 8765 4321" value="+56 9 8765 4321">
-                                </div>
-                                <div class="form-group">
-                                    <label>Rol en el Contrato *</label>
-                                    <input type="text" class="form-control sig-rol" placeholder="Ej: Arrendatario, Proveedor, Mandatario" value="Parte B">
                                 </div>
                             </div>
                         </div>
@@ -533,9 +616,9 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
 
                     <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:1.25rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center;">
                         <div>
-                            <div style="font-size:0.8rem; font-weight:700; color:#1E40AF; text-transform:uppercase;">Tarifa Total Única</div>
-                            <div style="font-size:1.8rem; font-weight:800; color:#1E3A8A;"><?= $precioFormateado ?> CLP</div>
-                            <div style="font-size:0.78rem; color:#64748B;">Incluye firmas ilimitadas de los comparecientes y custodia R2</div>
+                            <div style="font-size:0.8rem; font-weight:700; color:#1E40AF; text-transform:uppercase;">Tarifa Total Calculada</div>
+                            <div style="font-size:1.8rem; font-weight:800; color:#1E3A8A;" id="summaryCalculatedPrice"><?= $precioFormateado ?> CLP</div>
+                            <div style="font-size:0.78rem; color:#64748B;" id="summaryPricingBreakdown">Incluye 1 firmante base ($7.990) y custodia en Bóveda R2</div>
                         </div>
                         <div style="text-align:right;">
                             <span style="background:#DEF7EC; color:#03543F; font-size:0.75rem; font-weight:800; padding:4px 8px; border-radius:6px;">
@@ -870,6 +953,63 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
             `;
         }
 
+        const PRECIO_BASE_SUBIR_PDF = <?= (int)($settings['precio_base_subir_pdf'] ?? 7990) ?>;
+        const PRECIO_FIRMA_EXTRA = <?= (int)($settings['precio_firma_extra'] ?? 2990) ?>;
+
+        function updatePricingCalculation() {
+            const signers = getSignersData();
+            const totalSigners = Math.max(1, signers.length);
+            const extraSigners = Math.max(0, totalSigners - 1);
+            const totalPrice = PRECIO_BASE_SUBIR_PDF + (extraSigners * PRECIO_FIRMA_EXTRA);
+            
+            const formatted = '$' + totalPrice.toLocaleString('es-CL') + ' CLP';
+            const priceEl = document.getElementById('summaryCalculatedPrice');
+            if (priceEl) priceEl.innerText = formatted;
+
+            const breakdownEl = document.getElementById('summaryPricingBreakdown');
+            if (breakdownEl) {
+                if (extraSigners > 0) {
+                    breakdownEl.innerText = `1 firmante base ($${PRECIO_BASE_SUBIR_PDF.toLocaleString('es-CL')}) + ${extraSigners} firmante(s) extra ($${(extraSigners * PRECIO_FIRMA_EXTRA).toLocaleString('es-CL')})`;
+                } else {
+                    breakdownEl.innerText = `Incluye 1 firmante base ($${PRECIO_BASE_SUBIR_PDF.toLocaleString('es-CL')}) y custodia en Bóveda R2`;
+                }
+            }
+        }
+
+        function toggleRepresentante(idx) {
+            const box = document.getElementById(`signer_box_${idx}`);
+            if (!box) return;
+            const chk = box.querySelector('.sig-es-rep');
+            const repWrap = document.getElementById(`rep_company_${idx}`);
+            if (repWrap) {
+                repWrap.style.display = (chk && chk.checked) ? 'block' : 'none';
+            }
+        }
+
+        function changeDocType(idx) {
+            const box = document.getElementById(`signer_box_${idx}`);
+            if (!box) return;
+            const sel = box.querySelector('.sig-tipo-doc');
+            const lbl = document.getElementById(`lbl_id_${idx}`);
+            const inputRut = box.querySelector('.sig-rut');
+            const paisWrap = document.getElementById(`pais_wrap_${idx}`);
+
+            if (sel && sel.value === 'PASAPORTE') {
+                if (lbl) lbl.innerText = 'N° de Pasaporte Extranjero *';
+                if (inputRut) {
+                    inputRut.placeholder = 'Ej: P12345678 o DNI extranjero';
+                    inputRut.classList.remove('rut-valid', 'rut-invalid');
+                }
+                if (paisWrap) paisWrap.style.display = 'block';
+            } else {
+                if (lbl) lbl.innerText = 'RUT (Módulo 11) *';
+                if (inputRut) {
+                    inputRut.placeholder = '12.345.678-5';
+                }
+                if (paisWrap) paisWrap.style.display = 'none';
+            }
+        }
+
         function goToStep(step) {
             document.getElementById('viewStep1').style.display = (step === 1) ? 'block' : 'none';
             document.getElementById('viewStep2').style.display = (step === 2) ? 'block' : 'none';
@@ -894,6 +1034,9 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                 const signers = getSignersData();
                 document.getElementById('summarySignersCount').innerText = `${signers.length} compareciente(s)`;
 
+                // Actualizar cálculo dinámico de precio según firmantes
+                updatePricingCalculation();
+
                 // Ejecutar y mostrar el diagnóstico IA si estaba activo
                 runSmartLegalCheckIfRequested();
             }
@@ -908,22 +1051,65 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
             div.className = 'signer-box';
             div.id = `signer_box_${idx}`;
             div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
                     <span class="badge-firmante" style="background:#FEF3C7; color:#B45309;">Firmante ${idx + 1} (Adicional)</span>
-                    <button type="button" style="background:none; border:none; color:#DC2626; cursor:pointer; font-size:0.8rem; font-weight:700;" onclick="removeSignerRow(${idx})">
-                        <i class="fas fa-trash"></i> Eliminar
-                    </button>
+                    <div style="display:flex; align-items:center; gap:1rem;">
+                        <label style="font-size:0.8rem; color:#475569; display:flex; align-items:center; gap:0.35rem; cursor:pointer;">
+                            <input type="checkbox" class="sig-es-rep" onchange="toggleRepresentante(${idx})">
+                            <strong>Representante Legal</strong>
+                        </label>
+                        <button type="button" style="background:none; border:none; color:#DC2626; cursor:pointer; font-size:0.8rem; font-weight:700;" onclick="removeSignerRow(${idx})">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </div>
                 </div>
+
+                <!-- Campos de Empresa Representada -->
+                <div class="rep-company-wrap" id="rep_company_${idx}" style="display:none; background:#F8FAFC; border:1px dashed #CBD5E1; border-radius:8px; padding:0.85rem; margin-bottom:0.85rem;">
+                    <div style="font-size:0.8rem; font-weight:700; color:#0F2A4A; margin-bottom:0.4rem;">
+                        <i class="fas fa-building"></i> Datos de la Persona Jurídica / Empresa Representada
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Razón Social de la Empresa *</label>
+                            <input type="text" class="form-control sig-empresa-nombre" placeholder="Ej: Empresa SpA">
+                        </div>
+                        <div class="form-group">
+                            <label>RUT Empresa (Módulo 11) *</label>
+                            <input type="text" class="form-control sig-empresa-rut" placeholder="76.123.456-7" oninput="RutHelper.format(this.value)">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Nombre Completo *</label>
+                        <label>Tipo de Documento *</label>
+                        <select class="form-control sig-tipo-doc" onchange="changeDocType(${idx})">
+                            <option value="RUT" selected>Cédula Nacional de Identidad / RUT (Chile)</option>
+                            <option value="PASAPORTE">Pasaporte Extranjero / Documento Internacional</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="lbl-id-num" id="lbl_id_${idx}">RUT (Módulo 11) *</label>
+                        <input type="text" class="form-control sig-rut" placeholder="Ej: 11.222.333-4">
+                    </div>
+                    <div class="form-group sig-pais-wrap" id="pais_wrap_${idx}" style="display:none;">
+                        <label>País Emisor *</label>
+                        <input type="text" class="form-control sig-pais" placeholder="Ej: Venezuela, Colombia, Perú, España" value="Chile">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nombre Completo del Firmante *</label>
                         <input type="text" class="form-control sig-nombre" placeholder="Nombre del compareciente">
                     </div>
                     <div class="form-group">
-                        <label>RUT (Módulo 11) *</label>
-                        <input type="text" class="form-control sig-rut" placeholder="Ej: 11.222.333-4">
+                        <label>Rol en el Documento *</label>
+                        <input type="text" class="form-control sig-rol" placeholder="Ej: Testigo, Aval, Tercero" value="Parte">
                     </div>
                 </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Correo Electrónico *</label>
@@ -933,20 +1119,18 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                         <label>Teléfono WhatsApp *</label>
                         <input type="tel" class="form-control sig-tel" placeholder="+56 9 1111 2222">
                     </div>
-                    <div class="form-group">
-                        <label>Rol en el Contrato *</label>
-                        <input type="text" class="form-control sig-rol" placeholder="Ej: Testigo, Aval, Tercero" value="Parte">
-                    </div>
                 </div>
             `;
             container.appendChild(div);
             currentSignersCount++;
+            updatePricingCalculation();
         }
 
         function removeSignerRow(idx) {
             const row = document.getElementById(`signer_box_${idx}`);
             if (row) {
                 row.remove();
+                updatePricingCalculation();
             }
         }
 
@@ -955,13 +1139,31 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
             const signers = [];
             boxes.forEach(box => {
                 const nombre = box.querySelector('.sig-nombre')?.value.trim() || '';
+                const tipoDoc = box.querySelector('.sig-tipo-doc')?.value || 'RUT';
                 const rut = box.querySelector('.sig-rut')?.value.trim() || '';
+                const pais = box.querySelector('.sig-pais')?.value.trim() || 'Chile';
                 const email = box.querySelector('.sig-email')?.value.trim() || '';
                 const tel = box.querySelector('.sig-tel')?.value.trim() || '';
                 const rol = box.querySelector('.sig-rol')?.value.trim() || 'PARTE';
 
+                const esRep = box.querySelector('.sig-es-rep')?.checked ? true : false;
+                const empresaRazon = esRep ? (box.querySelector('.sig-empresa-nombre')?.value.trim() || '') : '';
+                const empresaRut = esRep ? (box.querySelector('.sig-empresa-rut')?.value.trim() || '') : '';
+
                 if (nombre && rut) {
-                    signers.push({ nombre, rut, email, telefono: tel, rol });
+                    signers.push({
+                        nombre,
+                        tipo_documento: tipoDoc,
+                        numero_identificacion: rut,
+                        rut: rut,
+                        pais_emisor: pais,
+                        email,
+                        telefono: tel,
+                        rol,
+                        es_representante: esRep,
+                        empresa_razon_social: empresaRazon,
+                        empresa_rut: empresaRut
+                    });
                 }
             });
             return signers;

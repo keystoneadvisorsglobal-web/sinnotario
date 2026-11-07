@@ -51,6 +51,42 @@ $allTemplates = $stmtTemplates->fetchAll();
 // Estado de Cloudflare R2
 $r2 = new StorageR2Adapter();
 $r2Ok = !empty($r2->accountId) && !empty($r2->apiToken);
+
+// Procesar actualización de precios desde Consola Administrativa
+$msgPricingSuccess = '';
+if (isset($_POST['save_pricing_settings'])) {
+    $precioFirmaExtra = (int)($_POST['precio_firma_extra'] ?? 2990);
+    $precioBasePdf = (int)($_POST['precio_base_subir_pdf'] ?? 7990);
+
+    $stmtUpdExtra = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('precio_firma_extra', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+    $stmtUpdExtra->execute([$precioFirmaExtra]);
+
+    $stmtUpdBase = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('precio_base_subir_pdf', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+    $stmtUpdBase->execute([$precioBasePdf]);
+
+    if (!empty($_POST['tpl_prices']) && is_array($_POST['tpl_prices'])) {
+        $stmtUpdTpl = $pdo->prepare("UPDATE templates SET precio_base = ? WHERE id = ?");
+        foreach ($_POST['tpl_prices'] as $tId => $tPrice) {
+            $stmtUpdTpl->execute([(int)$tPrice, (int)$tId]);
+        }
+    }
+    $msgPricingSuccess = '¡Precios de documentos y tarifas de firmas adicionales actualizados exitosamente en la plataforma!';
+}
+
+// Cargar configuración de precios actual
+$stmtSets = $pdo->query("SELECT * FROM system_settings");
+$sysSettings = [];
+if ($stmtSets) {
+    foreach ($stmtSets->fetchAll(PDO::FETCH_ASSOC) as $srow) {
+        $sysSettings[$srow['key']] = $srow['value'];
+    }
+}
+$currentPrecioExtra = (int)($sysSettings['precio_firma_extra'] ?? 2990);
+$currentPrecioBasePdf = (int)($sysSettings['precio_base_subir_pdf'] ?? 7990);
+
+// Recargar plantillas
+$stmtTemplates = $pdo->query("SELECT * FROM templates ORDER BY id ASC");
+$allTemplates = $stmtTemplates->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -251,6 +287,7 @@ $r2Ok = !empty($r2->accountId) && !empty($r2->apiToken);
 
             <nav style="flex: 1;">
                 <a href="#dashboard" class="admin-nav-item active" data-tab="dashboard"><i class="fas fa-chart-line"></i> Dashboard General</a>
+                <a href="#precios" class="admin-nav-item" data-tab="precios" style="color:var(--accent); font-weight:700;"><i class="fas fa-tags"></i> Precios & Tarifas</a>
                 <a href="#documentos" class="admin-nav-item" data-tab="documentos"><i class="fas fa-file-contract"></i> Monitor Contratos</a>
                 <a href="#whatsapp" class="admin-nav-item" data-tab="whatsapp"><i class="fab fa-whatsapp"></i> Instancias WhatsApp</a>
                 <a href="#vault" class="admin-nav-item" data-tab="vault"><i class="fas fa-database"></i> Bóveda Cloudflare R2</a>
@@ -368,6 +405,118 @@ $r2Ok = !empty($r2->accountId) && !empty($r2->apiToken);
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 1.1 SECCIÓN: PRECIOS Y TARIFAS             -->
+            <!-- ========================================== -->
+            <div id="section_precios" class="admin-section">
+                <?php if (!empty($msgPricingSuccess)): ?>
+                    <div style="background:#ECFDF5; border:1px solid #10B981; color:#065F46; padding:1rem; border-radius:10px; margin-bottom:1.5rem; display:flex; align-items:center; gap:0.75rem;">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                        <div>
+                            <strong>¡Configuración Guardada!</strong>
+                            <p style="margin:0; font-size:0.88rem;"><?= htmlspecialchars($msgPricingSuccess) ?></p>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <form method="POST">
+                    <div class="card-panel">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                            <div>
+                                <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary); margin:0;">
+                                    <i class="fas fa-sliders-h" style="color:var(--accent);"></i> Parámetros Globales de Tarifas y Firmas
+                                </h3>
+                                <p style="font-size:0.85rem; color:#64748B; margin:0.25rem 0 0;">
+                                    Define la tarifa por firmante adicional y el precio base de documentos propios cargados por clientes.
+                                </p>
+                            </div>
+                            <button type="submit" name="save_pricing_settings" class="btn-cta btn-gold">
+                                <i class="fas fa-save"></i> Guardar Cambios de Precios
+                            </button>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1.5rem; background:#F8FAFC; border:1px solid #E2E8F0; padding:1.25rem; border-radius:10px;">
+                            <div class="form-group">
+                                <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem;">
+                                    <i class="fas fa-user-plus" style="color:#0284C7;"></i> Precio por Firmante Extra (CLP) *
+                                </label>
+                                <p style="font-size:0.78rem; color:#64748B; margin:0.15rem 0 0.4rem;">
+                                    Monto que se suma al total por cada firmante que exceda al 1er firmante base.
+                                </p>
+                                <input type="number" name="precio_firma_extra" class="form-control" style="font-weight:800; font-size:1.1rem; color:#1E40AF;" value="<?= $currentPrecioExtra ?>" min="0" step="500" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem;">
+                                    <i class="fas fa-file-upload" style="color:#059669;"></i> Precio Base Carga PDF Propio (CLP) *
+                                </label>
+                                <p style="font-size:0.78rem; color:#64748B; margin:0.15rem 0 0.4rem;">
+                                    Tarifa base para documentos redactados por el cliente (incluye 1 firmante + bóveda R2).
+                                </p>
+                                <input type="number" name="precio_base_subir_pdf" class="form-control" style="font-weight:800; font-size:1.1rem; color:#065F46;" value="<?= $currentPrecioBasePdf ?>" min="0" step="500" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-panel">
+                        <div style="margin-bottom:1.25rem;">
+                            <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary); margin:0;">
+                                <i class="fas fa-file-alt" style="color:var(--accent);"></i> Catálogo Oficial: Precio Base por Instrumento (1 Firmante)
+                            </h3>
+                            <p style="font-size:0.85rem; color:#64748B; margin:0.25rem 0 0;">
+                                Puedes ajustar el precio base de cada contrato o declaración jurada del catálogo oficial.
+                            </p>
+                        </div>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:70px;">ID</th>
+                                    <th>Nombre del Instrumento</th>
+                                    <th>Categoría</th>
+                                    <th>Validez & Tipo</th>
+                                    <th style="width:200px;">Precio Base CLP (1 Firmante)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($allTemplates as $tpl): ?>
+                                    <tr>
+                                        <td><strong>#<?= $tpl['id'] ?></strong></td>
+                                        <td>
+                                            <strong style="color:var(--primary);"><?= htmlspecialchars($tpl['nombre']) ?></strong>
+                                            <div style="font-size:0.75rem; color:#64748B;">/redactar.php?slug=<?= htmlspecialchars($tpl['slug']) ?></div>
+                                        </td>
+                                        <td>
+                                            <span class="badge" style="background:#F1F5F9; color:#475569; text-transform:uppercase; font-size:0.7rem;">
+                                                <?= htmlspecialchars($tpl['categoria']) ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span style="font-size:0.78rem; color:#059669; font-weight:600;">
+                                                <i class="fas fa-check-circle"></i> Ley 19.799
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div style="display:flex; align-items:center; gap:0.35rem;">
+                                                <span style="font-weight:700; color:#64748B;">$</span>
+                                                <input type="number" name="tpl_prices[<?= $tpl['id'] ?>]" class="form-control" style="font-weight:800; text-align:right;" value="<?= (int)$tpl['precio_base'] ?>" min="0" step="500" required>
+                                                <span style="font-size:0.75rem; color:#64748B;">CLP</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+
+                        <div style="margin-top:1.5rem; text-align:right;">
+                            <button type="submit" name="save_pricing_settings" class="btn-cta btn-gold">
+                                <i class="fas fa-save"></i> Guardar Todas las Tarifas
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
 
             <!-- ========================================== -->
@@ -699,6 +848,10 @@ $r2Ok = !empty($r2->accountId) && !empty($r2->apiToken);
             'dashboard': {
                 title: 'Consola de Gestión y Operaciones',
                 desc: 'Monitoreo en vivo de transacciones, custodia y telecomunicaciones.'
+            },
+            'precios': {
+                title: 'Gestor de Tarifas y Precios de Firma',
+                desc: 'Configuración comercial de precios base por documento y tarifa por firmante adicional.'
             },
             'documentos': {
                 title: 'Monitor y Auditoría de Contratos',

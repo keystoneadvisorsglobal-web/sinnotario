@@ -23,6 +23,14 @@ if (!$tpl) {
 }
 
 $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
+
+$stmtSets = $pdo->query("SELECT * FROM system_settings");
+$settingsRows = $stmtSets ? $stmtSets->fetchAll(PDO::FETCH_ASSOC) : [];
+$sysSettings = [];
+foreach ($settingsRows as $sr) {
+    $sysSettings[$sr['key']] = $sr['value'];
+}
+$precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -328,14 +336,49 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     <!-- CONTENEDOR DINÁMICO DEL SELECTOR DE MODALIDAD / VARIANTE DE PLANTILLA (PASO 1) -->
                     <div id="step1ModalidadSelectorWrap" style="display:none; margin-bottom:1.5rem;"></div>
 
+                    <!-- Representación Legal de Empresa (Opcional) -->
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1.25rem;">
+                        <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:700; color:#0F2A4A; cursor:pointer; margin:0;">
+                            <input type="checkbox" id="f_parte_a_es_rep" onchange="toggleParteARepresentante()">
+                            <span><i class="fas fa-building"></i> Esta parte comparece y firma como Representante Legal de una Empresa</span>
+                        </label>
+                        <div id="parteARepFields" style="display:none; margin-top:0.75rem; border-top:1px dashed #CBD5E1; padding-top:0.75rem;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Razón Social de la Empresa Representada *</label>
+                                    <input type="text" id="f_parte_a_empresa_nombre" class="form-control" placeholder="Ej: Keystone Advisors SpA">
+                                </div>
+                                <div class="form-group">
+                                    <label>RUT Empresa Representada (Módulo 11) *</label>
+                                    <input type="text" id="f_parte_a_empresa_rut" class="form-control" placeholder="Ej: 76.123.456-7" maxlength="12">
+                                    <span id="err_parte_a_empresa_rut" class="rut-error-text">RUT inválido</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Tipo de Identificación *</label>
+                            <select id="f_parte_a_tipo_doc" class="form-control" onchange="changeParteADocType()">
+                                <option value="RUT" selected>Cédula de Identidad / RUT (Chile)</option>
+                                <option value="PASAPORTE">Pasaporte Extranjero / Documento Internacional</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="parte_a_pais_wrap" style="display:none;">
+                            <label>País Emisor del Pasaporte *</label>
+                            <input type="text" id="f_parte_a_pais" class="form-control" placeholder="Ej: Colombia, Venezuela, Perú, España, etc." value="Chile">
+                        </div>
+                    </div>
+
                     <div class="form-row">
                         <div class="form-group">
                             <label id="lbl_parte_a_nombre">Nombre Completo *</label>
                             <input type="text" id="f_parte_a_nombre" class="form-control" placeholder="Ej: Juan Andrés Pérez González" value="Juan Andrés Pérez González">
                         </div>
                         <div class="form-group">
-                            <label>RUT (Módulo 11) *</label>
-                            <input type="text" id="f_parte_a_rut" class="form-control" placeholder="12.345.678-5" value="12.345.678-5" maxlength="12">
+                            <label id="lbl_parte_a_rut">RUT (Módulo 11) *</label>
+                            <input type="text" id="f_parte_a_rut" class="form-control" placeholder="12.345.678-5" value="12.345.678-5" maxlength="25">
                             <span id="err_parte_a_rut" class="rut-error-text">RUT inválido</span>
                         </div>
                     </div>
@@ -391,14 +434,49 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                     </p>
 
                     <div id="parteBFieldsWrap">
+                        <!-- Representación Legal de Empresa Contraparte (Opcional) -->
+                        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1.25rem;">
+                            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:700; color:#0F2A4A; cursor:pointer; margin:0;">
+                                <input type="checkbox" id="f_parte_b_es_rep" onchange="toggleParteBRepresentante()">
+                                <span><i class="fas fa-building"></i> Esta parte comparece y firma como Representante Legal de una Empresa</span>
+                            </label>
+                            <div id="parteBRepFields" style="display:none; margin-top:0.75rem; border-top:1px dashed #CBD5E1; padding-top:0.75rem;">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Razón Social de la Empresa Representada *</label>
+                                        <input type="text" id="f_parte_b_empresa_nombre" class="form-control" placeholder="Ej: Servicios Profesionales Ltda.">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>RUT Empresa Representada (Módulo 11) *</label>
+                                        <input type="text" id="f_parte_b_empresa_rut" class="form-control" placeholder="Ej: 77.654.321-0" maxlength="12">
+                                        <span id="err_parte_b_empresa_rut" class="rut-error-text">RUT inválido</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Tipo de Identificación *</label>
+                                <select id="f_parte_b_tipo_doc" class="form-control" onchange="changeParteBDocType()">
+                                    <option value="RUT" selected>Cédula de Identidad / RUT (Chile)</option>
+                                    <option value="PASAPORTE">Pasaporte Extranjero / Documento Internacional</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="parte_b_pais_wrap" style="display:none;">
+                                <label>País Emisor del Pasaporte *</label>
+                                <input type="text" id="f_parte_b_pais" class="form-control" placeholder="Ej: Colombia, Venezuela, Perú, España, etc." value="Chile">
+                            </div>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label id="lbl_parte_b_nombre">Nombre Completo de la Contraparte *</label>
                                 <input type="text" id="f_parte_b_nombre" class="form-control" placeholder="Ej: María José Valenzuela" value="María José Valenzuela">
                             </div>
                             <div class="form-group">
-                                <label>RUT de la Contraparte (Módulo 11) *</label>
-                                <input type="text" id="f_parte_b_rut" class="form-control" placeholder="15.444.555-6" value="15.444.555-6" maxlength="12">
+                                <label id="lbl_parte_b_rut">RUT de la Contraparte (Módulo 11) *</label>
+                                <input type="text" id="f_parte_b_rut" class="form-control" placeholder="15.444.555-6" value="15.444.555-6" maxlength="25">
                                 <span id="err_parte_b_rut" class="rut-error-text">RUT inválido</span>
                             </div>
                         </div>
@@ -435,6 +513,24 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                                 <input type="tel" id="f_parte_b_tel" class="form-control" placeholder="+56 9 8765 4321" value="+56 9 8765 4321">
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Firmantes Adicionales Dinámicos (Avales, Co-deudores, Testigos o Partes Extras) -->
+                    <div id="extraSignersRedactarWrap" style="margin-top:1.5rem; border-top:1px solid #E2E8F0; padding-top:1.25rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                            <div>
+                                <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary); margin:0;">
+                                    <i class="fas fa-user-plus"></i> Firmantes Adicionales (Opcional)
+                                </h4>
+                                <p style="font-size:0.8rem; color:#64748B; margin:0.2rem 0 0;">
+                                    ¿Deseas incorporar más firmantes (ej. Aval, Codeudor solidario, Testigo o Socios)?
+                                </p>
+                            </div>
+                            <button type="button" class="btn-cta" style="background:#0F2A4A; color:white !important; font-size:0.8rem; padding:0.4rem 0.85rem;" onclick="addRedactarExtraSigner()">
+                                + Agregar Firmante
+                            </button>
+                        </div>
+                        <div id="redactarExtraSignersList"></div>
                     </div>
 
                     <!-- Mensaje para declaraciones juradas unipersonales -->
@@ -488,8 +584,12 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
                     <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:10px; padding:1.25rem; margin-bottom:1.5rem; font-size:0.88rem;">
                         <div style="display:flex; justify-content:space-between; margin-bottom:0.6rem;">
-                            <span><strong>Trámite:</strong> <?= htmlspecialchars($tpl['nombre']) ?></span>
-                            <strong>$<?= number_format($tpl['precio_base'], 0, ',', '.') ?> CLP</strong>
+                            <span><strong>Trámite Base:</strong> <?= htmlspecialchars($tpl['nombre']) ?></span>
+                            <strong id="summaryRedactarBasePrice">$<?= number_format($tpl['precio_base'], 0, ',', '.') ?> CLP</strong>
+                        </div>
+                        <div id="summaryRedactarExtraSignersRow" style="display:none; justify-content:space-between; margin-bottom:0.6rem; color:#2563EB;">
+                            <span id="summaryRedactarExtraLabel">Firmantes Adicionales (0 extras)</span>
+                            <strong id="summaryRedactarExtraPrice">$0 CLP</strong>
                         </div>
                         <div style="display:flex; justify-content:space-between; margin-bottom:0.6rem; color:#64748B;">
                             <span>Firma Electrónica Avanzada / Simple (Ley 19.799)</span>
@@ -501,7 +601,7 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                         </div>
                         <div style="border-top:1px solid #CBD5E1; padding-top:0.75rem; display:flex; justify-content:space-between; font-size:1.15rem; font-weight:800; color:var(--primary);">
                             <span>Total a Pagar:</span>
-                            <span>$<?= number_format($tpl['precio_base'], 0, ',', '.') ?> CLP</span>
+                            <span id="summaryRedactarTotalPrice">$<?= number_format($tpl['precio_base'], 0, ',', '.') ?> CLP</span>
                         </div>
                     </div>
 
@@ -571,6 +671,175 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+        const PRECIO_BASE_REDACTAR = <?= (int)$tpl['precio_base'] ?>;
+        const PRECIO_FIRMA_EXTRA_REDACTAR = <?= (int)$precioFirmaExtraRedactar ?>;
+        let redactarExtraSigners = [];
+
+        function toggleParteARepresentante() {
+            const chk = document.getElementById('f_parte_a_es_rep');
+            const wrap = document.getElementById('parteARepFields');
+            if (wrap) wrap.style.display = (chk && chk.checked) ? 'block' : 'none';
+            updateUniversalPreview();
+        }
+
+        function toggleParteBRepresentante() {
+            const chk = document.getElementById('f_parte_b_es_rep');
+            const wrap = document.getElementById('parteBRepFields');
+            if (wrap) wrap.style.display = (chk && chk.checked) ? 'block' : 'none';
+            updateUniversalPreview();
+        }
+
+        function changeParteADocType() {
+            const sel = document.getElementById('f_parte_a_tipo_doc');
+            const lbl = document.getElementById('lbl_parte_a_rut');
+            const input = document.getElementById('f_parte_a_rut');
+            const wrapPais = document.getElementById('parte_a_pais_wrap');
+
+            if (sel && sel.value === 'PASAPORTE') {
+                if (lbl) lbl.innerText = 'N° de Pasaporte Extranjero *';
+                if (input) {
+                    input.placeholder = 'Ej: P12345678';
+                    input.classList.remove('rut-valid', 'rut-invalid');
+                }
+                if (wrapPais) wrapPais.style.display = 'block';
+            } else {
+                if (lbl) lbl.innerText = 'RUT (Módulo 11) *';
+                if (input) input.placeholder = '12.345.678-5';
+                if (wrapPais) wrapPais.style.display = 'none';
+            }
+            updateUniversalPreview();
+        }
+
+        function changeParteBDocType() {
+            const sel = document.getElementById('f_parte_b_tipo_doc');
+            const lbl = document.getElementById('lbl_parte_b_rut');
+            const input = document.getElementById('f_parte_b_rut');
+            const wrapPais = document.getElementById('parte_b_pais_wrap');
+
+            if (sel && sel.value === 'PASAPORTE') {
+                if (lbl) lbl.innerText = 'N° de Pasaporte Extranjero *';
+                if (input) {
+                    input.placeholder = 'Ej: P87654321';
+                    input.classList.remove('rut-valid', 'rut-invalid');
+                }
+                if (wrapPais) wrapPais.style.display = 'block';
+            } else {
+                if (lbl) lbl.innerText = 'RUT de la Contraparte (Módulo 11) *';
+                if (input) input.placeholder = '15.444.555-6';
+                if (wrapPais) wrapPais.style.display = 'none';
+            }
+            updateUniversalPreview();
+        }
+
+        function addRedactarExtraSigner() {
+            const id = 'extra_sig_' + Date.now();
+            const idx = redactarExtraSigners.length + 3;
+            redactarExtraSigners.push({ id });
+
+            const container = document.getElementById('redactarExtraSignersList');
+            const div = document.createElement('div');
+            div.id = id;
+            div.className = 'signer-box';
+            div.style.cssText = 'background:#F8FAFC; border:1px solid #CBD5E1; border-radius:8px; padding:1rem; margin-top:0.85rem;';
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+                    <span class="badge" style="background:#FEF3C7; color:#B45309; font-size:0.75rem; font-weight:700;">Firmante Adicional ${redactarExtraSigners.length}</span>
+                    <button type="button" style="background:none; border:none; color:#DC2626; cursor:pointer; font-weight:700; font-size:0.78rem;" onclick="removeRedactarExtraSigner('${id}')">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo de Documento *</label>
+                        <select class="form-control extra-sig-tipo" onchange="changeExtraSignerDocType('${id}')">
+                            <option value="RUT" selected>Cédula de Identidad / RUT (Chile)</option>
+                            <option value="PASAPORTE">Pasaporte Extranjero / Documento Internacional</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="extra-sig-lbl-id">N° Identificación / RUT *</label>
+                        <input type="text" class="form-control extra-sig-rut" placeholder="Ej: 11.222.333-4">
+                    </div>
+                    <div class="form-group extra-sig-pais-wrap" style="display:none;">
+                        <label>País Emisor *</label>
+                        <input type="text" class="form-control extra-sig-pais" placeholder="Ej: Colombia, España" value="Chile">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nombre Completo *</label>
+                        <input type="text" class="form-control extra-sig-nombre" placeholder="Nombre del compareciente">
+                    </div>
+                    <div class="form-group">
+                        <label>Rol en el Contrato *</label>
+                        <input type="text" class="form-control extra-sig-rol" placeholder="Ej: Aval y Codeudor Solidario, Testigo, Socio" value="Aval Solidario">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Correo Electrónico *</label>
+                        <input type="email" class="form-control extra-sig-email" placeholder="correo@ejemplo.cl">
+                    </div>
+                    <div class="form-group">
+                        <label>WhatsApp *</label>
+                        <input type="tel" class="form-control extra-sig-tel" placeholder="+56 9 1111 2222">
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+            updateRedactarPricing();
+        }
+
+        function removeRedactarExtraSigner(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+            redactarExtraSigners = redactarExtraSigners.filter(s => s.id !== id);
+            updateRedactarPricing();
+        }
+
+        function changeExtraSignerDocType(id) {
+            const box = document.getElementById(id);
+            if (!box) return;
+            const sel = box.querySelector('.extra-sig-tipo');
+            const lbl = box.querySelector('.extra-sig-lbl-id');
+            const input = box.querySelector('.extra-sig-rut');
+            const wrapPais = box.querySelector('.extra-sig-pais-wrap');
+
+            if (sel && sel.value === 'PASAPORTE') {
+                if (lbl) lbl.innerText = 'N° de Pasaporte Extranjero *';
+                if (input) {
+                    input.placeholder = 'Ej: P12345678';
+                    input.classList.remove('rut-valid', 'rut-invalid');
+                }
+                if (wrapPais) wrapPais.style.display = 'block';
+            } else {
+                if (lbl) lbl.innerText = 'RUT (Módulo 11) *';
+                if (input) input.placeholder = '11.222.333-4';
+                if (wrapPais) wrapPais.style.display = 'none';
+            }
+        }
+
+        function updateRedactarPricing() {
+            const extraCount = redactarExtraSigners.length;
+            const extraCost = extraCount * PRECIO_FIRMA_EXTRA_REDACTAR;
+            const total = PRECIO_BASE_REDACTAR + extraCost;
+
+            const extraRow = document.getElementById('summaryRedactarExtraSignersRow');
+            const extraLbl = document.getElementById('summaryRedactarExtraLabel');
+            const extraPr = document.getElementById('summaryRedactarExtraPrice');
+            const totalPr = document.getElementById('summaryRedactarTotalPrice');
+
+            if (extraRow && extraCount > 0) {
+                extraRow.style.display = 'flex';
+                if (extraLbl) extraLbl.innerText = `Firmantes Adicionales (${extraCount} extra${extraCount > 1 ? 's' : ''})`;
+                if (extraPr) extraPr.innerText = `$${extraCost.toLocaleString('es-CL')} CLP`;
+            } else if (extraRow) {
+                extraRow.style.display = 'none';
+            }
+
+            if (totalPr) totalPr.innerText = `$${total.toLocaleString('es-CL')} CLP`;
         }
 
         const CURRENT_TEMPLATE = <?= json_encode($tpl, JSON_UNESCAPED_UNICODE) ?>;
@@ -2295,9 +2564,15 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
             // Actualizar firmas visuales
             const pvSignA = document.getElementById('pv_sign_parte_a');
-            if (pvSignA) pvSignA.innerText = nomA;
+            if (pvSignA) {
+                const repA = document.getElementById('f_parte_a_es_rep')?.checked ? ` (en rep. de ${document.getElementById('f_parte_a_empresa_nombre')?.value || 'Empresa'})` : '';
+                pvSignA.innerText = nomA + repA;
+            }
             const pvSignB = document.getElementById('pv_sign_parte_b');
-            if (pvSignB) pvSignB.innerText = nomB;
+            if (pvSignB) {
+                const repB = document.getElementById('f_parte_b_es_rep')?.checked ? ` (en rep. de ${document.getElementById('f_parte_b_empresa_nombre')?.value || 'Empresa'})` : '';
+                pvSignB.innerText = nomB + repB;
+            }
 
             const bodyContainer = document.getElementById('pv_dynamic_body_content');
             if (!bodyContainer) return;
@@ -3474,31 +3749,33 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
         }
 
         function nextUniversalStep(step) {
-            // Formatear y validar RUT parte A
+            // Formatear y validar RUT parte A (solo si es tipo RUT)
             if (currentStep === 1) {
+                const tipoDocA = document.getElementById('f_parte_a_tipo_doc')?.value || 'RUT';
                 const inputRutA = document.getElementById('f_parte_a_rut');
-                if (inputRutA) {
+                if (tipoDocA === 'RUT' && inputRutA) {
                     if (typeof RutHelper !== 'undefined') {
                         inputRutA.value = RutHelper.format(inputRutA.value);
                     }
                     const rut = inputRutA.value;
                     const isValid = typeof RutHelper !== 'undefined' ? RutHelper.validate(rut) : rut.length >= 8;
                     if (!isValid) {
-                        alert('Por favor ingresa un RUT válido con dígito verificador correcto.');
+                        alert('Por favor ingresa un RUT chileno válido con dígito verificador correcto o selecciona Pasaporte si eres extranjero.');
                         inputRutA.focus();
                         return;
                     }
                 }
             } else if (currentStep === 2 && !isUnipersonal) {
+                const tipoDocB = document.getElementById('f_parte_b_tipo_doc')?.value || 'RUT';
                 const inputRutB = document.getElementById('f_parte_b_rut');
-                if (inputRutB) {
+                if (tipoDocB === 'RUT' && inputRutB) {
                     if (typeof RutHelper !== 'undefined') {
                         inputRutB.value = RutHelper.format(inputRutB.value);
                     }
                     const rut = inputRutB.value;
                     const isValid = typeof RutHelper !== 'undefined' ? RutHelper.validate(rut) : rut.length >= 8;
                     if (!isValid) {
-                        alert('Por favor ingresa un RUT de Contraparte válido con dígito verificador correcto.');
+                        alert('Por favor ingresa un RUT de Contraparte válido con dígito verificador correcto o selecciona Pasaporte si es extranjero.');
                         inputRutB.focus();
                         return;
                     }
@@ -3550,25 +3827,65 @@ $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
             const isActuallyUnipersonal = isUnipersonal || (CURRENT_TEMPLATE.slug === 'autorizacion-domicilio-tributario-sii' && document.getElementById('f_sii_modalidad')?.value === 'opcion_c');
 
+            const esRepA = document.getElementById('f_parte_a_es_rep')?.checked ? true : false;
             const signers = [
                 {
                     rol: isActuallyUnipersonal ? 'DECLARANTE' : 'PARTE_A',
                     nombre: document.getElementById('f_parte_a_nombre').value,
+                    tipo_documento: document.getElementById('f_parte_a_tipo_doc')?.value || 'RUT',
+                    numero_identificacion: document.getElementById('f_parte_a_rut').value,
                     rut: document.getElementById('f_parte_a_rut').value,
+                    pais_emisor: document.getElementById('f_parte_a_pais')?.value || 'Chile',
+                    es_representante: esRepA,
+                    empresa_razon_social: esRepA ? (document.getElementById('f_parte_a_empresa_nombre')?.value || '') : '',
+                    empresa_rut: esRepA ? (document.getElementById('f_parte_a_empresa_rut')?.value || '') : '',
                     email: document.getElementById('f_parte_a_email').value,
                     telefono: document.getElementById('f_parte_a_tel').value
                 }
             ];
 
             if (!isActuallyUnipersonal) {
+                const esRepB = document.getElementById('f_parte_b_es_rep')?.checked ? true : false;
                 signers.push({
                     rol: 'PARTE_B',
                     nombre: document.getElementById('f_parte_b_nombre').value,
+                    tipo_documento: document.getElementById('f_parte_b_tipo_doc')?.value || 'RUT',
+                    numero_identificacion: document.getElementById('f_parte_b_rut').value,
                     rut: document.getElementById('f_parte_b_rut').value,
+                    pais_emisor: document.getElementById('f_parte_b_pais')?.value || 'Chile',
+                    es_representante: esRepB,
+                    empresa_razon_social: esRepB ? (document.getElementById('f_parte_b_empresa_nombre')?.value || '') : '',
+                    empresa_rut: esRepB ? (document.getElementById('f_parte_b_empresa_rut')?.value || '') : '',
                     email: document.getElementById('f_parte_b_email').value,
                     telefono: document.getElementById('f_parte_b_tel').value
                 });
             }
+
+            // Agregar firmantes extras si existen
+            const extraBoxes = document.querySelectorAll('#redactarExtraSignersList .signer-box');
+            extraBoxes.forEach(box => {
+                const n = box.querySelector('.extra-sig-nombre')?.value.trim();
+                const r = box.querySelector('.extra-sig-rut')?.value.trim();
+                const t = box.querySelector('.extra-sig-tipo')?.value || 'RUT';
+                const p = box.querySelector('.extra-sig-pais')?.value.trim() || 'Chile';
+                const em = box.querySelector('.extra-sig-email')?.value.trim();
+                const tel = box.querySelector('.extra-sig-tel')?.value.trim();
+                const rol = box.querySelector('.extra-sig-rol')?.value.trim() || 'FIRMANTE_EXTRA';
+
+                if (n && r) {
+                    signers.push({
+                        rol: rol,
+                        nombre: n,
+                        tipo_documento: t,
+                        numero_identificacion: r,
+                        rut: r,
+                        pais_emisor: p,
+                        es_representante: false,
+                        email: em,
+                        telefono: tel
+                    });
+                }
+            });
 
             const payload = {
                 template_slug: CURRENT_TEMPLATE.slug,

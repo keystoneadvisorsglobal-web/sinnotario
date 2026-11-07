@@ -1,5 +1,42 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 00:50 UTC-3] - SOL-0043
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0043`
+- **Alcance de los Cambios:**
+  - **Identificación Internacional, Representación Legal de Empresas, Multi-Firmantes & Pricing Dinámico:**
+    1. **Identificación de Extranjeros (Pasaporte / DNI Internacional):**
+       - Selector dinámico de Tipo de Documento: *«Cédula de Identidad / RUT (Chile)»* vs. *«Pasaporte Extranjero / Documento Internacional»*.
+       - Al elegir Pasaporte, se desactiva la validación restrictiva del Módulo 11 chileno, se adapta la etiqueta y placeholder a numeración internacional y se despliega el campo obligatorio de *«País Emisor del Pasaporte»*.
+       - Implementado tanto en el Wizard Universal ([`redactar.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/redactar.php)) como en el Asistente de Carga de Documento Propio ([`subir-documento.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/subir-documento.php)).
+    2. **Representación Legal a Nombre de Empresa (Personas Jurídicas):**
+       - Checkbox interactivo en cada compareciente: *«Firma como Representante Legal de Empresa»*.
+       - Despliega formulario para ingresar la Razón Social de la empresa y su RUT tributario con formateo Módulo 11.
+       - Reflejo automático en la vista previa del contrato y persistencia en la base de datos `document_signers` (`es_representante`, `empresa_razon_social`, `empresa_rut`).
+    3. **Firmantes Múltiples Ilimitados:**
+       - Soporte para agregar 3 o más comparecientes (Avales, Co-deudores solidarios, Testigos, Socios o Contrapartes) de forma dinámica tanto en plantillas como en carga de PDF propio.
+    4. **Tarifas Dinámicas (1 Firmante Base + Precio por Firmante Extra):**
+       - El precio base del trámite incluye 1 firmante.
+       - A partir del 2° compareciente, cada firmante adicional añade el recargo configurado (por defecto $2.990 CLP).
+       - Desglose transparente en el Paso de Revisión previo al pago.
+       - Cálculo y validación blindada en el Backend ([`api/index.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/api/index.php)) tanto para `create_draft` como para `upload_custom_document`.
+    5. **Módulo de Gestión de Precios en Consola Administrativa ([`admin.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/admin.php)):**
+       - Nueva pestaña interactiva: **«Precios & Tarifas»**.
+       - Parámetros globales: ajuste del precio por firmante adicional y precio base de carga de PDF propio.
+       - Tabla interactiva para ajustar el precio base de cada una de las 13 plantillas del catálogo con guardado en 1 clic.
+       - Persistencia en la tabla `system_settings` en la base de datos SQLite.
+- **Pruebas Validadas:**
+  - PHP Lint remoto en Hostinger: 0 errores de sintaxis en `api/index.php`, `subir-documento.php`, `redactar.php`, `admin.php` y `database/Database.php`.
+  - Smoke tests HTTP en producción:
+    - `https://sinnotario.cl/api/index.php?action=get_pricing_settings` &rarr; `HTTP/2 200 OK` (retorna `precio_firma_extra: 2990` y `precio_base_subir_pdf: 7990`).
+    - `POST https://sinnotario.cl/api/index.php?action=upload_custom_document` &rarr; `HTTP/2 200 OK` (creación de documento de prueba con 3 firmantes combinando Representante Legal de Empresa, Pasaporte de Colombia y RUT regular, calculando precio total de $13.970 CLP).
+    - `GET https://sinnotario.cl/api/index.php?action=verify_document` &rarr; `HTTP/2 200 OK` (validación de metadatos de país emisor, empresa representada y tipo de documento).
+    - Frontends `subir-documento.php`, `redactar.php` y `admin.php` retornando `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 00:35 UTC-3] - SOL-0042
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

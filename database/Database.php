@@ -92,8 +92,14 @@ class Database {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 document_id INTEGER NOT NULL,
                 rol_firmante VARCHAR(50) NOT NULL, -- ARRENDADOR, ARRENDATARIO, EMPLEADOR, TRABAJADOR, etc.
-                rut VARCHAR(12) NOT NULL,
+                rut VARCHAR(50) NOT NULL,
+                tipo_documento VARCHAR(20) DEFAULT 'RUT', -- RUT / PASAPORTE
+                numero_identificacion VARCHAR(50),
+                pais_emisor VARCHAR(100) DEFAULT 'Chile',
                 nombre_completo VARCHAR(200) NOT NULL,
+                es_representante BOOLEAN DEFAULT 0,
+                empresa_razon_social VARCHAR(200),
+                empresa_rut VARCHAR(20),
                 email VARCHAR(150) NOT NULL,
                 telefono VARCHAR(20),
                 orden_firma INTEGER DEFAULT 1,
@@ -105,6 +111,13 @@ class Database {
                 user_agent_firma TEXT,
                 evidencia_firma TEXT, -- JSON con detalles de auditoría
                 FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE
+            );",
+
+            // Parámetros y Tarifas Globales del Sistema
+            "CREATE TABLE IF NOT EXISTS system_settings (
+                key VARCHAR(50) PRIMARY KEY,
+                value TEXT,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );",
 
             // Registro de Auditoría y Trazabilidad (Cadena de Custodia)
