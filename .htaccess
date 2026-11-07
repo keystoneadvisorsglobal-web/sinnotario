@@ -1,0 +1,38 @@
+# SinNotario.cl - Reglas de Seguridad y Blindaje Web (LiteSpeed / Apache)
+
+# 1. BLOQUEO CRÍTICO: Denegar acceso HTTP directo a toda base de datos SQLite y archivos de entorno
+<Files ~ "\.(sqlite|sqlite3|db|env|log|bak|tar|gz|zip|sql)$">
+    Require all denied
+    Order allow,deny
+    Deny from all
+</Files>
+
+# 2. Denegar acceso a carpetas sensibles del sistema
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Proteger carpetas internas de backend y base de datos
+    RewriteRule ^database/ - [F,L]
+    RewriteRule ^config/ - [F,L]
+    RewriteRule ^src/ - [F,L]
+    RewriteRule ^templates/ - [F,L]
+    RewriteRule ^\.env - [F,L]
+    RewriteRule (^|/)\.(?!well-known) - [F,L]
+</IfModule>
+
+# 3. Endurecimiento de Cabeceras HTTP
+<IfModule mod_headers.c>
+    # Ocultar huellas de versión
+    Header unset X-Powered-By
+    Header always unset X-Powered-By
+    Header unset Server
+    Header always unset Server
+
+    # Cabeceras de protección activa contra XSS, Clickjacking y Sniffing
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

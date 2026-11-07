@@ -20,6 +20,8 @@ class Database {
 
             if ($isNew || filesize($dbPath) === 0) {
                 $this->initSchema();
+            } else {
+                $this->migrateSchema();
             }
         } catch (PDOException $e) {
             error_log("Database connection failed: " . $e->getMessage());
@@ -32,6 +34,57 @@ class Database {
             self::$instance = new self();
         }
         return self::$instance->pdo;
+    }
+
+    public function migrateSchema() {
+        try {
+            // Verificar columnas necesarias en tabla users
+            $userColsStmt = $this->pdo->query("PRAGMA table_info(users);");
+            $userCols = $userColsStmt->fetchAll(PDO::FETCH_COLUMN, 1);
+
+            $missingCols = [
+                'auth_provider' => "ALTER TABLE users ADD COLUMN auth_provider VARCHAR(20) DEFAULT 'LOCAL';",
+                'google_id' => "ALTER TABLE users ADD COLUMN google_id VARCHAR(100);",
+                'avatar_url' => "ALTER TABLE users ADD COLUMN avatar_url TEXT;",
+                'empresa_razon_social' => "ALTER TABLE users ADD COLUMN empresa_razon_social VARCHAR(200);",
+                'empresa_rut' => "ALTER TABLE users ADD COLUMN empresa_rut VARCHAR(20);",
+                'email_verificado' => "ALTER TABLE users ADD COLUMN email_verificado BOOLEAN DEFAULT 0;",
+                'ultimo_login' => "ALTER TABLE users ADD COLUMN ultimo_login DATETIME;"
+            ];
+
+            foreach ($missingCols as $colName => $alterSql) {
+                if (!in_array($colName, $userCols)) {
+                    $this->pdo->exec($alterSql);
+                }
+            }
+
+            // Crear tabla de sesiones seguras si no existe
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS user_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                token VARCHAR(128) NOT NULL UNIQUE,
+                ip_address VARCHAR(45),
+                user_agent TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                expires_at DATETIME NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );");
+
+            // Crear tabla de tokens de recuperación / verificación si no existe
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS user_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                tipo VARCHAR(30) NOT NULL, -- PASSWORD_RESET, EMAIL_VERIFY, OTP_LOGIN
+                token VARCHAR(128) NOT NULL UNIQUE,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                expires_at DATETIME NOT NULL,
+                utilizado BOOLEAN DEFAULT 0,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );");
+
+        } catch (Exception $e) {
+            error_log("Database migration warning: " . $e->getMessage());
+        }
     }
 
     public function initSchema() {

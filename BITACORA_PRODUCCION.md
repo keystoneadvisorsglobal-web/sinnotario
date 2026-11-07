@@ -1,5 +1,35 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 04:55 UTC-3] - SOL-0053
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0053`
+- **Alcance de los Cambios:**
+  - **Portal Privado de Clientes con Google Sign-In & Bóveda Personal:**
+    1. **Autenticación Dual (Google + Email/Password):**
+       - Integración oficial de Google Identity Services (GIS) / Google One Tap en [`login.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/login.php) con soporte de credenciales seguras.
+       - Registro y Login tradicional con cifrado de contraseñas mediante algoritmo `bcrypt` (cost 11).
+       - Creación del servicio [`AuthService.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/src/Services/AuthService.php) con gestión de sesiones PHP y tokens de larga duración (`user_sessions`).
+    2. **Migración Idempotente de Base de Datos (`Database.php`):**
+       - Adición segura de columnas a `users` (`auth_provider`, `google_id`, `avatar_url`, `empresa_razon_social`, `empresa_rut`, `email_verificado`, `ultimo_login`).
+       - Creación de tablas de auditoría de sesiones (`user_sessions`) y tokens (`user_tokens`).
+       - Vinculación automática inteligente de documentos preexistentes creados por el correo del usuario (`linkExistingDocumentsToUser`).
+    3. **Endpoints REST en `api/index.php`:**
+       - `auth_login`, `auth_register`, `auth_google`, `auth_current_user`, `auth_logout`, `client_get_documents` y `client_update_profile`.
+    4. **Zona Privada del Cliente (`mi-cuenta.php`):**
+       - Módulo de métricas (Total documentos, Pendientes de firma y Firmados/Sellados).
+       - Bóveda de contratos con estado de cada firmante (quién firmó y quién está pendiente), visor de Folio alfanumérico y descarga directa del PDF oficial.
+       - Panel de configuración de perfil y datos de empresa para acelerar futuros trámites.
+    5. **Pre-llenado Automático y Estado de Sesión en el Portal:**
+       - Menú superior de `index.php`, `redactar.php` y `subir-documento.php` adaptativo: muestra acceso al portal / avatar y nombre si el usuario está conectado.
+       - En `redactar.php` y `subir-documento.php`, si el cliente está logeado, el Paso 1 se autocompleta con su nombre, correo, RUT, teléfono y empresa sin necesidad de redigitar.
+- **Pruebas Validadas:**
+  - PHP Lint remoto: 0 errores de sintaxis en los 8 archivos modificados/creados.
+  - Smoke tests en producción: Registro de cuenta exitoso (`HTTP 200`), persistencia de sesión (`HTTP 200`), actualización de perfil de empresa (`HTTP 200`), protección de rutas (`HTTP 302 -> login.php` al cerrar sesión).
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 04:22 UTC-3] - SOL-0051
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
@@ -819,6 +849,26 @@
   - Validación sintáctica en Node.js de la totalidad de funciones JavaScript del cliente sin errores.
   - Smoke tests HTTP/2 200 OK en producción para `finiquito-laboral-mutuo-acuerdo`, `contrato-individual-trabajo`, `contrato-arriendo-ley-21461`, `prestacion-servicios-honorarios` y `declaracion-jurada-residencia`.
 - **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+---
+
+### Registro: 2026-11-07 07:30 UTC (04:30 CLT)
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario (`sinnotario.cl`)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0052`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Auditoría perimetral de ciberseguridad ofensiva sobre `https://sinnotario.cl/`:
+  1) **Vulnerabilidad Crítica Neutralizada (Acceso Web Directo a SQLite):** Se detectó que el archivo `database/sinnotario.sqlite` (73.728 bytes) se encontraba públicamente expuesto y permitía su descarga completa sin autenticación retornando HTTP 200, dejando vulnerables las tablas de documentos, firmantes y logs de auditoría criptográfica.
+  2) **Despliegue de Reglas de Blindaje en `.htaccess`:** Se generó e instaló en el servidor LiteSpeed el archivo `.htaccess` configurando el bloqueo estricto con `Require all denied` y `Order allow,deny / Deny from all` para cualquier archivo con extensiones `.sqlite`, `.sqlite3`, `.db`, `.env`, `.log`, `.bak`, `.sql`, `.tar`, `.gz`.
+  3) **Protección de Directorios Internos:** Reglas `mod_rewrite` denegando acceso directo con HTTP 403 Forbidden a las carpetas `/database/`, `/config/`, `/src/` y `/templates/`.
+  4) **Supresión de Huella de Versión (Anti-Fingerprinting):** Ocultamiento de la cabecera `X-Powered-By: PHP/7.4.33` y `Server`.
+  5) **Endurecimiento de Cabeceras HTTP:** Inyección de `Strict-Transport-Security` (HSTS max-age=31536000), `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff` y `X-XSS-Protection: 1; mode=block`.
+- **Pruebas Validadas:**
+  - `curl -I https://sinnotario.cl/database/sinnotario.sqlite` -> **HTTP 403 Forbidden** (Acceso denegado).
+  - `curl -I https://sinnotario.cl/.env` -> **HTTP 403 Forbidden**.
+  - `curl -I https://sinnotario.cl/config/` -> **HTTP 403 Forbidden**.
+  - `curl -I https://sinnotario.cl/` -> **HTTP 200 OK** con cabecera `X-Powered-By` oculta.
+- **Estado Final:** ✅ Éxito Total / 100% Blindado y Operativo en Producción.
 
 ---
 

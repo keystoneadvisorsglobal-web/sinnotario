@@ -6,7 +6,9 @@
  */
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/database/Database.php';
+require_once __DIR__ . '/src/Services/AuthService.php';
 
+$currentUser = AuthService::getCurrentUser();
 $slug = isset($_GET['slug']) ? trim($_GET['slug']) : (isset($_GET['doc']) ? trim($_GET['doc']) : 'contrato-arriendo-ley-21461');
 $pdo = Database::getInstance();
 
@@ -304,7 +306,12 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                     <i class="fas fa-chevron-down" style="position:absolute; right:10px; pointer-events:none; font-size:0.75rem; color:#64748B;"></i>
                 </div>
             </div>
-            <div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <?php if ($currentUser): ?>
+                    <a href="mi-cuenta.php" class="btn-cta" style="background:#0F2A4A; color:#FFFFFF !important; font-size:0.85rem; padding:0.4rem 0.8rem;">
+                        <i class="fas fa-folder-open"></i> Mi Bóveda (<?= htmlspecialchars($currentUser['nombre']) ?>)
+                    </a>
+                <?php endif; ?>
                 <a href="index.php" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;">
                     <i class="fas fa-times"></i> Salir
                 </a>
@@ -947,6 +954,30 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
             const chkB = document.getElementById('f_parte_b_es_rep');
             const wrapB = document.getElementById('parteBRepFields');
             if (chkB && wrapB) wrapB.style.display = chkB.checked ? 'block' : 'none';
+
+            // Pre-llenado automático de datos del Titular si el usuario ha iniciado sesión
+            <?php if ($currentUser): ?>
+            const nomA = document.getElementById('f_parte_a_nombre');
+            const emailA = document.getElementById('f_parte_a_email');
+            const rutAEl = document.getElementById('f_parte_a_rut');
+            const telAEl = document.getElementById('f_parte_a_telefono');
+            if (nomA) nomA.value = <?= json_encode($currentUser['nombre'] . ' ' . $currentUser['apellido']) ?>;
+            if (emailA) emailA.value = <?= json_encode($currentUser['email']) ?>;
+            if (rutAEl && <?= json_encode(!empty($currentUser['rut'])) ?>) rutAEl.value = <?= json_encode($currentUser['rut'] ?? '') ?>;
+            if (telAEl && <?= json_encode(!empty($currentUser['telefono'])) ?>) telAEl.value = <?= json_encode($currentUser['telefono'] ?? '') ?>;
+
+            <?php if (!empty($currentUser['empresa_razon_social'])): ?>
+            const chkRepA = document.getElementById('f_parte_a_es_rep');
+            const empNomA = document.getElementById('f_parte_a_empresa_nombre');
+            const empRutA = document.getElementById('f_parte_a_empresa_rut');
+            if (chkRepA && !chkRepA.checked) {
+                chkRepA.checked = true;
+                if (wrapA) wrapA.style.display = 'block';
+            }
+            if (empNomA) empNomA.value = <?= json_encode($currentUser['empresa_razon_social']) ?>;
+            if (empRutA) empRutA.value = <?= json_encode($currentUser['empresa_rut'] ?? '') ?>;
+            <?php endif; ?>
+            <?php endif; ?>
 
             bindUniversalPreviewSync();
             updateUniversalPreview();

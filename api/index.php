@@ -16,6 +16,7 @@ require_once __DIR__ . '/../database/Database.php';
 require_once __DIR__ . '/adapters/StorageR2Adapter.php';
 require_once __DIR__ . '/../src/Services/DocumentPdfService.php';
 require_once __DIR__ . '/../src/Services/GeminiLegalService.php';
+require_once __DIR__ . '/../src/Services/AuthService.php';
 
 $pdo = Database::getInstance();
 $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -428,7 +429,166 @@ try {
             jsonResponse(true, ['message' => 'Tarifas y precios actualizados exitosamente']);
             break;
 
-        // 10. Estado de salud / Check
+        // ==========================================
+        // MÓDULO DE AUTENTICACIÓN Y CLIENTES (PORTAL)
+        // ==========================================
+
+        // 10. Login con Email y Contraseña
+        case 'auth_login':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+            $input = json_decode(file_get_contents('php://input'), true);
+            $email = $input['email'] ?? '';
+            $password = $input['password'] ?? '';
+            $remember = !empty($input['remember']);
+
+            try {
+                $sessionData = AuthService::loginWithPassword($email, $password, $remember);
+                jsonResponse(true, $sessionData);
+            } catch (Exception $e) {
+                jsonResponse(false, null, $e->getMessage(), 401);
+            }
+            break;
+
+        // 11. Registro de nuevo usuario
+        case 'auth_register':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+            $input = json_decode(file_get_contents('php://input'), true);
+            $nombre = $input['nombre'] ?? '';
+            $apellido = $input['apellido'] ?? '';
+            $email = $input['email'] ?? '';
+            $password = $input['password'] ?? '';
+            $rut = $input['rut'] ?? null;
+            $telefono = $input['telefono'] ?? null;
+
+            try {
+                $sessionData = AuthService::registerUser($nombre, $apellido, $email, $password, $rut, $telefono);
+                jsonResponse(true, $sessionData);
+            } catch (Exception $e) {
+                jsonResponse(false, null, $e->getMessage(), 400);
+            }
+            break;
+
+        // 12. Autenticación con Google (One Tap / GIS OAuth)
+        case 'auth_google':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+            $input = json_decode(file_get_contents('php://input'), true);
+            $credential = $input['credential'] ?? '';
+
+            try {
+                $sessionData = AuthService::loginWithGoogle($credential);
+                jsonResponse(true, $sessionData);
+            } catch (Exception $e) {
+                jsonResponse(false, null, $e->getMessage(), 400);
+            }
+            break;
+
+        // 13. Obtener usuario autenticado actual
+        case 'auth_current_user':
+            $user = AuthService::getCurrentUser();
+            if ($user) {
+                jsonResponse(true, $user);
+            } else {
+                jsonResponse(false, null, 'No hay sesión activa', 401);
+            }
+            break;
+
+        // 14. Cerrar sesión
+        case 'auth_logout':
+            AuthService::logout();
+            jsonResponse(true, ['message' => 'Sesión cerrada correctamente']);
+            break;
+
+        // 15. Obtener documentos del portal privado del cliente
+        case 'client_get_documents':
+            $user = AuthService::getCurrentUser();
+            if (!$user) {
+                jsonResponse(false, null, 'Acceso no autorizado', 401);
+            }
+
+            // Buscar documentos asociados por user_id O por correo del usuario en firmantes
+            $userEmail = strtolower($user['email']);
+            $userId = (int)$user['id'];
+
+            $stmtDocs = $pdo->prepare("
+                SELECT DISTINCT 
+                    d.id,
+                    d.codigo_verificacion,
+                    d.titulo,
+                    d.estado,
+                    d.monto_pagado,
+                    d.estado_pago,
+                    d.pdf_r2_key,
+                    d.pdf_sha256,
+                    d.created_at,
+                    t.nombre AS template_nombre,
+                    t.categoria AS template_categoria,
+                    t.icono AS template_icono
+                FROM documents d
+                LEFT JOIN templates t ON d.template_id = t.id
+                LEFT JOIN document_signers s ON s.document_id = d.id
+                WHERE d.user_id = ? OR LOWER(s.email) = ?
+                ORDER BY d.id DESC
+            ");
+            $stmtDocs->execute([$userId, $userEmail]);
+            $docs = $stmtDocs->fetchAll(PDO::FETCH_ASSOC);
+
+            // Obtener estado de firmantes para cada documento
+            foreach ($docs as &$doc) {
+                $stmtSig = $pdo->prepare("
+                    SELECT 
+                        id, rol_firmante, rut, tipo_documento, nombre_completo, 
+                        email, telefono, estado_firma, fecha_firma, es_representante,
+                        empresa_razon_social, empresa_rut
+                    FROM document_signers
+                    WHERE document_id = ?
+                    ORDER BY orden_firma ASC, id ASC
+                ");
+                $stmtSig->execute([$doc['id']]);
+                $doc['signers'] = $stmtSig->fetchAll(PDO::FETCH_ASSOC);
+            }
+
+            jsonResponse(true, [
+                'user' => $user,
+                'documents' => $docs,
+                'total' => count($docs)
+            ]);
+            break;
+
+        // 16. Actualizar perfil de usuario
+        case 'client_update_profile':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+            $user = AuthService::getCurrentUser();
+            if (!$user) {
+                jsonResponse(false, null, 'Acceso no autorizado', 401);
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $nombre = trim($input['nombre'] ?? $user['nombre']);
+            $apellido = trim($input['apellido'] ?? $user['apellido']);
+            $telefono = trim($input['telefono'] ?? ($user['telefono'] ?? ''));
+            $rut = trim($input['rut'] ?? ($user['rut'] ?? ''));
+            $empresaNombre = trim($input['empresa_razon_social'] ?? ($user['empresa_razon_social'] ?? ''));
+            $empresaRut = trim($input['empresa_rut'] ?? ($user['empresa_rut'] ?? ''));
+
+            $stmtUpd = $pdo->prepare("
+                UPDATE users 
+                SET nombre = ?, apellido = ?, telefono = ?, rut = ?, empresa_razon_social = ?, empresa_rut = ?, updated_at = datetime('now')
+                WHERE id = ?
+            ");
+            $stmtUpd->execute([$nombre, $apellido, $telefono, $rut, $empresaNombre, $empresaRut, $user['id']]);
+
+            jsonResponse(true, ['message' => 'Perfil actualizado exitosamente']);
+            break;
+
+        // 17. Estado de salud / Check
         case 'health':
             $r2 = new StorageR2Adapter();
             $r2Configured = !empty($r2->accountId) && !empty($r2->apiToken);

@@ -7,7 +7,9 @@
  */
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/database/Database.php';
+require_once __DIR__ . '/src/Services/AuthService.php';
 
+$currentUser = AuthService::getCurrentUser();
 $pdo = Database::getInstance();
 $stmtSets = $pdo->query("SELECT * FROM system_settings");
 $settingsRows = $stmtSets ? $stmtSets->fetchAll(PDO::FETCH_ASSOC) : [];
@@ -303,7 +305,16 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                 <li><a href="index.php#empresas">Solución Empresas</a></li>
                 <li><a href="https://wa.me/56984180479?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
             </ul>
-            <div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <?php if ($currentUser): ?>
+                    <a href="mi-cuenta.php" class="btn-cta" style="background:#0F2A4A; color:#FFFFFF; padding:0.5rem 0.9rem; font-size:0.85rem; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="fas fa-folder-open"></i> Mi Bóveda (<?= htmlspecialchars($currentUser['nombre']) ?>)
+                    </a>
+                <?php else: ?>
+                    <a href="login.php" style="color:#0F2A4A; font-weight:700; text-decoration:none; font-size:0.85rem; padding:0.45rem 0.75rem; border-radius:6px; border:1px solid #CBD5E1; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="fas fa-lock"></i> Mi Cuenta
+                    </a>
+                <?php endif; ?>
                 <a href="verificar.php" class="btn-cta btn-secondary" style="padding:0.5rem 1rem; font-size:0.88rem;">
                     <i class="fas fa-qrcode"></i> Validar Folio
                 </a>
@@ -1271,6 +1282,30 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
             if (typeof window.enableExampleClearOnFocus === 'function') {
                 window.enableExampleClearOnFocus(document);
             }
+
+            // Pre-llenado automático si el usuario ha iniciado sesión
+            <?php if ($currentUser): ?>
+            const sig0Nombre = document.querySelector('#signer_box_0 .sig-nombre');
+            const sig0Email = document.querySelector('#signer_box_0 .sig-email');
+            const sig0Rut = document.querySelector('#signer_box_0 .sig-rut');
+            const sig0Tel = document.querySelector('#signer_box_0 .sig-tel');
+            if (sig0Nombre) sig0Nombre.value = <?= json_encode($currentUser['nombre'] . ' ' . $currentUser['apellido']) ?>;
+            if (sig0Email) sig0Email.value = <?= json_encode($currentUser['email']) ?>;
+            if (sig0Rut && <?= json_encode(!empty($currentUser['rut'])) ?>) sig0Rut.value = <?= json_encode($currentUser['rut'] ?? '') ?>;
+            if (sig0Tel && <?= json_encode(!empty($currentUser['telefono'])) ?>) sig0Tel.value = <?= json_encode($currentUser['telefono'] ?? '') ?>;
+
+            <?php if (!empty($currentUser['empresa_razon_social'])): ?>
+            const chkRep0 = document.querySelector('#signer_box_0 .sig-es-rep');
+            const empNom0 = document.querySelector('#signer_box_0 .sig-empresa-nombre');
+            const empRut0 = document.querySelector('#signer_box_0 .sig-empresa-rut');
+            if (chkRep0 && !chkRep0.checked) {
+                chkRep0.checked = true;
+                toggleRepresentante(0);
+            }
+            if (empNom0) empNom0.value = <?= json_encode($currentUser['empresa_razon_social']) ?>;
+            if (empRut0) empRut0.value = <?= json_encode($currentUser['empresa_rut'] ?? '') ?>;
+            <?php endif; ?>
+            <?php endif; ?>
 
             // Adjuntar validación a los RUTs iniciales (persona y empresa)
             document.querySelectorAll('.signer-box').forEach(box => {
