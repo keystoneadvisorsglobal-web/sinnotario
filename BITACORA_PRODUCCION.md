@@ -1,5 +1,25 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 13:45 UTC-3] - SOL-0058
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0058`
+- **Alcance de los Cambios:**
+  - **Integración Oficial de Google OAuth 2.0 en Producción:**
+    1. **Aprovisionamiento de Credenciales:**
+       - Se configuró el `Google Client ID` oficial creado en Google Cloud Console (`36671885786-kkaek0mrbsp83lmhpocc1k56v38j73le.apps.googleusercontent.com`) en la tabla `system_settings` de SQLite en producción.
+       - Se registraron `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` en el archivo de entorno `.env` en producción.
+    2. **Habilitación de Google Identity Services (GIS):**
+       - Se verificó que [`login.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/login.php) renderiza correctamente el atributo `data-client_id` y activa `hasGoogleClientId = true`.
+       - La alerta de credenciales pendientes desaparece automáticamente y el botón "Continuar con Google" dispara el diálogo One Tap / Selector de cuentas de Google de forma nativa.
+- **Pruebas Validadas:**
+  - Inspección de base de datos SQLite y variables de entorno: ID presente y consistente.
+  - Verificación por cURL con cookie de gate: El HTML renderizado contiene el Client ID oficial y el handler de Google activo.
+  - Smoke test HTTP en producción: `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 12:55 UTC-3] - SOL-0057
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
