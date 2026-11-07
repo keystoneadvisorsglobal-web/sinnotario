@@ -23,6 +23,8 @@ if (!file_exists($envFile)) {
 }
 loadEnv($envFile);
 
+require_once __DIR__ . '/gate.php';
+
 return [
     'app_name' => 'SinNotario.cl',
     'app_url' => getenv('APP_URL') ?: 'https://sinnotario.cl',

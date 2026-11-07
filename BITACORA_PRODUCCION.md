@@ -1,5 +1,26 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 05:13 UTC-3] - SOL-0055
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0055`
+- **Alcance de los Cambios:**
+  - **Candado Global de Pre-Lanzamiento y Página de Mantención con Clave (`AuthGate`):**
+    1. **Bloqueo Restringido al Público General:**
+       - Se desplegó [`config/gate.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/config/gate.php) cargado a través de [`config/app.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/config/app.php), interceptando todas las páginas públicas del sitio (`index.php`, `redactar.php`, `subir-documento.php`, `verificar.php`, `login.php`, `mi-cuenta.php`).
+       - Los visitantes no autorizados ven una pantalla corporativa de pre-lanzamiento en construcción con información legal de las Leyes 19.799 y 21.461, impidiendo el uso prematuro por parte del público.
+    2. **Desbloqueo Autorizado para el Equipo:**
+       - Modal con usuario y clave maestra (`GATE_USER` y `GATE_PASS`).
+       - Al autenticarse, se establece una cookie segura tokenizada con expiración de 30 días (`sn_preview_pass`) para que el equipo navegue por todo el portal, wizards y administración sin que se vuelva a solicitar la contraseña a cada clic.
+    3. **Enlace de Salida:**
+       - Posibilidad de volver a bloquear la vista en cualquier momento mediante `?exit_preview=1`.
+- **Pruebas Validadas:**
+  - Acceso anónimo desde navegador/curl: `https://sinnotario.cl/` y `https://sinnotario.cl/subir-documento.php` muestran la pantalla de "Entorno de Pre-Lanzamiento Restringido".
+  - Desbloqueo mediante credenciales: Permite el ingreso inmediato y preserva la navegación por todo el sitio.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 05:07 UTC-3] - SOL-0054
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
