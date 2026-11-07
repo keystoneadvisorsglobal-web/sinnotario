@@ -118,26 +118,52 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
         </section>
 
         <!-- Sección de Validación Pública (/verificar) -->
-        <section id="verificar" style="background: #FFFFFF; border-top: 1px solid var(--border); padding: 4rem 1.5rem;">
-            <div style="max-width: 800px; margin: 0 auto; text-align: center;">
-                <span class="card-category" style="background: #ECFDF5; color: #047857;">Módulo Oficial de Autenticidad</span>
-                <h2 style="font-size: 2.1rem; font-weight: 800; color: var(--primary); margin: 0.6rem 0 0.8rem; letter-spacing: -0.02em;">Verificador de Integridad y Firma</h2>
-                <p style="color: #64748B; font-size: 1rem; margin-bottom: 2rem; line-height: 1.6;">
+        <section id="verificar" style="background: #F8FAFC; border-top: 1px solid var(--border); padding: 5rem 1.5rem;">
+            <div style="max-width: 1060px; margin: 0 auto; text-align: center;">
+                <span class="card-category" style="background: #ECFDF5; color: #047857; font-weight: 700; padding: 0.4rem 1rem; border-radius: 9999px;">
+                    Módulo Oficial de Autenticidad
+                </span>
+                <h2 style="font-size: 2.3rem; font-weight: 800; color: var(--primary); margin: 0.75rem 0 0.85rem; letter-spacing: -0.02em;">
+                    Verificador de Integridad y Firma
+                </h2>
+                <p style="color: #64748B; font-size: 1.05rem; margin-bottom: 2.25rem; line-height: 1.6; max-width: 780px; margin-left: auto; margin-right: auto;">
                     Ingresa el código único alfanumérico impreso al pie de página de cualquier documento emitido por SinNotario.cl para consultar su firma digital y bóveda de custodia en Cloudflare R2.
                 </p>
 
-                <div class="search-input-wrap" style="border: 1.5px solid var(--primary); box-shadow: var(--shadow-sm); max-width: 600px; margin: 0 auto;">
-                    <i class="fas fa-qrcode"></i>
-                    <input type="text" id="verifyCodeInput" class="search-input" placeholder="Ej: SN-4A9B-81CD" style="text-transform: uppercase;">
-                    <button id="btnSubmitVerify" class="search-btn">
-                        <i class="fas fa-search"></i> Validar Documento
-                    </button>
-                <div style="margin-top: 1rem; font-size: 0.88rem;">
-                    <a href="verificar.php" style="color: #2563EB; font-weight: 700; text-decoration: none;">
-                        <i class="fas fa-fingerprint"></i> ¿Deseas cotejar un archivo PDF mediante Hash SHA-256? Ir al Portal Completo de Verificación &rarr;
-                    </a>
+                <!-- Cuadro de Verificación Ampliado y Desahogado -->
+                <div style="background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 14px; box-shadow: 0 4px 20px -2px rgba(15, 42, 74, 0.08); padding: 1.5rem 1.75rem; max-width: 920px; margin: 0 auto;">
+                    <div style="display: flex; gap: 0.85rem; align-items: center; justify-content: center; flex-wrap: wrap;">
+                        <!-- Input con borde claro, padding cómodo y placeholder legible -->
+                        <div style="position: relative; flex: 1; min-width: 280px; display: flex; align-items: center;">
+                            <i class="fas fa-qrcode" style="position: absolute; left: 1rem; color: #94A3B8; font-size: 1.2rem; pointer-events: none;"></i>
+                            <input type="text" id="verifyCodeInput" placeholder="Ingresa el código ej: SN-4A9B-81CD" 
+                                   style="width: 100%; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0.8rem 1rem 0.8rem 2.85rem; font-size: 1rem; font-weight: 600; color: #0F2A4A; text-transform: uppercase; background: #FFFFFF; outline: none; transition: border-color 0.2s, box-shadow 0.2s;"
+                                   onfocus="this.style.borderColor='#2563EB'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.12)';"
+                                   onblur="this.style.borderColor='#CBD5E1'; this.style.boxShadow='none';">
+                        </div>
+
+                        <!-- Botón estilizado con altura controlada y texto balanceado -->
+                        <button id="btnSubmitVerify" 
+                                style="background: var(--primary); color: #FFFFFF; border: none; border-radius: 8px; padding: 0.8rem 1.6rem; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: background 0.2s; white-space: nowrap; height: 46px; box-shadow: 0 2px 6px rgba(15,42,74,0.2);"
+                                onmouseover="this.style.background='#1E3A8A';"
+                                onmouseout="this.style.background='var(--primary)';">
+                            <i class="fas fa-search"></i> Validar Documento
+                        </button>
+                    </div>
+
+                    <!-- Enlace secundario separado con espacio amplio y formato desahogado -->
+                    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed #E2E8F0; font-size: 0.92rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <span style="color: #64748B;"><i class="fas fa-fingerprint" style="color: #2563EB; font-size: 1.1rem; vertical-align: middle;"></i> ¿Tienes el archivo en tu equipo?</span>
+                        <a href="verificar.php" style="color: #2563EB; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;"
+                           onmouseover="this.style.textDecoration='underline';"
+                           onmouseout="this.style.textDecoration='none';">
+                            Cotejar PDF mediante Hash SHA-256 en el Portal Completo de Verificación <i class="fas fa-arrow-right" style="font-size: 0.8rem;"></i>
+                        </a>
+                    </div>
                 </div>
-                <div id="verifyResultDiv" style="margin-top: 1.5rem; text-align: left; display: none; max-width: 600px; margin-left: auto; margin-right: auto;"></div>
+
+                <!-- Contenedor de Resultado de Validación -->
+                <div id="verifyResultDiv" style="margin-top: 1.5rem; text-align: left; display: none; max-width: 920px; margin-left: auto; margin-right: auto;"></div>
             </div>
         </section>
 

@@ -801,3 +801,20 @@
   - Validación sintáctica en Node.js de la totalidad de funciones JavaScript del cliente sin errores.
   - Smoke tests HTTP/2 200 OK en producción para `finiquito-laboral-mutuo-acuerdo`, `contrato-individual-trabajo`, `contrato-arriendo-ley-21461`, `prestacion-servicios-honorarios` y `declaracion-jurada-residencia`.
 - **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+---
+
+### Registro: 2026-11-07 07:15 UTC (04:15 CLT)
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario (`sinnotario.cl`)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0050`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Se rediseñó, amplió y desahogó el módulo de verificación pública de documentos en la portada principal (`index.php#verificar`):
+  1) **Ampliación Horizontal de Contenedor:** Se incrementó el ancho máximo del cuadro de verificación de 600px a 920px (dentro de un contenedor de sección de 1060px), otorgando suficiente amplitud visual en desktop sin apretar los elementos.
+  2) **Corrección de Estructura y Bordes del Input:** Se corrigió un cierre prematuro de etiqueta que forzaba el enlace dentro de la barra de búsqueda. El campo de texto de código ahora cuenta con un borde nítido (`border: 1.5px solid #CBD5E1`), estado de foco (`focus`) iluminado con anillo azul sutil, icono espaciado y placeholder explicativo (*«Ingresa el código ej: SN-4A9B-81CD»*).
+  3) **Ajuste de Botón de Validación:** Se fijó una altura balanceada (`height: 46px`) con padding proporcionado y texto alineado con su icono, eliminando el exceso de altura respecto al input.
+  4) **Desacoplamiento del Enlace Alternativo de Cotejo PDF:** Se separó el acceso hacia el Portal Completo de Verificación por Hash SHA-256 en una fila inferior delimitada con borde punteado suave, iconografía nítida y tipografía legible y espaciada.
+- **Pruebas Validadas:**
+  - Verificación sintáctica remota (`php -l domains/sinnotario.cl/public_html/index.php`) con cero errores.
+  - Smoke tests HTTP/2 200 OK en `https://sinnotario.cl/` con validación de elementos ampliados.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
