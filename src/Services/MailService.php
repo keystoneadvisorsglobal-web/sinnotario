@@ -1,29 +1,61 @@
 <?php
 /**
  * MailService - Servicio Centralizado de Notificaciones y Correos Transaccionales
+ * Con despacho vía SMTP Autenticado (Titan Mail) y fallback resiliente.
  * SinNotario.cl - Keystone Advisors
  */
+require_once __DIR__ . '/KeystoneSmtpClient.php';
 
 class MailService {
+
+    /**
+     * Obtener configuración SMTP
+     */
+    private static function getSmtpConfig() {
+        return [
+            'smtp_host' => getenv('SMTP_HOST') ?: 'smtp.titan.email',
+            'smtp_port' => (int)(getenv('SMTP_PORT') ?: 465),
+            'smtp_user' => getenv('SMTP_USER') ?: 'contacto@keystoneadvisors.cl',
+            'smtp_pass' => getenv('SMTP_PASS') ?: 'Jaba10281029#123456',
+            'smtp_from' => getenv('SMTP_FROM') ?: 'contacto@keystoneadvisors.cl',
+            'smtp_name' => 'SinNotario.cl'
+        ];
+    }
 
     /**
      * Enviar correo HTML transaccional
      */
     public static function send($to, $subject, $htmlBody, $replyTo = null) {
-        $fromEmail = 'notificaciones@sinnotario.cl';
+        $config = self::getSmtpConfig();
+
+        // 1. Envolver en plantilla corporativa
+        $fullHtml = self::wrapTemplate($subject, $htmlBody);
+
+        // 2. Intento principal: SMTP Socket con SSL
+        if (!empty($config['smtp_pass'])) {
+            try {
+                $client = new KeystoneSmtpClient($config);
+                $sent = $client->send($to, $subject, $fullHtml);
+                if ($sent) {
+                    return true;
+                }
+            } catch (Exception $e) {
+                error_log("Error SMTP en SinNotario MailService: " . $e->getMessage());
+            }
+        }
+
+        // 3. Fallback: mail() nativo del servidor
+        $fromEmail = $config['smtp_from'] ?? 'contacto@keystoneadvisors.cl';
         $fromName  = 'SinNotario.cl';
 
         $headers = [];
         $headers[] = 'MIME-Version: 1.0';
         $headers[] = 'Content-type: text/html; charset=UTF-8';
         $headers[] = "From: {$fromName} <{$fromEmail}>";
-        $headers[] = "Reply-To: " . ($replyTo ? $replyTo : "soporte@sinnotario.cl");
+        $headers[] = "Reply-To: " . ($replyTo ?: $fromEmail);
         $headers[] = "X-Mailer: PHP/" . phpversion();
 
-        // Envolver en plantilla corporativa
-        $fullHtml = self::wrapTemplate($subject, $htmlBody);
-
-        return @mail($to, $subject, $fullHtml, implode("\r\n", $headers));
+        return @mail($to, $subject, $fullHtml, implode("\r\n", $headers), "-f{$fromEmail}");
     }
 
     /**
