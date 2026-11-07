@@ -49,20 +49,33 @@ window.RutHelper = {
         if (!inputElement) return;
         
         const handler = (e) => {
-            const raw = e.target.value;
-            const formatted = this.format(raw);
-            if (e.type === 'blur' || e.type === 'change' || (raw && raw.length >= 8)) {
-                e.target.value = formatted;
+            const clean = this.clean(inputElement.value);
+
+            // Si el campo está configurado en modo Pasaporte o no es RUT, salir
+            if (inputElement.dataset && inputElement.dataset.docType === 'PASAPORTE') {
+                return;
+            }
+
+            if (e.type === 'blur' || e.type === 'change') {
+                // Al salir del campo o cambiar, formatear con puntos y guion siempre que tenga al menos 2 caracteres
+                if (clean.length >= 2) {
+                    inputElement.value = this.format(clean);
+                }
+            } else if (e.type === 'input') {
+                // Mientras escribe, si alcanza 8 o 9 caracteres (un RUT completo), formatear en caliente
+                if (clean.length >= 8 && clean.length <= 9) {
+                    inputElement.value = this.format(clean);
+                }
             }
             
-            const clean = this.clean(e.target.value);
-            if (clean.length >= 8) {
-                const isValid = this.validate(clean);
+            const currentClean = this.clean(inputElement.value);
+            if (currentClean.length >= 7) {
+                const isValid = this.validate(currentClean);
                 if (isValid) {
                     inputElement.classList.remove('rut-invalid');
                     inputElement.classList.add('rut-valid');
                     if (errorElement) errorElement.style.display = 'none';
-                } else {
+                } else if (currentClean.length >= 8) {
                     inputElement.classList.remove('rut-valid');
                     inputElement.classList.add('rut-invalid');
                     if (errorElement) {

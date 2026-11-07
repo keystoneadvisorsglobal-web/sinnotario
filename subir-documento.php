@@ -684,10 +684,20 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
     </footer>
 
     <!-- Scripts del Wizard de Carga Propia -->
+    <script src="assets/js/app.js?v=20261107_2"></script>
     <script>
         let currentUploadedFile = null;
         let currentCalculatedHash = '';
         let currentSignersCount = 2;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Inicializar formateo y validación de RUT en los campos por defecto
+            document.querySelectorAll('.sig-rut, .sig-empresa-rut').forEach(input => {
+                if (typeof RutHelper !== 'undefined') {
+                    RutHelper.attachToInput(input);
+                }
+            });
+        });
 
         // Drag & Drop Setup
         const dropzone = document.getElementById('dropzoneBox');
@@ -995,6 +1005,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
             const paisWrap = document.getElementById(`pais_wrap_${idx}`);
 
             if (sel && sel.value === 'PASAPORTE') {
+                if (inputRut) inputRut.dataset.docType = 'PASAPORTE';
                 if (lbl) lbl.innerText = 'N° de Pasaporte Extranjero *';
                 if (inputRut) {
                     inputRut.placeholder = 'Ej: P12345678 o DNI extranjero';
@@ -1002,9 +1013,11 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                 }
                 if (paisWrap) paisWrap.style.display = 'block';
             } else {
+                if (inputRut) inputRut.dataset.docType = 'RUT';
                 if (lbl) lbl.innerText = 'RUT *';
                 if (inputRut) {
                     inputRut.placeholder = '12.345.678-5';
+                    if (typeof RutHelper !== 'undefined') inputRut.value = RutHelper.format(inputRut.value);
                 }
                 if (paisWrap) paisWrap.style.display = 'none';
             }
@@ -1122,6 +1135,14 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                 </div>
             `;
             container.appendChild(div);
+            const newRut = div.querySelector('.sig-rut');
+            if (newRut && typeof RutHelper !== 'undefined') {
+                RutHelper.attachToInput(newRut);
+            }
+            const newEmpRut = div.querySelector('.sig-empresa-rut');
+            if (newEmpRut && typeof RutHelper !== 'undefined') {
+                RutHelper.attachToInput(newEmpRut);
+            }
             currentSignersCount++;
             updatePricingCalculation();
         }

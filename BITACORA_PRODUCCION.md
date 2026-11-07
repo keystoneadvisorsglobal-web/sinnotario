@@ -1,5 +1,25 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 01:03 UTC-3] - SOL-0045
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0045`
+- **Alcance de los Cambios:**
+  - **Autoformateo Reactivo de RUT con Puntos y Guión:**
+    1. **Robustecimiento de `RutHelper.attachToInput()`:**
+       - Formateo inmediato al alcanzar la longitud del RUT (8 o 9 dígitos limpios) mientras el usuario tipea (`input`).
+       - Formateo automático obligatorio al desenfocar o salir del campo (`blur` y `change`) para cualquier número ingresado (ej. escribe `123456785` &rarr; se transforma automáticamente en `12.345.678-5`).
+    2. **Cobertura al 100% de los Inputs de RUT:**
+       - Inclusión y enlace de `RutHelper` en [`subir-documento.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/subir-documento.php) para los firmantes iniciales y firmantes adicionales agregados dinámicamente.
+       - Enlace de autoformateo a los campos de RUT de empresa representada (`f_parte_a_empresa_rut`, `f_parte_b_empresa_rut`, `sig-empresa-rut`).
+       - Exclusión selectiva cuando el usuario escoge *Pasaporte Extranjero* (`dataset.docType = 'PASAPORTE'`).
+- **Pruebas Validadas:**
+  - PHP Lint remoto en Hostinger: 0 errores de sintaxis en `redactar.php` y `subir-documento.php`.
+  - Smoke tests HTTP en producción: `app.js?v=20261107_2` y frontends respondiendo `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 00:58 UTC-3] - SOL-0044
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

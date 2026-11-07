@@ -698,6 +698,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
             const wrapPais = document.getElementById('parte_a_pais_wrap');
 
             if (sel && sel.value === 'PASAPORTE') {
+                if (input) input.dataset.docType = 'PASAPORTE';
                 if (lbl) lbl.innerText = 'N° de Pasaporte Extranjero *';
                 if (input) {
                     input.placeholder = 'Ej: P12345678';
@@ -705,8 +706,12 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                 }
                 if (wrapPais) wrapPais.style.display = 'block';
             } else {
+                if (input) input.dataset.docType = 'RUT';
                 if (lbl) lbl.innerText = 'RUT *';
-                if (input) input.placeholder = '12.345.678-5';
+                if (input) {
+                    input.placeholder = '12.345.678-5';
+                    if (typeof RutHelper !== 'undefined') input.value = RutHelper.format(input.value);
+                }
                 if (wrapPais) wrapPais.style.display = 'none';
             }
             updateUniversalPreview();
@@ -719,6 +724,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
             const wrapPais = document.getElementById('parte_b_pais_wrap');
 
             if (sel && sel.value === 'PASAPORTE') {
+                if (input) input.dataset.docType = 'PASAPORTE';
                 if (lbl) lbl.innerText = 'N° de Pasaporte Extranjero *';
                 if (input) {
                     input.placeholder = 'Ej: P87654321';
@@ -726,8 +732,12 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                 }
                 if (wrapPais) wrapPais.style.display = 'block';
             } else {
+                if (input) input.dataset.docType = 'RUT';
                 if (lbl) lbl.innerText = 'RUT de la Contraparte *';
-                if (input) input.placeholder = '15.444.555-6';
+                if (input) {
+                    input.placeholder = '15.444.555-6';
+                    if (typeof RutHelper !== 'undefined') input.value = RutHelper.format(input.value);
+                }
                 if (wrapPais) wrapPais.style.display = 'none';
             }
             updateUniversalPreview();
@@ -789,6 +799,10 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                 </div>
             `;
             container.appendChild(div);
+            const newRutInput = div.querySelector('.extra-sig-rut');
+            if (newRutInput && typeof RutHelper !== 'undefined') {
+                RutHelper.attachToInput(newRutInput);
+            }
             updateRedactarPricing();
         }
 
@@ -808,6 +822,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
             const wrapPais = box.querySelector('.extra-sig-pais-wrap');
 
             if (sel && sel.value === 'PASAPORTE') {
+                if (input) input.dataset.docType = 'PASAPORTE';
                 if (lbl) lbl.innerText = 'N° de Pasaporte Extranjero *';
                 if (input) {
                     input.placeholder = 'Ej: P12345678';
@@ -815,8 +830,12 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                 }
                 if (wrapPais) wrapPais.style.display = 'block';
             } else {
+                if (input) input.dataset.docType = 'RUT';
                 if (lbl) lbl.innerText = 'RUT *';
-                if (input) input.placeholder = '11.222.333-4';
+                if (input) {
+                    input.placeholder = '11.222.333-4';
+                    if (typeof RutHelper !== 'undefined') input.value = RutHelper.format(input.value);
+                }
                 if (wrapPais) wrapPais.style.display = 'none';
             }
         }
@@ -856,9 +875,23 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                 RutHelper.attachToInput(rutA, errA);
             }
 
+            const rutRepA = document.getElementById('f_parte_a_empresa_rut');
+            const errRepA = document.getElementById('err_parte_a_empresa_rut');
+            if (rutRepA && typeof RutHelper !== 'undefined') {
+                RutHelper.attachToInput(rutRepA, errRepA);
+            }
+
             const rutB = document.getElementById('f_parte_b_rut');
             const errB = document.getElementById('err_parte_b_rut');
             if (rutB && typeof RutHelper !== 'undefined') {
+                RutHelper.attachToInput(rutB, errB);
+            }
+
+            const rutRepB = document.getElementById('f_parte_b_empresa_rut');
+            const errRepB = document.getElementById('err_parte_b_empresa_rut');
+            if (rutRepB && typeof RutHelper !== 'undefined') {
+                RutHelper.attachToInput(rutRepB, errRepB);
+            }
                 RutHelper.attachToInput(rutB, errB);
             }
 
