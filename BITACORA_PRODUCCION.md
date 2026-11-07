@@ -1,5 +1,38 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 00:07 UTC-3] - SOL-0041
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0041`
+- **Alcance de los Cambios:**
+  - **Módulo de Carga y Firma de Documento Propio (PDF Externo):**
+    1. **Asistente Frontend Especializado (`subir-documento.php`):**
+       - Wizard en 3 pasos:
+         - *Paso 1 (Carga del PDF & Cómputo Forense):* Zona de Drag & Drop con validación de tipo MIME y extensión `.pdf`, lectura inmediata mediante `FileReader` y extracción en Base64, cálculo de Hash SHA-256 en cliente con Web Crypto API (`window.crypto.subtle`), previsualización en vivo en visor `<iframe>` interactivo incrustado y título sugerido.
+         - *Paso 2 (Configuración de Partes y Firmantes):* Formulario dinámico para agregar múltiples firmantes con rol (Emisor, Mandante, Trabajador, Arrendatario, Aval, Testigo, etc.), validación de RUT chileno con Módulo 11 en tiempo real (`RutHelper`), Nombre completo, Correo electrónico y Teléfono WhatsApp.
+         - *Paso 3 (Resumen Legal, Certificación & Envío):* Resumen del documento, visualización del Hash SHA-256, desglose de firmantes y tarifa preferencial de certificación y firma bajo Ley 19.799 ($7.990).
+    2. **Endpoint Backend en API (`api/index.php` -> `upload_custom_document`):**
+       - Recepción del payload Base64 con título, archivo PDF, firmantes y hash cliente.
+       - Validación de cabecera binaria PDF (`%PDF`).
+       - Generación de código único de verificación (`SN-XXXX-XXXX`).
+       - Subida y sellado criptográfico automático a la bóveda en la nube Cloudflare R2 (`documents/{verifCode}.pdf`).
+       - Registro en la base de datos `documents` (`estado = 'PENDIENTE_FIRMAS'`, `pdf_sha256`, `pdf_r2_key`).
+       - Registro individualizado de cada firmante en `document_signers` con tokens de acceso únicos.
+    3. **Integración en Portal Principal (`index.php`):**
+       - Enlace prioritario en la barra de navegación superior ("Subir tu Documento").
+       - Banner promocional interactivo destacado bajo el buscador principal en el Hero con llamada a la acción hacia `subir-documento.php`.
+- **Pruebas Validadas:**
+  - PHP Lint remoto en Hostinger: 0 errores de sintaxis en `subir-documento.php`, `api/index.php` e `index.php`.
+  - Smoke tests HTTP en producción:
+    - `https://sinnotario.cl/subir-documento.php` -> `HTTP/2 200 OK`.
+    - `https://sinnotario.cl/index.php` -> `HTTP/2 200 OK`.
+    - `POST https://sinnotario.cl/api/index.php?action=upload_custom_document` -> `HTTP/2 200 OK` (creación y custodia exitosa de documento de prueba `SN-E26A-53BC` con 2 firmantes).
+    - `GET https://sinnotario.cl/api/index.php?action=verify_document&code=SN-E26A-53BC` -> `HTTP/2 200 OK`.
+    - `GET https://sinnotario.cl/verificar.php?code=SN-E26A-53BC` -> `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-06 15:48 UTC-3] - SOL-0037
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

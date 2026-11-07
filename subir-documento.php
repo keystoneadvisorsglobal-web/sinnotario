@@ -1,0 +1,825 @@
+<?php
+/**
+ * SinNotario.cl - Módulo Oficial de Carga de Documento Propio para Firma (PDF Upload)
+ * Permite a personas naturales y empresas subir su propio contrato o documento privado en PDF,
+ * previsualizarlo, someterlo voluntariamente a Smart Legal Check (IA) si lo desean,
+ * registrar a los comparecientes/firmantes con RUT oficial y sellarlo en la Bóveda Cloudflare R2 con código de verificación.
+ */
+require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/database/Database.php';
+
+$precioFirmaPropia = 7990;
+$precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir Documento Propio para Firma Digital | SinNotario.cl</title>
+    <meta name="description" content="Sube tu propio archivo PDF para firmar electrónicamente con plena validez bajo la Ley N° 19.799. Incluye verificación criptográfica SHA-256, Bóveda Cloudflare R2 y Smart Legal Check opcional.">
+    
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=20261107_1">
+
+    <style>
+        :root {
+            --upload-primary: #0F2A4A;
+            --upload-accent: #D4AF37;
+            --upload-success: #059669;
+            --upload-card-bg: #FFFFFF;
+        }
+
+        body {
+            background-color: #F8FAFC;
+            color: #1E293B;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .upload-hero {
+            background: linear-gradient(135deg, #0A1C33 0%, #0F2A4A 100%);
+            color: #FFFFFF;
+            padding: 3.5rem 1.5rem 3rem;
+            text-align: center;
+            position: relative;
+            border-bottom: 4px solid var(--upload-accent);
+        }
+
+        .upload-hero h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin: 0.5rem 0 0.8rem;
+            letter-spacing: -0.02em;
+        }
+
+        .upload-hero p {
+            font-size: 1.05rem;
+            color: #CBD5E1;
+            max-width: 720px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .upload-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(212, 175, 55, 0.15);
+            color: #F59E0B;
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            padding: 0.35rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+
+        .upload-container {
+            max-width: 1180px;
+            margin: -2rem auto 4rem;
+            padding: 0 1.5rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .upload-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .upload-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .upload-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            border: 1px solid #E2E8F0;
+            padding: 2rem;
+        }
+
+        .step-progress-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .step-progress-row::before {
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 30px;
+            right: 30px;
+            height: 2px;
+            background: #E2E8F0;
+            z-index: 1;
+        }
+
+        .step-item {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            flex: 1;
+        }
+
+        .step-bubble {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #F1F5F9;
+            color: #64748B;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.4rem;
+            border: 2px solid #CBD5E1;
+            transition: all 0.2s;
+        }
+
+        .step-item.active .step-bubble {
+            background: var(--upload-primary);
+            color: white;
+            border-color: var(--upload-primary);
+            box-shadow: 0 0 0 4px rgba(15, 42, 74, 0.15);
+        }
+
+        .step-item.completed .step-bubble {
+            background: var(--upload-success);
+            color: white;
+            border-color: var(--upload-success);
+        }
+
+        .step-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #64748B;
+        }
+
+        .step-item.active .step-label {
+            color: var(--upload-primary);
+        }
+
+        /* Dropzone */
+        .dropzone-box {
+            border: 2px dashed #94A3B8;
+            border-radius: 14px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            background: #F8FAFC;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .dropzone-box:hover, .dropzone-box.dragover {
+            border-color: #2563EB;
+            background: #EFF6FF;
+        }
+
+        .btn-upload-action {
+            background: var(--upload-primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0.9rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-upload-action:hover {
+            background: #1B3B6F;
+            transform: translateY(-1px);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #0F2A4A;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid #CBD5E1;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            color: #0F2A4A;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #2563EB;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .preview-viewer {
+            width: 100%;
+            height: 540px;
+            border: 1px solid #CBD5E1;
+            border-radius: 10px;
+            background: #FFFFFF;
+        }
+
+        .signer-box {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+            position: relative;
+        }
+
+        .badge-firmante {
+            background: #EFF6FF;
+            color: #1D4ED8;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="site-header">
+        <div class="header-container">
+            <a href="index.php" class="brand-logo">
+                <img src="assets/logos/cropped-sinnotario-logo2-32x32.png" alt="SinNotario.cl Logo" class="brand-icon">
+                <span class="brand-text">SIN<strong>NOTARIO</strong><span class="brand-tld">.CL</span></span>
+            </a>
+            <nav class="main-nav">
+                <a href="index.php">Inicio</a>
+                <a href="index.php#catalogo">Catálogo</a>
+                <a href="subir-documento.php" style="color: var(--primary); font-weight: 700;">Subir Documento Propio</a>
+                <a href="verificar.php">Verificar</a>
+                <a href="marco-legal.php">Marco Legal</a>
+                <a href="empresas.php">Empresas</a>
+            </nav>
+            <div class="header-actions">
+                <a href="verificar.php" class="btn-cta btn-secondary" style="padding:0.5rem 1rem; font-size:0.88rem;">
+                    <i class="fas fa-qrcode"></i> Validar Folio
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="upload-hero">
+        <div class="upload-badge">
+            <i class="fas fa-file-upload"></i> Carga Libre de Archivos PDF
+        </div>
+        <h1>Firma tu Propio Documento o Contrato</h1>
+        <p>
+            ¿Ya tienes tu contrato, anexo o acuerdo redactado? Sube tu PDF, agrega a los comparecientes y envíalo a firmar electrónicamente con plena fuerza legal bajo la <strong>Ley N° 19.799</strong>.
+        </p>
+    </section>
+
+    <!-- Main Wizard -->
+    <main class="upload-container">
+        <div class="upload-grid">
+            
+            <!-- Columna Izquierda: Wizard interactivo -->
+            <div class="upload-card">
+                
+                <!-- Progreso -->
+                <div class="step-progress-row">
+                    <div class="step-item active" id="p_step1">
+                        <div class="step-bubble">1</div>
+                        <div class="step-label">Archivo PDF</div>
+                    </div>
+                    <div class="step-item" id="p_step2">
+                        <div class="step-bubble">2</div>
+                        <div class="step-label">Firmantes</div>
+                    </div>
+                    <div class="step-item" id="p_step3">
+                        <div class="step-bubble">3</div>
+                        <div class="step-label">Revisión & Envío</div>
+                    </div>
+                </div>
+
+                <!-- PASO 1: Subir Archivo PDF -->
+                <div id="viewStep1">
+                    <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--upload-primary); margin: 0 0 0.5rem;">
+                        Paso 1: Selecciona o Arrastra tu Documento PDF
+                    </h2>
+                    <p style="font-size: 0.88rem; color: #64748B; margin-bottom: 1.5rem;">
+                        Aceptamos documentos en formato PDF de hasta 20 MB. Tu archivo será cifrado y sellado con huella criptográfica SHA-256.
+                    </p>
+
+                    <div class="dropzone-box" id="dropzoneBox" onclick="document.getElementById('fileUploadInput').click()">
+                        <i class="fas fa-cloud-upload-alt fa-3x" style="color: #2563EB; margin-bottom: 0.75rem;"></i>
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #0F2A4A; margin-bottom: 0.35rem;">
+                            Haz clic para seleccionar tu PDF o arrástralo aquí
+                        </h3>
+                        <p style="font-size: 0.85rem; color: #64748B; margin: 0;">
+                            Contratos de arriendo, acuerdos comerciales, actas, convenios, poderes o anexos.
+                        </p>
+                        <input type="file" id="fileUploadInput" accept="application/pdf" style="display: none;" onchange="handleSelectedPdf(this.files[0])">
+                    </div>
+
+                    <!-- Info del archivo cargado -->
+                    <div id="fileLoadedDetails" style="display:none; margin-top: 1.5rem; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 1.25rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <div style="display:flex; align-items:center; gap:0.6rem;">
+                                <i class="fas fa-file-pdf fa-2x" style="color:#DC2626;"></i>
+                                <div>
+                                    <strong style="color:#065F46; font-size:1rem;" id="fileNameDisplay">contrato.pdf</strong>
+                                    <div style="font-size:0.8rem; color:#475569;" id="fileSizeDisplay">145 KB</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-card-create" style="padding:0.4rem 0.8rem; font-size:0.8rem; background:#DC2626;" onclick="clearLoadedFile()">
+                                <i class="fas fa-trash"></i> Cambiar
+                            </button>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:0.75rem;">
+                            <label>Título o Nombre del Documento *</label>
+                            <input type="text" id="customDocTitle" class="form-control" placeholder="Ej: Contrato de Prestación de Servicios - Proyecto 2026">
+                        </div>
+
+                        <div style="font-size:0.78rem; color:#64748B; word-break:break-all;">
+                            <strong>Hash SHA-256 Calculado:</strong> <code id="fileHashDisplay" style="color:#065F46;">Calculando...</code>
+                        </div>
+                    </div>
+
+                    <!-- Asistente Opcional Smart Legal Check -->
+                    <div style="margin-top: 1.5rem; background: #FEFCE8; border: 1px solid #FEF08A; border-radius: 10px; padding: 1rem;">
+                        <label style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; margin: 0;">
+                            <input type="checkbox" id="chkSmartLegalCheck" style="margin-top: 0.25rem; transform: scale(1.15);">
+                            <div>
+                                <strong style="color: #854D0E; font-size: 0.92rem;">
+                                    <i class="fas fa-robot"></i> Activar Diagnóstico Preventivo con IA (Smart Legal Check)
+                                </strong>
+                                <p style="font-size: 0.82rem; color: #713F12; margin: 0.25rem 0 0; line-height: 1.4;">
+                                    Nuestra IA analizará automáticamente el texto en busca de advertencias normativas, cláusulas abusivas o indicios de trámites que requieran Notaría exclusiva.
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div style="margin-top: 1.75rem; text-align: right;">
+                        <button type="button" id="btnNextToStep2" class="btn-upload-action" onclick="goToStep(2)" disabled>
+                            Siguiente: Agregar Firmantes <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PASO 2: Datos de los Firmantes -->
+                <div id="viewStep2" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                        <div>
+                            <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--upload-primary); margin: 0 0 0.35rem;">
+                                Paso 2: Comparecientes / Firmantes
+                            </h2>
+                            <p style="font-size: 0.85rem; color: #64748B; margin: 0;">
+                                Individualiza a las partes que firmarán el documento con RUT Módulo 11 oficial.
+                            </p>
+                        </div>
+                        <button type="button" class="btn-cta btn-secondary" style="padding:0.4rem 0.85rem; font-size:0.82rem;" onclick="addSignerRow()">
+                            <i class="fas fa-user-plus"></i> + Agregar Firmante
+                        </button>
+                    </div>
+
+                    <div id="signersListContainer">
+                        <!-- Firmante 1 -->
+                        <div class="signer-box" id="signer_box_0">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem;">
+                                <span class="badge-firmante">Firmante 1 (Titular / Iniciador)</span>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nombre Completo *</label>
+                                    <input type="text" class="form-control sig-nombre" placeholder="Ej: Juan Andrés Pérez González" value="Juan Andrés Pérez González">
+                                </div>
+                                <div class="form-group">
+                                    <label>RUT (Módulo 11) *</label>
+                                    <input type="text" class="form-control sig-rut" placeholder="12.345.678-5" value="12.345.678-5">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Correo Electrónico *</label>
+                                    <input type="email" class="form-control sig-email" placeholder="juan.perez@ejemplo.cl" value="juan.perez@ejemplo.cl">
+                                </div>
+                                <div class="form-group">
+                                    <label>Teléfono WhatsApp *</label>
+                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 1234 5678" value="+56 9 1234 5678">
+                                </div>
+                                <div class="form-group">
+                                    <label>Rol en el Contrato *</label>
+                                    <input type="text" class="form-control sig-rol" placeholder="Ej: Arrendador, Contratante, Mandante" value="Parte A">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Firmante 2 -->
+                        <div class="signer-box" id="signer_box_1">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem;">
+                                <span class="badge-firmante" style="background:#FAF5FF; color:#7E22CE;">Firmante 2 (Contraparte)</span>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nombre Completo *</label>
+                                    <input type="text" class="form-control sig-nombre" placeholder="Ej: María José Valenzuela Soto" value="María José Valenzuela Soto">
+                                </div>
+                                <div class="form-group">
+                                    <label>RUT (Módulo 11) *</label>
+                                    <input type="text" class="form-control sig-rut" placeholder="15.444.555-6" value="15.444.555-6">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Correo Electrónico *</label>
+                                    <input type="email" class="form-control sig-email" placeholder="mj.valenzuela@ejemplo.cl" value="mj.valenzuela@ejemplo.cl">
+                                </div>
+                                <div class="form-group">
+                                    <label>Teléfono WhatsApp *</label>
+                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 8765 4321" value="+56 9 8765 4321">
+                                </div>
+                                <div class="form-group">
+                                    <label>Rol en el Contrato *</label>
+                                    <input type="text" class="form-control sig-rol" placeholder="Ej: Arrendatario, Proveedor, Mandatario" value="Parte B">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; margin-top: 1.75rem;">
+                        <button type="button" class="btn-cta btn-secondary" onclick="goToStep(1)">
+                            <i class="fas fa-arrow-left"></i> Volver al Archivo
+                        </button>
+                        <button type="button" class="btn-upload-action" onclick="goToStep(3)">
+                            Revisión y Despacho <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PASO 3: Resumen, Diagnóstico y Envío -->
+                <div id="viewStep3" style="display: none;">
+                    <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--upload-primary); margin: 0 0 0.5rem;">
+                        Paso 3: Confirmación y Envío a Firma
+                    </h2>
+                    <p style="font-size: 0.88rem; color: #64748B; margin-bottom: 1.5rem;">
+                        Verifica el resumen del despacho. Al confirmar, el documento será sellado en la Bóveda Cloudflare R2 con código QR oficial.
+                    </p>
+
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:1.25rem; margin-bottom:1.5rem;">
+                        <h4 style="font-size:0.95rem; font-weight:700; color:#0F2A4A; margin-bottom:0.75rem;">
+                            <i class="fas fa-check-circle" style="color:#059669;"></i> Resumen de la Orden de Firma
+                        </h4>
+                        <p style="margin:0 0 0.35rem; font-size:0.9rem;"><strong>Documento:</strong> <span id="summaryDocTitle">Contrato.pdf</span></p>
+                        <p style="margin:0 0 0.35rem; font-size:0.9rem;"><strong>Firmantes Identificados:</strong> <span id="summarySignersCount">2 personas</span></p>
+                        <p style="margin:0 0 0.35rem; font-size:0.9rem;"><strong>Bóveda de Seguridad:</strong> Cloudflare R2 Cifrada (AES-256)</p>
+                        <p style="margin:0; font-size:0.9rem;"><strong>Validez Legal:</strong> Ley N° 19.799 de Firma Electrónica</p>
+                    </div>
+
+                    <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:1.25rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:0.8rem; font-weight:700; color:#1E40AF; text-transform:uppercase;">Tarifa Total Única</div>
+                            <div style="font-size:1.8rem; font-weight:800; color:#1E3A8A;"><?= $precioFormateado ?> CLP</div>
+                            <div style="font-size:0.78rem; color:#64748B;">Incluye firmas ilimitadas de los comparecientes y custodia R2</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="background:#DEF7EC; color:#03543F; font-size:0.75rem; font-weight:800; padding:4px 8px; border-radius:6px;">
+                                <i class="fas fa-shield-alt"></i> Firma Certificada
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between;">
+                        <button type="button" class="btn-cta btn-secondary" onclick="goToStep(2)">
+                            <i class="fas fa-arrow-left"></i> Modificar Firmantes
+                        </button>
+                        <button type="button" id="btnSubmitFinalOrder" class="btn-upload-action" style="background:#059669;" onclick="submitCustomDocument()">
+                            <i class="fas fa-paper-plane"></i> Emitir y Despachar a Firmantes
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Columna Derecha: Visor del PDF y Garantías -->
+            <div>
+                <div class="upload-card" style="padding:1.5rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <h3 style="font-size:1rem; font-weight:800; color:#0F2A4A; margin:0;">
+                            <i class="far fa-file-pdf"></i> Visor del Documento
+                        </h3>
+                        <span id="badgePreviewStatus" style="font-size:0.75rem; background:#F1F5F9; color:#64748B; padding:3px 8px; border-radius:4px; font-weight:700;">
+                            Sin Archivo
+                        </span>
+                    </div>
+
+                    <div id="pdfViewerPlaceholder" style="height:500px; background:#F8FAFC; border:1px dashed #CBD5E1; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:1.5rem; color:#64748B;">
+                        <i class="fas fa-file-pdf fa-4x" style="color:#CBD5E1; margin-bottom:1rem;"></i>
+                        <h4 style="font-size:1.05rem; font-weight:700; color:#475569; margin-bottom:0.35rem;">
+                            Previsualización Inactiva
+                        </h4>
+                        <p style="font-size:0.85rem; margin:0; max-width:280px;">
+                            Selecciona tu archivo PDF en el Paso 1 para visualizarlo directamente en este visor.
+                        </p>
+                    </div>
+
+                    <iframe id="pdfIframeViewer" class="preview-viewer" style="display:none;" title="Visor PDF"></iframe>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer style="background: #0A1C33; color: #94A3B8; padding: 3rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem;">
+        <div style="max-width: 1140px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <strong style="color: white;">SinNotario.cl</strong> — Carga Libre y Firma Digital de Instrumentos Privados bajo la Ley N° 19.799.
+            </div>
+            <div style="display: flex; gap: 1.5rem;">
+                <a href="index.php" style="color: #CBD5E1; text-decoration: none;">Inicio</a>
+                <a href="marco-legal.php" style="color: #CBD5E1; text-decoration: none;">Marco Legal</a>
+                <a href="verificar.php" style="color: #CBD5E1; text-decoration: none;">Verificar</a>
+                <a href="terminos-condiciones.php" style="color: #CBD5E1; text-decoration: none;">Términos</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts del Wizard de Carga Propia -->
+    <script>
+        let currentUploadedFile = null;
+        let currentCalculatedHash = '';
+        let currentSignersCount = 2;
+
+        // Drag & Drop Setup
+        const dropzone = document.getElementById('dropzoneBox');
+        if (dropzone) {
+            ['dragenter', 'dragover'].forEach(name => {
+                dropzone.addEventListener(name, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.add('dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(name => {
+                dropzone.addEventListener(name, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.remove('dragover');
+                });
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleSelectedPdf(files[0]);
+                }
+            });
+        }
+
+        async function handleSelectedPdf(file) {
+            if (!file || file.type !== 'application/pdf') {
+                alert('Por favor selecciona un archivo en formato PDF.');
+                return;
+            }
+
+            currentUploadedFile = file;
+
+            // UI
+            document.getElementById('fileNameDisplay').innerText = file.name;
+            document.getElementById('fileSizeDisplay').innerText = `${(file.size / 1024).toFixed(1)} KB`;
+            document.getElementById('customDocTitle').value = file.name.replace(/\.[^/.]+$/, "");
+            document.getElementById('fileLoadedDetails').style.display = 'block';
+            document.getElementById('btnNextToStep2').disabled = false;
+
+            // Cómputo SHA-256 local
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                currentCalculatedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                document.getElementById('fileHashDisplay').innerText = currentCalculatedHash;
+            } catch (err) {
+                document.getElementById('fileHashDisplay').innerText = 'No disponible';
+            }
+
+            // Cargar en Visor
+            const fileUrl = URL.createObjectURL(file);
+            const iframe = document.getElementById('pdfIframeViewer');
+            const placeholder = document.getElementById('pdfViewerPlaceholder');
+            const badge = document.getElementById('badgePreviewStatus');
+
+            iframe.src = fileUrl;
+            iframe.style.display = 'block';
+            placeholder.style.display = 'none';
+            badge.innerText = 'PDF Cargado';
+            badge.style.background = '#DEF7EC';
+            badge.style.color = '#03543F';
+        }
+
+        function clearLoadedFile() {
+            currentUploadedFile = null;
+            currentCalculatedHash = '';
+            document.getElementById('fileUploadInput').value = '';
+            document.getElementById('fileLoadedDetails').style.display = 'none';
+            document.getElementById('btnNextToStep2').disabled = true;
+
+            const iframe = document.getElementById('pdfIframeViewer');
+            const placeholder = document.getElementById('pdfViewerPlaceholder');
+            const badge = document.getElementById('badgePreviewStatus');
+
+            iframe.src = '';
+            iframe.style.display = 'none';
+            placeholder.style.display = 'flex';
+            badge.innerText = 'Sin Archivo';
+            badge.style.background = '#F1F5F9';
+            badge.style.color = '#64748B';
+        }
+
+        function goToStep(step) {
+            document.getElementById('viewStep1').style.display = (step === 1) ? 'block' : 'none';
+            document.getElementById('viewStep2').style.display = (step === 2) ? 'block' : 'none';
+            document.getElementById('viewStep3').style.display = (step === 3) ? 'block' : 'none';
+
+            // Actualizar burbujas
+            for (let i = 1; i <= 3; i++) {
+                const el = document.getElementById(`p_step${i}`);
+                if (i < step) {
+                    el.className = 'step-item completed';
+                } else if (i === step) {
+                    el.className = 'step-item active';
+                } else {
+                    el.className = 'step-item';
+                }
+            }
+
+            if (step === 3) {
+                // Actualizar resumen
+                const title = document.getElementById('customDocTitle').value.trim() || (currentUploadedFile ? currentUploadedFile.name : 'Documento Personalizado');
+                document.getElementById('summaryDocTitle').innerText = title;
+                const signers = getSignersData();
+                document.getElementById('summarySignersCount').innerText = `${signers.length} compareciente(s)`;
+            }
+
+            window.scrollTo({ top: 150, behavior: 'smooth' });
+        }
+
+        function addSignerRow() {
+            const idx = currentSignersCount;
+            const container = document.getElementById('signersListContainer');
+            const div = document.createElement('div');
+            div.className = 'signer-box';
+            div.id = `signer_box_${idx}`;
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem;">
+                    <span class="badge-firmante" style="background:#FEF3C7; color:#B45309;">Firmante ${idx + 1} (Adicional)</span>
+                    <button type="button" style="background:none; border:none; color:#DC2626; cursor:pointer; font-size:0.8rem; font-weight:700;" onclick="removeSignerRow(${idx})">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nombre Completo *</label>
+                        <input type="text" class="form-control sig-nombre" placeholder="Nombre del compareciente">
+                    </div>
+                    <div class="form-group">
+                        <label>RUT (Módulo 11) *</label>
+                        <input type="text" class="form-control sig-rut" placeholder="Ej: 11.222.333-4">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Correo Electrónico *</label>
+                        <input type="email" class="form-control sig-email" placeholder="correo@ejemplo.cl">
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono WhatsApp *</label>
+                        <input type="tel" class="form-control sig-tel" placeholder="+56 9 1111 2222">
+                    </div>
+                    <div class="form-group">
+                        <label>Rol en el Contrato *</label>
+                        <input type="text" class="form-control sig-rol" placeholder="Ej: Testigo, Aval, Tercero" value="Parte">
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+            currentSignersCount++;
+        }
+
+        function removeSignerRow(idx) {
+            const row = document.getElementById(`signer_box_${idx}`);
+            if (row) {
+                row.remove();
+            }
+        }
+
+        function getSignersData() {
+            const boxes = document.querySelectorAll('.signer-box');
+            const signers = [];
+            boxes.forEach(box => {
+                const nombre = box.querySelector('.sig-nombre')?.value.trim() || '';
+                const rut = box.querySelector('.sig-rut')?.value.trim() || '';
+                const email = box.querySelector('.sig-email')?.value.trim() || '';
+                const tel = box.querySelector('.sig-tel')?.value.trim() || '';
+                const rol = box.querySelector('.sig-rol')?.value.trim() || 'PARTE';
+
+                if (nombre && rut) {
+                    signers.push({ nombre, rut, email, telefono: tel, rol });
+                }
+            });
+            return signers;
+        }
+
+        async function submitCustomDocument() {
+            if (!currentUploadedFile) {
+                alert('Debes seleccionar un archivo PDF.');
+                goToStep(1);
+                return;
+            }
+
+            const signers = getSignersData();
+            if (signers.length === 0) {
+                alert('Debes ingresar al menos un compareciente/firmante.');
+                goToStep(2);
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitFinalOrder');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sellando en Cloudflare R2...';
+
+            try {
+                // Convertir archivo a Base64
+                const reader = new FileReader();
+                reader.readAsDataURL(currentUploadedFile);
+                reader.onload = async function () {
+                    const base64Data = reader.result.split(',')[1];
+                    const docTitle = document.getElementById('customDocTitle').value.trim() || currentUploadedFile.name;
+
+                    const payload = {
+                        action: 'upload_custom_document',
+                        titulo: docTitle,
+                        file_name: currentUploadedFile.name,
+                        pdf_base64: base64Data,
+                        sha256: currentCalculatedHash,
+                        signers: signers,
+                        audit_ai: document.getElementById('chkSmartLegalCheck').checked
+                    };
+
+                    const response = await fetch('api/index.php?action=upload_custom_document', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const json = await response.json();
+
+                    if (json.success && json.data) {
+                        alert(`¡Documento sellado exitosamente!\n\nCódigo de Verificación: ${json.data.codigo_verificacion}\nLos enlaces de firma digital han sido preparados y quedarán disponibles para despacho.`);
+                        window.location.href = `verificar.php?code=${encodeURIComponent(json.data.codigo_verificacion)}`;
+                    } else {
+                        alert('Error al procesar el documento: ' + (json.error || 'Respuesta inválida del servidor'));
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Emitir y Despachar a Firmantes';
+                    }
+                };
+            } catch (err) {
+                alert('Error al enviar el archivo: ' + err.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Emitir y Despachar a Firmantes';
+            }
+        }
+    </script>
+</body>
+</html>

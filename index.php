@@ -35,6 +35,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 
             <ul class="nav-links">
                 <li><a href="index.php" class="<?= $page === 'home' ? 'active' : '' ?>">Trámites</a></li>
+                <li><a href="subir-documento.php" style="color: var(--accent); font-weight: 800;"><i class="fas fa-file-upload"></i> Subir tu Documento</a></li>
                 <li><a href="verificar.php">Verificar Documento</a></li>
                 <li><a href="#empresas">Solución Empresas</a></li>
                 <li><a href="https://wa.me/56984180479?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
@@ -75,6 +76,22 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 
                 <!-- Detector Negativo de Notaría Exclusiva -->
                 <div id="negativeAlertBox" class="negative-alert-box"></div>
+            </div>
+
+            <!-- Banner Promocional: Subir Documento Propio -->
+            <div style="max-width: 760px; margin: 2rem auto 0; background: rgba(255,255,255,0.92); border: 2px dashed #0284C7; border-radius: 14px; padding: 1.25rem 1.75rem; display: flex; align-items: center; justify-content: space-between; gap: 1.2rem; flex-wrap: wrap; box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.15);">
+                <div style="display: flex; align-items: center; gap: 1rem; text-align: left;">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0;">
+                        <i class="fas fa-file-upload"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 800; color: #0F172A; font-size: 1.05rem;">¿Ya tienes tu documento o contrato redactado?</div>
+                        <div style="color: #64748B; font-size: 0.88rem;">Sube tu archivo PDF propio y envíalo a firmar a todas las partes en minutos con validez Ley 19.799.</div>
+                    </div>
+                </div>
+                <a href="subir-documento.php" class="btn-cta" style="padding: 0.7rem 1.4rem; font-size: 0.92rem; background: #0284C7; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35); white-space: nowrap;">
+                    <i class="fas fa-cloud-upload-alt"></i> Subir PDF Propio &rarr;
+                </a>
             </div>
         </section>
 
