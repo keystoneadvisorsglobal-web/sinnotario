@@ -684,20 +684,10 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
     </footer>
 
     <!-- Scripts del Wizard de Carga Propia -->
-    <script src="assets/js/app.js?v=20261107_2"></script>
     <script>
         let currentUploadedFile = null;
         let currentCalculatedHash = '';
         let currentSignersCount = 2;
-
-        window.addEventListener('DOMContentLoaded', () => {
-            // Inicializar formateo y validación de RUT en los campos por defecto
-            document.querySelectorAll('.sig-rut, .sig-empresa-rut').forEach(input => {
-                if (typeof RutHelper !== 'undefined') {
-                    RutHelper.attachToInput(input);
-                }
-            });
-        });
 
         // Drag & Drop Setup
         const dropzone = document.getElementById('dropzoneBox');
@@ -1005,7 +995,6 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
             const paisWrap = document.getElementById(`pais_wrap_${idx}`);
 
             if (sel && sel.value === 'PASAPORTE') {
-                if (inputRut) inputRut.dataset.docType = 'PASAPORTE';
                 if (lbl) lbl.innerText = 'N° de Pasaporte Extranjero *';
                 if (inputRut) {
                     inputRut.placeholder = 'Ej: P12345678 o DNI extranjero';
@@ -1013,17 +1002,129 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                 }
                 if (paisWrap) paisWrap.style.display = 'block';
             } else {
-                if (inputRut) inputRut.dataset.docType = 'RUT';
                 if (lbl) lbl.innerText = 'RUT *';
                 if (inputRut) {
                     inputRut.placeholder = '12.345.678-5';
-                    if (typeof RutHelper !== 'undefined') inputRut.value = RutHelper.format(inputRut.value);
                 }
                 if (paisWrap) paisWrap.style.display = 'none';
             }
         }
 
         function goToStep(step) {
+            // Si intenta avanzar del Paso 2 al Paso 3, validar firmantes y RUTs
+            if (step === 3) {
+                const boxes = document.querySelectorAll('.signer-box');
+                let hasErrors = false;
+                let firstErrorInput = null;
+
+                boxes.forEach((box, bIdx) => {
+                    const tipoDoc = box.querySelector('.sig-tipo-doc')?.value || 'RUT';
+                    const inputNombre = box.querySelector('.sig-nombre');
+                    const inputRut = box.querySelector('.sig-rut');
+                    let errEl = box.querySelector('.rut-error-text');
+
+                    if (!errEl && inputRut && inputRut.parentElement) {
+                        errEl = document.createElement('div');
+                        errEl.className = 'rut-error-text';
+                        errEl.style.cssText = 'color:#DC2626; font-size:0.75rem; font-weight:600; margin-top:0.35rem; display:none; padding:4px 8px; background:#FEF2F2; border-left:3px solid #DC2626; border-radius:4px;';
+                        inputRut.parentElement.appendChild(errEl);
+                    }
+
+                    const nombreVal = inputNombre ? inputNombre.value.trim() : '';
+                    const rutVal = inputRut ? inputRut.value.trim() : '';
+
+                    if (!nombreVal) {
+                        if (inputNombre) inputNombre.classList.add('rut-invalid');
+                        hasErrors = true;
+                        if (!firstErrorInput) firstErrorInput = inputNombre;
+                    } else if (inputNombre) {
+                        inputNombre.classList.remove('rut-invalid');
+                    }
+
+                    if (tipoDoc === 'RUT') {
+                        if (!rutVal) {
+                            if (inputRut) inputRut.classList.add('rut-invalid');
+                            if (errEl) {
+                                errEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Debes ingresar el RUT del firmante.';
+                                errEl.style.display = 'block';
+                            }
+                            hasErrors = true;
+                            if (!firstErrorInput) firstErrorInput = inputRut;
+                        } else if (typeof RutHelper !== 'undefined') {
+                            const formatted = RutHelper.format(rutVal);
+                            if (inputRut) inputRut.value = formatted;
+                            const valid = RutHelper.validate(formatted);
+                            if (!valid) {
+                                if (inputRut) {
+                                    inputRut.classList.remove('rut-valid');
+                                    inputRut.classList.add('rut-invalid');
+                                }
+                                if (errEl) {
+                                    errEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> RUT inválido: el dígito verificador no coincide con la numeración.';
+                                    errEl.style.display = 'block';
+                                }
+                                hasErrors = true;
+                                if (!firstErrorInput) firstErrorInput = inputRut;
+                            } else {
+                                if (inputRut) {
+                                    inputRut.classList.remove('rut-invalid');
+                                    inputRut.classList.add('rut-valid');
+                                }
+                                if (errEl) errEl.style.display = 'none';
+                            }
+                        }
+                    } else if (tipoDoc === 'PASAPORTE') {
+                        if (!rutVal) {
+                            if (inputRut) inputRut.classList.add('rut-invalid');
+                            hasErrors = true;
+                            if (!firstErrorInput) firstErrorInput = inputRut;
+                        } else if (inputRut) {
+                            inputRut.classList.remove('rut-invalid');
+                        }
+                    }
+
+                    // Si es representante legal, validar RUT de empresa
+                    const chkRep = box.querySelector('.sig-es-rep');
+                    if (chkRep && chkRep.checked) {
+                        const empRut = box.querySelector('.sig-empresa-rut');
+                        let empErrEl = box.querySelector('.rep-company-wrap .rut-error-text');
+                        if (!empErrEl && empRut && empRut.parentElement) {
+                            empErrEl = document.createElement('div');
+                            empErrEl.className = 'rut-error-text';
+                            empErrEl.style.cssText = 'color:#DC2626; font-size:0.75rem; font-weight:600; margin-top:0.35rem; display:none; padding:4px 8px; background:#FEF2F2; border-left:3px solid #DC2626; border-radius:4px;';
+                            empRut.parentElement.appendChild(empErrEl);
+                        }
+                        const empRutVal = empRut ? empRut.value.trim() : '';
+                        if (empRutVal && typeof RutHelper !== 'undefined') {
+                            const empFmt = RutHelper.format(empRutVal);
+                            if (empRut) empRut.value = empFmt;
+                            const empValid = RutHelper.validate(empFmt);
+                            if (!empValid) {
+                                if (empRut) empRut.classList.add('rut-invalid');
+                                if (empErrEl) {
+                                    empErrEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> RUT de Empresa inválido: dígito verificador incorrecto.';
+                                    empErrEl.style.display = 'block';
+                                }
+                                hasErrors = true;
+                                if (!firstErrorInput) firstErrorInput = empRut;
+                            } else {
+                                if (empRut) empRut.classList.remove('rut-invalid');
+                                if (empErrEl) empErrEl.style.display = 'none';
+                            }
+                        }
+                    }
+                });
+
+                if (hasErrors) {
+                    if (firstErrorInput) {
+                        firstErrorInput.focus();
+                        firstErrorInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    alert('Por favor corrige los datos o RUTs destacados en rojo antes de continuar.');
+                    return;
+                }
+            }
+
             document.getElementById('viewStep1').style.display = (step === 1) ? 'block' : 'none';
             document.getElementById('viewStep2').style.display = (step === 2) ? 'block' : 'none';
             document.getElementById('viewStep3').style.display = (step === 3) ? 'block' : 'none';
@@ -1135,17 +1236,47 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                 </div>
             `;
             container.appendChild(div);
-            const newRut = div.querySelector('.sig-rut');
-            if (newRut && typeof RutHelper !== 'undefined') {
-                RutHelper.attachToInput(newRut);
-            }
-            const newEmpRut = div.querySelector('.sig-empresa-rut');
-            if (newEmpRut && typeof RutHelper !== 'undefined') {
-                RutHelper.attachToInput(newEmpRut);
-            }
             currentSignersCount++;
             updatePricingCalculation();
+
+            // Vincular auto-cleaner y validación de RUT en la nueva fila
+            if (typeof window.enableExampleClearOnFocus === 'function') {
+                window.enableExampleClearOnFocus(div);
+            }
+            const newRut = div.querySelector('.sig-rut');
+            if (newRut && typeof RutHelper !== 'undefined') {
+                let errEl = div.querySelector('.rut-error-text');
+                if (!errEl && newRut.parentElement) {
+                    errEl = document.createElement('div');
+                    errEl.className = 'rut-error-text';
+                    errEl.style.cssText = 'color:#DC2626; font-size:0.75rem; font-weight:600; margin-top:0.35rem; display:none; padding:4px 8px; background:#FEF2F2; border-left:3px solid #DC2626; border-radius:4px;';
+                    newRut.parentElement.appendChild(errEl);
+                }
+                RutHelper.attachToInput(newRut, errEl);
+            }
         }
+
+        // Inicializar validaciones y auto-cleaner al cargar el documento
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof window.enableExampleClearOnFocus === 'function') {
+                window.enableExampleClearOnFocus(document);
+            }
+
+            // Adjuntar validación a los RUTs iniciales
+            document.querySelectorAll('.signer-box').forEach(box => {
+                const rutInp = box.querySelector('.sig-rut');
+                if (rutInp && typeof RutHelper !== 'undefined') {
+                    let errEl = box.querySelector('.rut-error-text');
+                    if (!errEl && rutInp.parentElement) {
+                        errEl = document.createElement('div');
+                        errEl.className = 'rut-error-text';
+                        errEl.style.cssText = 'color:#DC2626; font-size:0.75rem; font-weight:600; margin-top:0.35rem; display:none; padding:4px 8px; background:#FEF2F2; border-left:3px solid #DC2626; border-radius:4px;';
+                        rutInp.parentElement.appendChild(errEl);
+                    }
+                    RutHelper.attachToInput(rutInp, errEl);
+                }
+            });
+        });
 
         function removeSignerRow(idx) {
             const row = document.getElementById(`signer_box_${idx}`);

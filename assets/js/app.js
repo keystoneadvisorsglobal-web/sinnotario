@@ -2,7 +2,7 @@
  * SinNotario.cl - Motor de Aplicación y Frontend Interactivo
  */
 
-// Utilidad Oficial: Validación y Formato de RUT Chileno 
+// Utilidad Oficial: Validación y Formato de RUT Chileno
 window.RutHelper = {
     clean(rut) {
         return typeof rut === 'string' ? rut.replace(/[^0-9kK]/g, '').toUpperCase() : '';
@@ -49,48 +49,82 @@ window.RutHelper = {
         if (!inputElement) return;
         
         const handler = (e) => {
-            const clean = this.clean(inputElement.value);
-
-            // Si el campo está configurado en modo Pasaporte o no es RUT, salir
-            if (inputElement.dataset && inputElement.dataset.docType === 'PASAPORTE') {
-                return;
-            }
-
-            if (e.type === 'blur' || e.type === 'change') {
-                // Al salir del campo o cambiar, formatear con puntos y guion siempre que tenga al menos 2 caracteres
-                if (clean.length >= 2) {
-                    inputElement.value = this.format(clean);
-                }
-            } else if (e.type === 'input') {
-                // Mientras escribe, si alcanza 8 o 9 caracteres (un RUT completo), formatear en caliente
-                if (clean.length >= 8 && clean.length <= 9) {
-                    inputElement.value = this.format(clean);
-                }
+            const raw = e.target.value;
+            const formatted = this.format(raw);
+            if (e.type === 'blur' || e.type === 'change' || (raw && raw.length >= 8)) {
+                e.target.value = formatted;
             }
             
-            const currentClean = this.clean(inputElement.value);
-            if (currentClean.length >= 7) {
-                const isValid = this.validate(currentClean);
+            const clean = this.clean(e.target.value);
+            if (clean.length >= 8) {
+                const isValid = this.validate(clean);
                 if (isValid) {
                     inputElement.classList.remove('rut-invalid');
                     inputElement.classList.add('rut-valid');
-                    if (errorElement) errorElement.style.display = 'none';
-                } else if (currentClean.length >= 8) {
+                    if (errorElement) {
+                        errorElement.innerHTML = '';
+                        errorElement.style.display = 'none';
+                    }
+                } else {
                     inputElement.classList.remove('rut-valid');
                     inputElement.classList.add('rut-invalid');
                     if (errorElement) {
-                        errorElement.innerText = 'RUT inválido (dígito verificador no coincide)';
+                        errorElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> RUT inválido: el dígito verificador no coincide con la numeración.';
                         errorElement.style.display = 'block';
                     }
                 }
+            } else if (clean.length > 0) {
+                inputElement.classList.remove('rut-valid');
+                inputElement.classList.add('rut-invalid');
+                if (errorElement) {
+                    errorElement.innerHTML = '<i class="fas fa-exclamation-circle"></i> RUT incompleto (ingresa al menos 8 dígitos).';
+                    errorElement.style.display = 'block';
+                }
             } else {
                 inputElement.classList.remove('rut-valid', 'rut-invalid');
-                if (errorElement) errorElement.style.display = 'none';
+                if (errorElement) {
+                    errorElement.innerHTML = '';
+                    errorElement.style.display = 'none';
+                }
             }
         };
 
         inputElement.addEventListener('input', handler);
         inputElement.addEventListener('blur', handler);
+        inputElement.addEventListener('change', handler);
+    }
+};
+const RutHelper = window.RutHelper;
+
+/**
+ * Limpiador inteligente de valores de ejemplo:
+ * Al hacer clic o focus por primera vez en cualquier casilla con texto de ejemplo precargado,
+ * limpia automáticamente el valor para que el usuario escriba directamente.
+ */
+window.enableExampleClearOnFocus = function(container = document) {
+    if (!container) return;
+    const inputs = container.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"]');
+    inputs.forEach(input => {
+        if (!input.dataset.exampleCleanerBound) {
+            input.dataset.exampleCleanerBound = 'true';
+            // Guardar valor original si viene precargado
+            const initialVal = (input.value || '').trim();
+            if (initialVal) {
+                input.dataset.initialExample = initialVal;
+            }
+
+            input.addEventListener('focus', function() {
+                if (!input.dataset.userHasEdited && input.dataset.initialExample && input.value.trim() === input.dataset.initialExample) {
+                    input.value = '';
+                }
+            });
+
+            input.addEventListener('input', function() {
+                input.dataset.userHasEdited = 'true';
+            });
+        }
+    });
+};
         inputElement.addEventListener('change', handler);
     }
 };

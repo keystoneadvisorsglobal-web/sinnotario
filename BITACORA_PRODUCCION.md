@@ -732,3 +732,21 @@
   - Smoke tests HTTP/2 200 OK en `https://sinnotario.cl/verificar.php`.
   - Prueba de API `verify_by_hash` con hash real retornando coincidencia exitosa de documento sellado en R2 con estado y lista de firmantes.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
+
+
+---
+
+### Registro: 2026-11-07 05:52 UTC (02:52 CLT)
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario (sinnotario.cl)
+- **Ambiente Destino:** Producción (156.67.72.209:65002)
+- **Identificador de la Solución:** SOL-0044, SOL-0045, SOL-0046
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Se desplegó en producción el paquete de mejoras de usabilidad y validación interactiva para redactar.php y subir-documento.php:
+  1) Retiro y reemplazo de toda mención técnica a "(Módulo 11)" por "RUT" o "RUT Empresa".
+  2) Formateo automático continuo de RUT chileno con puntos y guion en tiempo real.
+  3) Limpiador inteligente de ejemplos al hacer foco o clic (enableExampleClearOnFocus), facilitando el llenado directo.
+  4) Alertas visuales dinámicas de RUT inválido con reborde rojo y mensajes claros de corrección, enlazadas al botón "Siguiente Paso" con auto-enfoque y scroll hacia el primer campo inconsistente.
+- **Pruebas Validadas:**
+  - php -l remoto en redactar.php, subir-documento.php, index.php y empresas.php sin errores (0 syntax errors).
+  - Smoke tests HTTP 200 en https://sinnotario.cl/redactar.php, https://sinnotario.cl/subir-documento.php y https://sinnotario.cl/.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción.
