@@ -626,6 +626,14 @@ body {
 }
 
 @media (max-width: 900px) {
+    .brand-logo img {
+        height: 60px;
+    }
+    .nav-container {
+        padding: 0.65rem 1rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
     .footer-container {
         grid-template-columns: 1fr;
         gap: 2rem;
@@ -635,5 +643,61 @@ body {
     }
     .nav-links {
         display: none;
+    }
+    .search-input-wrap {
+        flex-direction: column;
+        padding: 0.5rem;
+    }
+    .search-input-wrap input {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    .search-btn {
+        width: 100%;
+    }
+    .form-row {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .step-progress-row::before {
+        display: none;
+    }
+    .step-progress-row {
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+    .step-label {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .hero-title {
+        font-size: 1.75rem;
+    }
+    .hero-section {
+        padding: 2.5rem 1rem;
+    }
+    .brand-logo img {
+        height: 48px;
+    }
+    .portal-hero-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .portal-hero-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    .btn-new-doc, .btn-upload-doc {
+        width: 100%;
+        justify-content: center;
+    }
+    .doc-actions {
+        flex-direction: column;
+    }
+    .btn-action {
+        width: 100%;
+        justify-content: center;
     }
 }
