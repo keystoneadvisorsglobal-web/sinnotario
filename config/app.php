@@ -36,5 +36,8 @@ return [
     'evolution_api' => [
         'url' => getenv('EVOLUTION_API_URL') ?: 'http://5.183.9.148:8080',
         'global_key' => getenv('EVOLUTION_API_KEY') ?: '',
+    ],
+    'google_oauth' => [
+        'client_id' => getenv('GOOGLE_CLIENT_ID') ?: '',
     ]
 ];

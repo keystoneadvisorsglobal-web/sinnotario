@@ -5,6 +5,7 @@
  */
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/src/Services/AuthService.php';
+require_once __DIR__ . '/database/Database.php';
 
 $currentUser = AuthService::getCurrentUser();
 if ($currentUser) {
@@ -14,6 +15,15 @@ if ($currentUser) {
 
 $tab = isset($_GET['tab']) && $_GET['tab'] === 'registro' ? 'registro' : 'login';
 $redirectUrl = isset($_GET['redirect']) ? htmlspecialchars($_GET['redirect']) : 'mi-cuenta.php';
+
+// Consultar Google Client ID configurado (en BD o .env)
+$pdo = Database::getInstance();
+$stmtG = $pdo->query("SELECT value FROM system_settings WHERE key = 'google_oauth_client_id'");
+$googleClientId = $stmtG ? $stmtG->fetchColumn() : '';
+if (empty($googleClientId)) {
+    $config = require __DIR__ . '/config/app.php';
+    $googleClientId = $config['google_oauth']['client_id'] ?? '';
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -264,14 +274,16 @@ $redirectUrl = isset($_GET['redirect']) ? htmlspecialchars($_GET['redirect']) : 
                     Continuar con Google
                 </button>
 
-                <!-- Contenedor invisible de Google GIS -->
+                <?php if (!empty($googleClientId)): ?>
+                <!-- Contenedor oficial de Google GIS -->
                 <div id="g_id_onload"
-                     data-client_id="814765351817-k78q9g3quomve6m5g4bovb16t4j6u87l.apps.googleusercontent.com"
+                     data-client_id="<?= htmlspecialchars($googleClientId) ?>"
                      data-context="signin"
                      data-ux_mode="popup"
                      data-callback="onGoogleTokenReceived"
                      data-auto_prompt="false">
                 </div>
+                <?php endif; ?>
 
                 <div class="auth-divider">o ingresa con tu correo</div>
 
@@ -481,7 +493,13 @@ $redirectUrl = isset($_GET['redirect']) ? htmlspecialchars($_GET['redirect']) : 
             }
         }
 
+        const hasGoogleClientId = <?= json_encode(!empty($googleClientId)) ?>;
+
         function handleGoogleSignIn() {
+            if (!hasGoogleClientId) {
+                showAlert('El acceso con Google se encuentra en fase de configuración de credenciales. Por favor utiliza tu correo y contraseña o crea tu cuenta en la pestaña "Crear Cuenta".');
+                return;
+            }
             if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
                 google.accounts.id.prompt();
             } else {

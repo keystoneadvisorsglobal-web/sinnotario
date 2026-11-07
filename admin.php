@@ -70,7 +70,14 @@ if (isset($_POST['save_pricing_settings'])) {
             $stmtUpdTpl->execute([(int)$tPrice, (int)$tId]);
         }
     }
-    $msgPricingSuccess = '¡Precios de documentos y tarifas de firmas adicionales actualizados exitosamente en la plataforma!';
+
+    if (isset($_POST['google_oauth_client_id'])) {
+        $gClientId = trim($_POST['google_oauth_client_id']);
+        $stmtG = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('google_oauth_client_id', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+        $stmtG->execute([$gClientId]);
+    }
+
+    $msgPricingSuccess = '¡Parámetros del sistema y tarifas actualizadas exitosamente!';
 }
 
 // Cargar configuración de precios actual
@@ -457,6 +464,17 @@ $allTemplates = $stmtTemplates->fetchAll();
                                 </p>
                                 <input type="number" name="precio_base_subir_pdf" class="form-control" style="font-weight:800; font-size:1.1rem; color:#065F46;" value="<?= $currentPrecioBasePdf ?>" min="0" step="500" required>
                             </div>
+                        </div>
+
+                        <!-- Integración Google OAuth / GIS -->
+                        <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
+                            <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem;">
+                                <i class="fab fa-google" style="color:#EA4335;"></i> Google Client ID para Inicio de Sesión (OAuth 2.0 / GIS)
+                            </label>
+                            <p style="font-size:0.78rem; color:#64748B; margin:0.15rem 0 0.4rem;">
+                                ID de cliente de la consola de Google Cloud (ej: <code>xxxx.apps.googleusercontent.com</code>) para habilitar "Continuar con Google".
+                            </p>
+                            <input type="text" name="google_oauth_client_id" class="form-control" placeholder="Ej: 123456789-abcdef.apps.googleusercontent.com" value="<?= htmlspecialchars($sysSettings['google_oauth_client_id'] ?? '') ?>">
                         </div>
                     </div>
 
