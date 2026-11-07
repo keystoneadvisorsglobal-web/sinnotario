@@ -1,5 +1,23 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 04:22 UTC-3] - SOL-0051
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0051`
+- **Alcance de los Cambios:**
+  - **Autoformateo Reactivo de RUT Empresa:**
+    1. **Vinculación de Eventos en `subir-documento.php`:**
+       - Se corrigió el markup de `.sig-empresa-rut` retirando el inline `oninput="RutHelper.format(this.value)"` que no asignaba el valor formateado al input.
+       - Se agregaron escuchadores mediante `RutHelper.attachToInput()` para los campos de RUT de empresa de Firmante 1, Firmante 2 y todos los firmantes creados dinámicamente (`addSigner()`).
+    2. **Ajuste de Reactividad en `assets/js/app.js`:**
+       - En `RutHelper.attachToInput()`, se perfeccionó la condición para autoformatear al escribir a partir de 8 dígitos limpios y en eventos `blur`/`change`, evitando que números largos como `7808968689` queden en texto crudo y formateándolos automáticamente a `78.089.686-9` o `78.089.686-8` con su validación visual correspondiente.
+- **Pruebas Validadas:**
+  - PHP Lint remoto en servidor: 0 errores de sintaxis en `subir-documento.php`.
+  - Smoke tests HTTP en producción: `https://sinnotario.cl/subir-documento.php` respondiendo `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 01:03 UTC-3] - SOL-0045
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

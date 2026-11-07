@@ -52,10 +52,14 @@ window.RutHelper = {
             const raw = e.target.value;
             const clean = this.clean(raw);
 
-            // Formatear dinámicamente si es blur, change o mientras escribe cuando ya tiene longitud suficiente
+            // Formatear dinámicamente si es blur, change o mientras escribe cuando ya tiene longitud suficiente (>= 7 u 8 caracteres numéricos)
             const formatted = this.format(raw);
-            if (e.type === 'blur' || e.type === 'change' || (raw && clean.length >= 7)) {
-                if (e.target.value !== formatted && (e.type === 'blur' || e.type === 'change' || clean.length >= 8)) {
+            if (e.type === 'blur' || e.type === 'change') {
+                if (clean.length >= 2) {
+                    e.target.value = formatted;
+                }
+            } else if (clean.length >= 8) {
+                if (e.target.value !== formatted) {
                     e.target.value = formatted;
                 }
             }

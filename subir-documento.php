@@ -451,7 +451,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                                     </div>
                                     <div class="form-group">
                                         <label>RUT Empresa *</label>
-                                        <input type="text" class="form-control sig-empresa-rut" placeholder="76.123.456-7" oninput="RutHelper.format(this.value)">
+                                        <input type="text" class="form-control sig-empresa-rut" placeholder="76.123.456-7" maxlength="12">
                                     </div>
                                 </div>
                             </div>
@@ -519,7 +519,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                                     </div>
                                     <div class="form-group">
                                         <label>RUT Empresa *</label>
-                                        <input type="text" class="form-control sig-empresa-rut" placeholder="77.987.654-3" oninput="RutHelper.format(this.value)">
+                                        <input type="text" class="form-control sig-empresa-rut" placeholder="77.987.654-3" maxlength="12">
                                     </div>
                                 </div>
                             </div>
@@ -1189,7 +1189,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                         </div>
                         <div class="form-group">
                             <label>RUT Empresa *</label>
-                            <input type="text" class="form-control sig-empresa-rut" placeholder="76.123.456-7" oninput="RutHelper.format(this.value)">
+                            <input type="text" class="form-control sig-empresa-rut" placeholder="76.123.456-7" maxlength="12">
                         </div>
                     </div>
                 </div>
@@ -1253,6 +1253,17 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                 }
                 RutHelper.attachToInput(newRut, errEl);
             }
+            const newEmpRut = div.querySelector('.sig-empresa-rut');
+            if (newEmpRut && typeof RutHelper !== 'undefined') {
+                let empErrEl = div.querySelector('.rep-company-wrap .rut-error-text');
+                if (!empErrEl && newEmpRut.parentElement) {
+                    empErrEl = document.createElement('div');
+                    empErrEl.className = 'rut-error-text';
+                    empErrEl.style.cssText = 'color:#DC2626; font-size:0.75rem; font-weight:600; margin-top:0.35rem; display:none; padding:4px 8px; background:#FEF2F2; border-left:3px solid #DC2626; border-radius:4px;';
+                    newEmpRut.parentElement.appendChild(empErrEl);
+                }
+                RutHelper.attachToInput(newEmpRut, empErrEl);
+            }
         }
 
         // Inicializar validaciones y auto-cleaner al cargar el documento
@@ -1261,7 +1272,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                 window.enableExampleClearOnFocus(document);
             }
 
-            // Adjuntar validación a los RUTs iniciales
+            // Adjuntar validación a los RUTs iniciales (persona y empresa)
             document.querySelectorAll('.signer-box').forEach(box => {
                 const rutInp = box.querySelector('.sig-rut');
                 if (rutInp && typeof RutHelper !== 'undefined') {
@@ -1273,6 +1284,18 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                         rutInp.parentElement.appendChild(errEl);
                     }
                     RutHelper.attachToInput(rutInp, errEl);
+                }
+
+                const empRutInp = box.querySelector('.sig-empresa-rut');
+                if (empRutInp && typeof RutHelper !== 'undefined') {
+                    let empErrEl = box.querySelector('.rep-company-wrap .rut-error-text');
+                    if (!empErrEl && empRutInp.parentElement) {
+                        empErrEl = document.createElement('div');
+                        empErrEl.className = 'rut-error-text';
+                        empErrEl.style.cssText = 'color:#DC2626; font-size:0.75rem; font-weight:600; margin-top:0.35rem; display:none; padding:4px 8px; background:#FEF2F2; border-left:3px solid #DC2626; border-radius:4px;';
+                        empRutInp.parentElement.appendChild(empErrEl);
+                    }
+                    RutHelper.attachToInput(empRutInp, empErrEl);
                 }
             });
         });
