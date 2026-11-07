@@ -767,3 +767,19 @@
   - php -l remoto en redactar.php y subir-documento.php sin errores sintácticos.
   - Smoke tests HTTP 200 en https://sinnotario.cl/redactar.php y https://sinnotario.cl/subir-documento.php.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción.
+
+
+---
+
+### Registro: 2026-11-07 06:29 UTC (03:29 CLT)
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario (sinnotario.cl)
+- **Ambiente Destino:** Producción (156.67.72.209:65002)
+- **Identificador de la Solución:** SOL-0048
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Se homologó la cabecera institucional (header / navbar) en subir-documento.php y verificar.php:
+  1) Se reemplazó la inclusión de un icono recortado de 32x32px (.brand-icon con cropped-sinnotario-logo2-32x32.png forzado a 82px) por el logotipo corporativo completo oficial de la plataforma (assets/logos/sinnotario-logo.png).
+  2) Se estandarizó la barra de navegación con la clase maestra .nav-container y enlaces .nav-links alineados al 100% con index.php y redactar.php, eliminando cualquier descuadre, pixelado o desplazamiento en la esquina superior izquierda.
+- **Pruebas Validadas:**
+  - php -l remoto en subir-documento.php y verificar.php retornando 0 errores.
+  - Smoke tests HTTP 200 en https://sinnotario.cl/subir-documento.php y https://sinnotario.cl/verificar.php.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción.

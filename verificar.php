@@ -345,19 +345,18 @@ $hashParam = isset($_GET['hash']) ? trim($_GET['hash']) : '';
 
     <!-- Header Navigation -->
     <header class="site-header">
-        <div class="header-container">
+        <div class="nav-container">
             <a href="index.php" class="brand-logo">
-                <img src="assets/logos/cropped-sinnotario-logo2-32x32.png" alt="SinNotario.cl Logo" class="brand-icon">
-                <span class="brand-text">SIN<strong>NOTARIO</strong><span class="brand-tld">.CL</span></span>
+                <img src="assets/logos/sinnotario-logo.png" alt="SinNotario.cl Logo">
             </a>
-            <nav class="main-nav">
-                <a href="index.php">Inicio</a>
-                <a href="index.php#catalogo">Catálogo</a>
-                <a href="verificar.php" style="color: var(--primary); font-weight: 700;">Verificar Documento</a>
-                <a href="marco-legal.php">Marco Legal</a>
-                <a href="empresas.php">Empresas</a>
-            </nav>
-            <div class="header-actions">
+            <ul class="nav-links">
+                <li><a href="index.php">Trámites</a></li>
+                <li><a href="subir-documento.php" style="color: var(--accent); font-weight: 800;"><i class="fas fa-file-upload"></i> Subir tu Documento</a></li>
+                <li><a href="verificar.php" style="color: var(--accent); font-weight: 700;">Verificar Documento</a></li>
+                <li><a href="index.php#empresas">Solución Empresas</a></li>
+                <li><a href="https://wa.me/56984180479?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
+            </ul>
+            <div>
                 <a href="index.php#catalogo" class="btn-cta btn-primary" style="padding:0.5rem 1.1rem; font-size:0.88rem;">
                     <i class="fas fa-file-signature"></i> Redactar Contrato
                 </a>
