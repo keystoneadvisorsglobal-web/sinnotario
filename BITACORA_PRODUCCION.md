@@ -750,3 +750,20 @@
   - php -l remoto en redactar.php, subir-documento.php, index.php y empresas.php sin errores (0 syntax errors).
   - Smoke tests HTTP 200 en https://sinnotario.cl/redactar.php, https://sinnotario.cl/subir-documento.php y https://sinnotario.cl/.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción.
+
+
+---
+
+### Registro: 2026-11-07 06:20 UTC (03:20 CLT)
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario (sinnotario.cl)
+- **Ambiente Destino:** Producción (156.67.72.209:65002)
+- **Identificador de la Solución:** SOL-0047
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Se diagnosticó y subsanó la falta de formateo automático de RUT en el Wizard de Redacción documental (redactar.php):
+  1) Se detectó y corrigió un cierre duplicado en app.js que impedía la ejecución fluida de los listeners en el navegador.
+  2) Se sincronizó el motor RutHelper.attachToInput() para formatear de forma continua al escribir (input), cambiar (change) y desenfocar (blur) en todos los campos de RUT del formulario: Titular/Parte A, Contraparte/Parte B, RUTs de empresas representadas, Codeudor/Aval y firmantes adicionales dinámicos.
+  3) Se unificó la inclusión de app.js con cache-busting (?v=20261107_1) en redactar.php y subir-documento.php.
+- **Pruebas Validadas:**
+  - php -l remoto en redactar.php y subir-documento.php sin errores sintácticos.
+  - Smoke tests HTTP 200 en https://sinnotario.cl/redactar.php y https://sinnotario.cl/subir-documento.php.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción.

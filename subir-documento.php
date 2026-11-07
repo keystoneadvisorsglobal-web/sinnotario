@@ -684,6 +684,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
     </footer>
 
     <!-- Scripts del Wizard de Carga Propia -->
+    <script src="assets/js/app.js?v=20261107_1"></script>
     <script>
         let currentUploadedFile = null;
         let currentCalculatedHash = '';

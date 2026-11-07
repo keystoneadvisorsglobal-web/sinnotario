@@ -660,7 +660,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
     </main>
 
     <!-- Scripts Universal Wizard -->
-    <script src="assets/js/app.js?v=20261106_16"></script>
+    <script src="assets/js/app.js?v=20261107_1"></script>
     <script>
         // Funciones auxiliares seguras locales
         function escapeHtml(text) {
@@ -790,6 +790,22 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
             `;
             container.appendChild(div);
             updateRedactarPricing();
+
+            // Vincular auto-cleaner y validación de RUT en la fila extra
+            if (typeof window.enableExampleClearOnFocus === 'function') {
+                window.enableExampleClearOnFocus(div);
+            }
+            const extraRutInput = div.querySelector('.extra-sig-rut');
+            if (extraRutInput && typeof RutHelper !== 'undefined') {
+                let errEl = div.querySelector('.rut-error-text');
+                if (!errEl && extraRutInput.parentElement) {
+                    errEl = document.createElement('div');
+                    errEl.className = 'rut-error-text';
+                    errEl.style.cssText = 'color:#DC2626; font-size:0.75rem; font-weight:600; margin-top:0.35rem; display:none; padding:4px 8px; background:#FEF2F2; border-left:3px solid #DC2626; border-radius:4px;';
+                    extraRutInput.parentElement.appendChild(errEl);
+                }
+                RutHelper.attachToInput(extraRutInput, errEl);
+            }
         }
 
         function removeRedactarExtraSigner(id) {
@@ -872,6 +888,11 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
             const errEmpB = document.getElementById('err_parte_b_empresa_rut');
             if (rutEmpB && typeof RutHelper !== 'undefined') {
                 RutHelper.attachToInput(rutEmpB, errEmpB);
+            }
+
+            const rutAval = document.getElementById('f_deuda_aval_rut');
+            if (rutAval && typeof RutHelper !== 'undefined') {
+                RutHelper.attachToInput(rutAval);
             }
 
             // Habilitar limpiador inteligente de valores de ejemplo al hacer foco

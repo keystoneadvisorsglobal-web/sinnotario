@@ -50,12 +50,16 @@ window.RutHelper = {
         
         const handler = (e) => {
             const raw = e.target.value;
+            const clean = this.clean(raw);
+
+            // Formatear dinámicamente si es blur, change o mientras escribe cuando ya tiene longitud suficiente
             const formatted = this.format(raw);
-            if (e.type === 'blur' || e.type === 'change' || (raw && raw.length >= 8)) {
-                e.target.value = formatted;
+            if (e.type === 'blur' || e.type === 'change' || (raw && clean.length >= 7)) {
+                if (e.target.value !== formatted && (e.type === 'blur' || e.type === 'change' || clean.length >= 8)) {
+                    e.target.value = formatted;
+                }
             }
             
-            const clean = this.clean(e.target.value);
             if (clean.length >= 8) {
                 const isValid = this.validate(clean);
                 if (isValid) {
@@ -90,8 +94,18 @@ window.RutHelper = {
         };
 
         inputElement.addEventListener('input', handler);
-        inputElement.addEventListener('blur', handler);
-        inputElement.addEventListener('change', handler);
+        inputElement.addEventListener('blur', (e) => {
+            if (e.target.value) {
+                e.target.value = this.format(e.target.value);
+            }
+            handler(e);
+        });
+        inputElement.addEventListener('change', (e) => {
+            if (e.target.value) {
+                e.target.value = this.format(e.target.value);
+            }
+            handler(e);
+        });
     }
 };
 const RutHelper = window.RutHelper;
@@ -125,10 +139,6 @@ window.enableExampleClearOnFocus = function(container = document) {
         }
     });
 };
-        inputElement.addEventListener('change', handler);
-    }
-};
-const RutHelper = window.RutHelper;
 
 // Catálogo de trámites prohibidos / exclusivos de Notaría (Detector Negativo)
 const NOTARY_EXCLUSIVE_KEYWORDS = [
