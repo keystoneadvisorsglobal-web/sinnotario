@@ -35,7 +35,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 
             <ul class="nav-links">
                 <li><a href="index.php" class="<?= $page === 'home' ? 'active' : '' ?>">Trámites</a></li>
-                <li><a href="#verificar" onclick="scrollToVerify()">Verificar Documento</a></li>
+                <li><a href="verificar.php">Verificar Documento</a></li>
                 <li><a href="#empresas">Solución Empresas</a></li>
                 <li><a href="https://wa.me/56984180479?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
             </ul>
@@ -115,8 +115,11 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
                     <button id="btnSubmitVerify" class="search-btn">
                         <i class="fas fa-search"></i> Validar Documento
                     </button>
+                <div style="margin-top: 1rem; font-size: 0.88rem;">
+                    <a href="verificar.php" style="color: #2563EB; font-weight: 700; text-decoration: none;">
+                        <i class="fas fa-fingerprint"></i> ¿Deseas cotejar un archivo PDF mediante Hash SHA-256? Ir al Portal Completo de Verificación &rarr;
+                    </a>
                 </div>
-
                 <div id="verifyResultDiv" style="margin-top: 1.5rem; text-align: left; display: none; max-width: 600px; margin-left: auto; margin-right: auto;"></div>
             </div>
         </section>
@@ -248,7 +251,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
                 <ul>
                     <li><a href="https://wa.me/56984180479" target="_blank"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
                     <li><a href="mailto:soporte@sinnotario.cl"><i class="far fa-envelope"></i> soporte@sinnotario.cl</a></li>
-                    <li><a href="#verificar"><i class="fas fa-shield-alt"></i> Validador de Firmas</a></li>
+                    <li><a href="verificar.php"><i class="fas fa-shield-alt"></i> Validador de Firmas</a></li>
                 </ul>
             </div>
         </div>

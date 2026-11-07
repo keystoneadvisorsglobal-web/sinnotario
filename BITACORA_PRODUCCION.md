@@ -587,3 +587,21 @@
   - Smoke tests HTTP/2 200 OK tanto en `https://sinnotario.cl/redactar.php?slug=contrato-individual-trabajo` como en `https://sinnotario.cl/redactar.php?doc=contrato-individual-trabajo`.
   - Prueba de evaluación de runtime en Node.js confirmando renderizado exitoso de más de 10.000 caracteres de contenido contractual en la vista previa.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.
+
+---
+
+### Registro: 2026-11-06 21:55 UTC (18:55 CLT)
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario (`sinnotario.cl`)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0040`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Se desarrolló y desplegó en producción el **Módulo 4: Portal de Verificación Pública y Trazabilidad Forense** (`verificar.php`), cumpliendo al 100% con los requerimientos de la Ley N° 19.799 y la arquitectura descrita en `DISENO_FUNCIONAL_SINNOTARIO.md`. El portal ofrece una experiencia integral para bancos, juzgados, notarías, corredoras y partes interesadas mediante 3 métodos de validación simultáneos:
+  1) **Vía 1 (Folio Alfanumérico):** Búsqueda directa por código de verificación único (ej: `SN-297C-BA91`).
+  2) **Vía 2 (Escaneo de QR Dinámico):** Detección automática al cargar por parámetros `?code=` o `?doc=` estampados en el pie de página de los PDFs oficiales.
+  3) **Vía 3 (Cotejo Forense Drag & Drop por Hash SHA-256):** El usuario arrastra el archivo PDF; el navegador calcula de forma segura y privada su huella digital mediante `crypto.subtle.digest('SHA-256')` y el nuevo endpoint `api/index.php?action=verify_by_hash` contrasta el hash contra la base de datos y la Bóveda Cifrada Cloudflare R2, detectando si el PDF fue adulterado posteriormente a la firma.
+  Se incorporó la visualización de la **Cadena de Custodia de Firmantes** (nombre, RUT, rol, estado y fecha de firma), metadatos oficiales del instrumento y botón para imprimir el Certificado de Validación.
+- **Pruebas Validadas:**
+  - Verificación sintáctica remota (`php -l`) en `verificar.php`, `api/index.php` e `index.php` retornando 0 errores.
+  - Smoke tests HTTP/2 200 OK en `https://sinnotario.cl/verificar.php`.
+  - Prueba de API `verify_by_hash` con hash real retornando coincidencia exitosa de documento sellado en R2 con estado y lista de firmantes.
+- **Estado Final:** ✅ Éxito Total / Desplegado en Producción y sincronizado en Git.

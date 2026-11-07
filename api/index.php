@@ -62,6 +62,36 @@ try {
             break;
 
         // 3. Verificación de documento público (/verificar)
+        case 'verify_by_hash':
+            $hash = isset($_GET['hash']) ? trim($_GET['hash']) : '';
+            if (empty($hash) || strlen($hash) !== 64) {
+                jsonResponse(false, null, 'Hash SHA-256 inválido o no proporcionado', 400);
+            }
+
+            $stmt = $pdo->prepare("SELECT d.*, t.nombre as template_nombre FROM documents d LEFT JOIN templates t ON d.template_id = t.id WHERE d.pdf_sha256 = ?");
+            $stmt->execute([$hash]);
+            $doc = $stmt->fetch();
+
+            if (!$doc) {
+                jsonResponse(false, null, 'No se encontró ningún documento con el hash especificado (posible alteración o documento no emitido en SinNotario)', 404);
+            }
+
+            // Obtener firmantes
+            $stmtSigners = $pdo->prepare("SELECT rol_firmante, rut, nombre_completo, estado_firma, metodo_firma, fecha_firma FROM document_signers WHERE document_id = ?");
+            $stmtSigners->execute([$doc['id']]);
+            $signers = $stmtSigners->fetchAll();
+
+            unset($doc['datos_formulario']);
+            unset($doc['token_pago']);
+
+            jsonResponse(true, [
+                'document' => $doc,
+                'signers' => $signers,
+                'is_valid' => in_array($doc['estado'], ['COMPLETADO', 'PENDIENTE_FIRMAS', 'BORRADOR']),
+                'custody_vault' => 'Cloudflare R2 Encrypted Vault (Chile Law 19.799)'
+            ]);
+            break;
+
         case 'verify_document':
             $code = isset($_GET['code']) ? trim($_GET['code']) : '';
             if (empty($code)) {
