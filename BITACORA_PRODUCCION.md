@@ -783,3 +783,21 @@
   - php -l remoto en subir-documento.php y verificar.php retornando 0 errores.
   - Smoke tests HTTP 200 en https://sinnotario.cl/subir-documento.php y https://sinnotario.cl/verificar.php.
 - **Estado Final:** ✅ Éxito Total / Desplegado en Producción.
+
+---
+
+### Registro: 2026-11-07 07:12 UTC (04:12 CLT)
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario (`sinnotario.cl`)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0049`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Se realizó la estabilización, corrección y revalidación integral del Wizard Universal de Redacción y Live Preview 60/40 en `redactar.php` atendiendo a los fallos reportados de selección de plantillas y representación legal de empresas:
+  1) **Selector Superior de Cambio Directo de Plantillas (`#headerTemplateSwitcher`):** Se integró en la cabecera del wizard una lista desplegable con las 13 plantillas legales categorizadas (Laboral, Inmobiliario, Comercial y Declaraciones Juradas), permitiendo al usuario cambiar o escoger el documento deseado directamente sin tener que abandonar el asistente.
+  2) **Blindaje Anticaídas del DOM (`setSafeText` / `setSafeVal` / `try-catch`):** Se eliminaron accesos directos inseguros en `setupTemplateFields()`, reemplazándolos por setters defensivos con verificación de existencia previa del elemento para garantizar que ningún documento interrumpa el ciclo de vida del script.
+  3) **Selector de Modalidades y Variantes en Paso 1:** Se garantizó la ejecución y visualización prioritaria de `renderStep1ModalidadSelector()` en el Paso 1 para los 10 documentos con variantes (Finiquito Laboral con opciones Mi DT, Blindaje Patronal y Transaccional; Contrato de Trabajo 40 Horas / Art. 22 / Teletrabajo; Servicios Profesionales, etc.).
+  4) **Reactivación y Comparecencia de Representación de Empresas:** Se reforzó el comportamiento del checkbox de representante legal (`#f_parte_a_es_rep` y `#f_parte_b_es_rep`), asegurando el despliegue inmediato de los campos de Razón Social y RUT de la persona jurídica representada, su reflejo reactivo en la vista previa del contrato en vivo y su adecuada inclusión en los metadatos de despacho.
+- **Pruebas Validadas:**
+  - Verificación sintáctica remota (`php -l domains/sinnotario.cl/public_html/redactar.php`) retornando cero errores.
+  - Validación sintáctica en Node.js de la totalidad de funciones JavaScript del cliente sin errores.
+  - Smoke tests HTTP/2 200 OK en producción para `finiquito-laboral-mutuo-acuerdo`, `contrato-individual-trabajo`, `contrato-arriendo-ley-21461`, `prestacion-servicios-honorarios` y `declaracion-jurada-residencia`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.

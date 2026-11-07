@@ -24,6 +24,10 @@ if (!$tpl) {
 
 $precioFormatted = '$' . number_format($tpl['precio_base'], 0, ',', '.');
 
+// Obtener todas las plantillas para el selector de cambio de plantilla en la cabecera
+$allTemplatesStmt = $pdo->query("SELECT id, slug, nombre, categoria FROM templates ORDER BY categoria ASC, nombre ASC");
+$allTemplatesList = $allTemplatesStmt ? $allTemplatesStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+
 $stmtSets = $pdo->query("SELECT * FROM system_settings");
 $settingsRows = $stmtSets ? $stmtSets->fetchAll(PDO::FETCH_ASSOC) : [];
 $sysSettings = [];
@@ -286,9 +290,19 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
             <a href="index.php" class="brand-logo">
                 <img src="assets/logos/sinnotario-logo.png" alt="SinNotario.cl Logo">
             </a>
-            <div style="font-size: 0.9rem; color: #64748B;">
-                <span class="card-category <?= htmlspecialchars($tpl['categoria']) ?>"><?= ucfirst(htmlspecialchars($tpl['categoria'])) ?></span> 
-                <?= htmlspecialchars($tpl['nombre']) ?>
+            <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+                <span class="card-category <?= htmlspecialchars($tpl['categoria']) ?>"><?= ucfirst(htmlspecialchars($tpl['categoria'])) ?></span>
+                <div style="position:relative; display:inline-flex; align-items:center;">
+                    <select id="headerTemplateSwitcher" onchange="if(this.value) window.location.href='redactar.php?slug='+this.value" 
+                            style="font-size: 0.92rem; font-weight: 700; color: #0F2A4A; background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0.4rem 2rem 0.4rem 0.75rem; cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; -moz-appearance: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); max-width: 380px;">
+                        <?php foreach ($allTemplatesList as $at): ?>
+                            <option value="<?= htmlspecialchars($at['slug']) ?>" <?= $at['slug'] === $tpl['slug'] ? 'selected' : '' ?>>
+                                [<?= ucfirst(htmlspecialchars($at['categoria'])) ?>] <?= htmlspecialchars($at['nombre']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <i class="fas fa-chevron-down" style="position:absolute; right:10px; pointer-events:none; font-size:0.75rem; color:#64748B;"></i>
+                </div>
             </div>
             <div>
                 <a href="index.php" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;">
@@ -677,17 +691,31 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
         const PRECIO_FIRMA_EXTRA_REDACTAR = <?= (int)$precioFirmaExtraRedactar ?>;
         let redactarExtraSigners = [];
 
+                // Funciones defensivas para evitar excepciones al manipular el DOM
+        function setSafeText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text;
+        }
+        function setSafeVal(id, val) {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
+        }
+
         function toggleParteARepresentante() {
             const chk = document.getElementById('f_parte_a_es_rep');
             const wrap = document.getElementById('parteARepFields');
-            if (wrap) wrap.style.display = (chk && chk.checked) ? 'block' : 'none';
+            if (wrap) {
+                wrap.style.display = (chk && chk.checked) ? 'block' : 'none';
+            }
             updateUniversalPreview();
         }
 
         function toggleParteBRepresentante() {
             const chk = document.getElementById('f_parte_b_es_rep');
             const wrap = document.getElementById('parteBRepFields');
-            if (wrap) wrap.style.display = (chk && chk.checked) ? 'block' : 'none';
+            if (wrap) {
+                wrap.style.display = (chk && chk.checked) ? 'block' : 'none';
+            }
             updateUniversalPreview();
         }
 
@@ -863,7 +891,18 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
         const isUnipersonal = ['declaracion-jurada-residencia', 'declaracion-jurada-ingresos-informales', 'salvoconducto-mudanza'].includes(CURRENT_TEMPLATE.slug);
 
         function initUniversalWizard() {
-            setupTemplateFields();
+            // Asegurar que el selector de variantes de plantilla en el Paso 1 se renderice de forma prioritaria
+            try {
+                renderStep1ModalidadSelector();
+            } catch (errSel) {
+                console.warn('Advertencia en renderStep1ModalidadSelector:', errSel);
+            }
+
+            try {
+                setupTemplateFields();
+            } catch (errTpl) {
+                console.warn('Advertencia en setupTemplateFields:', errTpl);
+            }
 
             // Rut validation setup defensivo
             const rutA = document.getElementById('f_parte_a_rut');
@@ -899,6 +938,15 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
             if (typeof window.enableExampleClearOnFocus === 'function') {
                 window.enableExampleClearOnFocus(document.getElementById('universalWizardForm') || document);
             }
+
+            // Sincronizar estado inicial de representantes si vinieran marcados
+            const chkA = document.getElementById('f_parte_a_es_rep');
+            const wrapA = document.getElementById('parteARepFields');
+            if (chkA && wrapA) wrapA.style.display = chkA.checked ? 'block' : 'none';
+
+            const chkB = document.getElementById('f_parte_b_es_rep');
+            const wrapB = document.getElementById('parteBRepFields');
+            if (chkB && wrapB) wrapB.style.display = chkB.checked ? 'block' : 'none';
 
             bindUniversalPreviewSync();
             updateUniversalPreview();
@@ -1350,183 +1398,183 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                 if (parteBWrap) parteBWrap.style.display = 'none';
                 if (unipersonalNotice) unipersonalNotice.style.display = 'block';
                 if (signBWrap) signBWrap.style.display = 'none';
-                document.getElementById('lblStep1').innerText = 'Declarante';
-                document.getElementById('lblStep2').innerText = 'Tipo Trámite';
-                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Declarante';
+                setSafeText('lblStep1', 'Declarante');
+                setSafeText('lblStep2', 'Tipo Trámite');
+                setSafeText('step1Title', 'Paso 1: Datos del Declarante');
             } else if (CURRENT_TEMPLATE.slug === 'contrato-individual-trabajo') {
                 // Personalización para Contrato Individual de Trabajo (Código del Trabajo Art. 10)
-                document.getElementById('lblStep1').innerText = 'Empleador';
-                document.getElementById('lblStep2').innerText = 'Trabajador';
-                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Empleador y Representante Legal';
-                document.getElementById('step1Desc').innerText = 'Individualización de la empresa empleadora (Razón Social, RUT, Giro, Domicilio) y su Representante Legal.';
-                document.getElementById('lbl_parte_a_nombre').innerText = 'Razón Social o Nombre del Empleador *';
-                document.getElementById('f_parte_a_nombre').value = 'Servicios Tecnológicos SpA';
-                document.getElementById('f_parte_a_rut').value = '76.987.654-3';
-                document.getElementById('f_parte_a_civil').value = 'Giro: Consultoría en TI y Desarrollo de Software';
-                document.getElementById('f_parte_a_profesion').value = 'Rep. Legal: Juan Andrés Pérez González, C.I. 12.345.678-5';
-                document.getElementById('f_parte_a_domicilio').value = 'Av. Andrés Bello 2711, Piso 14';
-                document.getElementById('f_parte_a_comuna').value = 'Las Condes, Santiago';
+                setSafeText('lblStep1', 'Empleador');
+                setSafeText('lblStep2', 'Trabajador');
+                setSafeText('step1Title', 'Paso 1: Datos del Empleador y Representante Legal');
+                setSafeText('step1Desc', 'Individualización de la empresa empleadora (Razón Social, RUT, Giro, Domicilio) y su Representante Legal.');
+                setSafeText('lbl_parte_a_nombre', 'Razón Social o Nombre del Empleador *');
+                setSafeVal('f_parte_a_nombre', 'Servicios Tecnológicos SpA');
+                setSafeVal('f_parte_a_rut', '76.987.654-3');
+                setSafeVal('f_parte_a_civil', 'Giro: Consultoría en TI y Desarrollo de Software');
+                setSafeVal('f_parte_a_profesion', 'Rep. Legal: Juan Andrés Pérez González, C.I. 12.345.678-5');
+                setSafeVal('f_parte_a_domicilio', 'Av. Andrés Bello 2711, Piso 14');
+                setSafeVal('f_parte_a_comuna', 'Las Condes, Santiago');
 
-                document.getElementById('step2Title').innerText = 'Paso 2: Datos del Trabajador';
-                document.getElementById('step2Desc').innerText = 'Individualización completa del trabajador para el contrato y su registro en la Dirección del Trabajo (REL).';
-                document.getElementById('lbl_parte_b_nombre').innerText = 'Nombre Completo del Trabajador *';
-                document.getElementById('f_parte_b_nombre').value = 'María José Valenzuela Soto';
-                document.getElementById('f_parte_b_rut').value = '15.444.555-6';
-                document.getElementById('f_parte_b_civil').value = 'chilena, soltera, Nac. 15/04/1992';
-                document.getElementById('f_parte_b_profesion').value = 'Ingeniera en Informática';
-                document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
-                document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
+                setSafeText('step2Title', 'Paso 2: Datos del Trabajador');
+                setSafeText('step2Desc', 'Individualización completa del trabajador para el contrato y su registro en la Dirección del Trabajo (REL).');
+                setSafeText('lbl_parte_b_nombre', 'Nombre Completo del Trabajador *');
+                setSafeVal('f_parte_b_nombre', 'María José Valenzuela Soto');
+                setSafeVal('f_parte_b_rut', '15.444.555-6');
+                setSafeVal('f_parte_b_civil', 'chilena, soltera, Nac. 15/04/1992');
+                setSafeVal('f_parte_b_profesion', 'Ingeniera en Informática');
+                setSafeVal('f_parte_b_domicilio', 'Av. Apoquindo 4500, Depto 801');
+                setSafeVal('f_parte_b_comuna', 'Las Condes, Santiago');
             } else if (CURRENT_TEMPLATE.slug === 'finiquito-laboral-mutuo-acuerdo') {
-                document.getElementById('lblStep1').innerText = 'Empleador';
-                document.getElementById('lblStep2').innerText = 'Trabajador';
-                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Empleador y Representante';
-                document.getElementById('step1Desc').innerText = 'Identificación de la empresa empleadora y de su representante legal que suscribe el finiquito.';
-                document.getElementById('lbl_parte_a_nombre').innerText = 'Razón Social o Nombre del Empleador *';
-                document.getElementById('f_parte_a_nombre').value = 'Servicios Tecnológicos SpA';
-                document.getElementById('f_parte_a_rut').value = '76.987.654-3';
-                document.getElementById('f_parte_a_civil').value = 'Giro: Consultoría en TI y Desarrollo de Software';
-                document.getElementById('f_parte_a_profesion').value = 'Rep. Legal: Juan Andrés Pérez González, C.I. 12.345.678-5';
-                document.getElementById('f_parte_a_domicilio').value = 'Av. Andrés Bello 2711, Piso 14';
-                document.getElementById('f_parte_a_comuna').value = 'Las Condes, Santiago';
+                setSafeText('lblStep1', 'Empleador');
+                setSafeText('lblStep2', 'Trabajador');
+                setSafeText('step1Title', 'Paso 1: Datos del Empleador y Representante');
+                setSafeText('step1Desc', 'Identificación de la empresa empleadora y de su representante legal que suscribe el finiquito.');
+                setSafeText('lbl_parte_a_nombre', 'Razón Social o Nombre del Empleador *');
+                setSafeVal('f_parte_a_nombre', 'Servicios Tecnológicos SpA');
+                setSafeVal('f_parte_a_rut', '76.987.654-3');
+                setSafeVal('f_parte_a_civil', 'Giro: Consultoría en TI y Desarrollo de Software');
+                setSafeVal('f_parte_a_profesion', 'Rep. Legal: Juan Andrés Pérez González, C.I. 12.345.678-5');
+                setSafeVal('f_parte_a_domicilio', 'Av. Andrés Bello 2711, Piso 14');
+                setSafeVal('f_parte_a_comuna', 'Las Condes, Santiago');
 
-                document.getElementById('step2Title').innerText = 'Paso 2: Datos del Trabajador Finiquitado';
-                document.getElementById('step2Desc').innerText = 'Datos completos del trabajador para la ratificación del finiquito ante ministro de fe o portal Mi DT.';
-                document.getElementById('lbl_parte_b_nombre').innerText = 'Nombre Completo del Trabajador *';
-                document.getElementById('f_parte_b_nombre').value = 'María José Valenzuela Soto';
-                document.getElementById('f_parte_b_rut').value = '15.444.555-6';
-                document.getElementById('f_parte_b_civil').value = 'chilena, soltera';
-                document.getElementById('f_parte_b_profesion').value = 'Analista de Operaciones';
-                document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
-                document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
+                setSafeText('step2Title', 'Paso 2: Datos del Trabajador Finiquitado');
+                setSafeText('step2Desc', 'Datos completos del trabajador para la ratificación del finiquito ante ministro de fe o portal Mi DT.');
+                setSafeText('lbl_parte_b_nombre', 'Nombre Completo del Trabajador *');
+                setSafeVal('f_parte_b_nombre', 'María José Valenzuela Soto');
+                setSafeVal('f_parte_b_rut', '15.444.555-6');
+                setSafeVal('f_parte_b_civil', 'chilena, soltera');
+                setSafeVal('f_parte_b_profesion', 'Analista de Operaciones');
+                setSafeVal('f_parte_b_domicilio', 'Av. Apoquindo 4500, Depto 801');
+                setSafeVal('f_parte_b_comuna', 'Las Condes, Santiago');
             } else if (CURRENT_TEMPLATE.slug === 'acuerdo-confidencialidad-nda') {
-                document.getElementById('lblStep1').innerText = 'Parte A';
-                document.getElementById('lblStep2').innerText = 'Parte B';
-                document.getElementById('step1Title').innerText = 'Paso 1: Datos de la Primera Parte (Divulgante / Receptora)';
-                document.getElementById('step1Desc').innerText = 'Identificación de la primera parte que suscribe el Acuerdo de Confidencialidad.';
-                document.getElementById('step2Title').innerText = 'Paso 2: Datos de la Segunda Parte (Divulgante / Receptora)';
-                document.getElementById('step2Desc').innerText = 'Identificación de la segunda parte obligada a los deberes de confidencialidad y reserva.';
+                setSafeText('lblStep1', 'Parte A');
+                setSafeText('lblStep2', 'Parte B');
+                setSafeText('step1Title', 'Paso 1: Datos de la Primera Parte (Divulgante / Receptora)');
+                setSafeText('step1Desc', 'Identificación de la primera parte que suscribe el Acuerdo de Confidencialidad.');
+                setSafeText('step2Title', 'Paso 2: Datos de la Segunda Parte (Divulgante / Receptora)');
+                setSafeText('step2Desc', 'Identificación de la segunda parte obligada a los deberes de confidencialidad y reserva.');
             } else if (CURRENT_TEMPLATE.slug === 'prestacion-servicios-honorarios') {
-                document.getElementById('lblStep1').innerText = 'Mandante';
-                document.getElementById('lblStep2').innerText = 'Profesional';
-                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Mandante / Empresa Contratante';
-                document.getElementById('step1Desc').innerText = 'Identificación de la persona o empresa que encarga y contrata los servicios profesionales independientes.';
-                document.getElementById('lbl_parte_a_nombre').innerText = 'Razón Social o Nombre del Mandante *';
-                document.getElementById('f_parte_a_nombre').value = 'Inversiones y Servicios Keystone SpA';
-                document.getElementById('f_parte_a_rut').value = '76.890.123-4';
-                document.getElementById('f_parte_a_civil').value = 'Giro: Consultoría y Gestión de Inversiones';
-                document.getElementById('f_parte_a_profesion').value = 'Rep. Legal: Juan Andrés Pérez González, C.I. 12.345.678-5';
-                document.getElementById('f_parte_a_domicilio').value = 'Av. Andrés Bello 2711, Piso 14';
-                document.getElementById('f_parte_a_comuna').value = 'Las Condes, Santiago';
+                setSafeText('lblStep1', 'Mandante');
+                setSafeText('lblStep2', 'Profesional');
+                setSafeText('step1Title', 'Paso 1: Datos del Mandante / Empresa Contratante');
+                setSafeText('step1Desc', 'Identificación de la persona o empresa que encarga y contrata los servicios profesionales independientes.');
+                setSafeText('lbl_parte_a_nombre', 'Razón Social o Nombre del Mandante *');
+                setSafeVal('f_parte_a_nombre', 'Inversiones y Servicios Keystone SpA');
+                setSafeVal('f_parte_a_rut', '76.890.123-4');
+                setSafeVal('f_parte_a_civil', 'Giro: Consultoría y Gestión de Inversiones');
+                setSafeVal('f_parte_a_profesion', 'Rep. Legal: Juan Andrés Pérez González, C.I. 12.345.678-5');
+                setSafeVal('f_parte_a_domicilio', 'Av. Andrés Bello 2711, Piso 14');
+                setSafeVal('f_parte_a_comuna', 'Las Condes, Santiago');
 
-                document.getElementById('step2Title').innerText = 'Paso 2: Datos del Profesional Independiente';
-                document.getElementById('step2Desc').innerText = 'Identificación del prestador de servicios que emitirá la boleta de honorarios electrónica (BHE).';
-                document.getElementById('lbl_parte_b_nombre').innerText = 'Nombre Completo del Profesional *';
-                document.getElementById('f_parte_b_nombre').value = 'María José Valenzuela Soto';
-                document.getElementById('f_parte_b_rut').value = '15.444.555-6';
-                document.getElementById('f_parte_b_civil').value = 'chilena, soltera';
-                document.getElementById('f_parte_b_profesion').value = 'Ingeniera Civil en Computación';
-                document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
-                document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
+                setSafeText('step2Title', 'Paso 2: Datos del Profesional Independiente');
+                setSafeText('step2Desc', 'Identificación del prestador de servicios que emitirá la boleta de honorarios electrónica (BHE).');
+                setSafeText('lbl_parte_b_nombre', 'Nombre Completo del Profesional *');
+                setSafeVal('f_parte_b_nombre', 'María José Valenzuela Soto');
+                setSafeVal('f_parte_b_rut', '15.444.555-6');
+                setSafeVal('f_parte_b_civil', 'chilena, soltera');
+                setSafeVal('f_parte_b_profesion', 'Ingeniera Civil en Computación');
+                setSafeVal('f_parte_b_domicilio', 'Av. Apoquindo 4500, Depto 801');
+                setSafeVal('f_parte_b_comuna', 'Las Condes, Santiago');
             } else if (CURRENT_TEMPLATE.slug === 'reconocimiento-deuda-pagare-privado') {
-                document.getElementById('lblStep1').innerText = 'Acreedor';
-                document.getElementById('lblStep2').innerText = 'Deudor';
-                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Acreedor / Beneficiario';
-                document.getElementById('step1Desc').innerText = 'Identificación de la persona o entidad a quien se le adeuda la suma comprometida.';
-                document.getElementById('lbl_parte_a_nombre').innerText = 'Nombre o Razón Social del Acreedor *';
-                document.getElementById('f_parte_a_nombre').value = 'Inversiones y Capitales SpA';
-                document.getElementById('f_parte_a_rut').value = '76.543.210-K';
-                document.getElementById('f_parte_a_civil').value = 'Giro: Inversiones y Servicios Financieros';
-                document.getElementById('f_parte_a_profesion').value = 'Rep. Legal: Juan Andrés Pérez González, C.I. 12.345.678-5';
-                document.getElementById('f_parte_a_domicilio').value = 'Av. El Golf 150, Piso 8';
-                document.getElementById('f_parte_a_comuna').value = 'Las Condes, Santiago';
+                setSafeText('lblStep1', 'Acreedor');
+                setSafeText('lblStep2', 'Deudor');
+                setSafeText('step1Title', 'Paso 1: Datos del Acreedor / Beneficiario');
+                setSafeText('step1Desc', 'Identificación de la persona o entidad a quien se le adeuda la suma comprometida.');
+                setSafeText('lbl_parte_a_nombre', 'Nombre o Razón Social del Acreedor *');
+                setSafeVal('f_parte_a_nombre', 'Inversiones y Capitales SpA');
+                setSafeVal('f_parte_a_rut', '76.543.210-K');
+                setSafeVal('f_parte_a_civil', 'Giro: Inversiones y Servicios Financieros');
+                setSafeVal('f_parte_a_profesion', 'Rep. Legal: Juan Andrés Pérez González, C.I. 12.345.678-5');
+                setSafeVal('f_parte_a_domicilio', 'Av. El Golf 150, Piso 8');
+                setSafeVal('f_parte_a_comuna', 'Las Condes, Santiago');
 
-                document.getElementById('step2Title').innerText = 'Paso 2: Datos del Deudor Principal';
-                document.getElementById('step2Desc').innerText = 'Identificación del deudor que suscribe y asume la obligación de pago y los títulos ejecutivos.';
-                document.getElementById('lbl_parte_b_nombre').innerText = 'Nombre Completo del Deudor *';
-                document.getElementById('f_parte_b_nombre').value = 'María José Valenzuela Soto';
-                document.getElementById('f_parte_b_rut').value = '15.444.555-6';
-                document.getElementById('f_parte_b_civil').value = 'chilena, soltera';
-                document.getElementById('f_parte_b_profesion').value = 'Comerciante Independiente';
-                document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
-                document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
+                setSafeText('step2Title', 'Paso 2: Datos del Deudor Principal');
+                setSafeText('step2Desc', 'Identificación del deudor que suscribe y asume la obligación de pago y los títulos ejecutivos.');
+                setSafeText('lbl_parte_b_nombre', 'Nombre Completo del Deudor *');
+                setSafeVal('f_parte_b_nombre', 'María José Valenzuela Soto');
+                setSafeVal('f_parte_b_rut', '15.444.555-6');
+                setSafeVal('f_parte_b_civil', 'chilena, soltera');
+                setSafeVal('f_parte_b_profesion', 'Comerciante Independiente');
+                setSafeVal('f_parte_b_domicilio', 'Av. Apoquindo 4500, Depto 801');
+                setSafeVal('f_parte_b_comuna', 'Las Condes, Santiago');
             } else if (CURRENT_TEMPLATE.slug === 'acta-entrega-llaves-e-inventario') {
-                document.getElementById('lblStep1').innerText = 'Arrendador';
-                document.getElementById('lblStep2').innerText = 'Arrendatario';
-                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Propietario / Arrendador';
-                document.getElementById('step1Desc').innerText = 'Identificación de la parte propietaria que entrega o restituye formalmente el inmueble.';
-                document.getElementById('lbl_parte_a_nombre').innerText = 'Nombre Completo del Arrendador *';
-                document.getElementById('f_parte_a_nombre').value = 'Juan Andrés Pérez González';
-                document.getElementById('f_parte_a_rut').value = '12.345.678-5';
-                document.getElementById('f_parte_a_civil').value = 'chileno, soltero';
-                document.getElementById('f_parte_a_profesion').value = 'Ingeniero Comercial';
-                document.getElementById('f_parte_a_domicilio').value = 'Av. Providencia 1234, Depto 402';
-                document.getElementById('f_parte_a_comuna').value = 'Providencia, Santiago';
+                setSafeText('lblStep1', 'Arrendador');
+                setSafeText('lblStep2', 'Arrendatario');
+                setSafeText('step1Title', 'Paso 1: Datos del Propietario / Arrendador');
+                setSafeText('step1Desc', 'Identificación de la parte propietaria que entrega o restituye formalmente el inmueble.');
+                setSafeText('lbl_parte_a_nombre', 'Nombre Completo del Arrendador *');
+                setSafeVal('f_parte_a_nombre', 'Juan Andrés Pérez González');
+                setSafeVal('f_parte_a_rut', '12.345.678-5');
+                setSafeVal('f_parte_a_civil', 'chileno, soltero');
+                setSafeVal('f_parte_a_profesion', 'Ingeniero Comercial');
+                setSafeVal('f_parte_a_domicilio', 'Av. Providencia 1234, Depto 402');
+                setSafeVal('f_parte_a_comuna', 'Providencia, Santiago');
 
-                document.getElementById('step2Title').innerText = 'Paso 2: Datos del Arrendatario';
-                document.getElementById('step2Desc').innerText = 'Identificación de la parte arrendataria que recibe o desocupa la propiedad.';
-                document.getElementById('lbl_parte_b_nombre').innerText = 'Nombre Completo del Arrendatario *';
-                document.getElementById('f_parte_b_nombre').value = 'María José Valenzuela Soto';
-                document.getElementById('f_parte_b_rut').value = '15.444.555-6';
-                document.getElementById('f_parte_b_civil').value = 'chilena, soltera';
-                document.getElementById('f_parte_b_profesion').value = 'Abogada';
-                document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
-                document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
+                setSafeText('step2Title', 'Paso 2: Datos del Arrendatario');
+                setSafeText('step2Desc', 'Identificación de la parte arrendataria que recibe o desocupa la propiedad.');
+                setSafeText('lbl_parte_b_nombre', 'Nombre Completo del Arrendatario *');
+                setSafeVal('f_parte_b_nombre', 'María José Valenzuela Soto');
+                setSafeVal('f_parte_b_rut', '15.444.555-6');
+                setSafeVal('f_parte_b_civil', 'chilena, soltera');
+                setSafeVal('f_parte_b_profesion', 'Abogada');
+                setSafeVal('f_parte_b_domicilio', 'Av. Apoquindo 4500, Depto 801');
+                setSafeVal('f_parte_b_comuna', 'Las Condes, Santiago');
             } else if (CURRENT_TEMPLATE.slug === 'autorizacion-domicilio-tributario-sii') {
-                document.getElementById('lblStep1').innerText = 'Propietario';
-                document.getElementById('lblStep2').innerText = 'Empresa';
-                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Propietario / Autorizante';
-                document.getElementById('step1Desc').innerText = 'Identificación del dueño del inmueble que autoriza fijar el domicilio tributario.';
-                document.getElementById('lbl_parte_a_nombre').innerText = 'Nombre Completo del Propietario *';
-                document.getElementById('f_parte_a_nombre').value = 'Juan Andrés Pérez González';
-                document.getElementById('f_parte_a_rut').value = '12.345.678-5';
-                document.getElementById('f_parte_a_civil').value = 'chileno, soltero';
-                document.getElementById('f_parte_a_profesion').value = 'Ingeniero Comercial';
-                document.getElementById('f_parte_a_domicilio').value = 'Av. Providencia 1234, Depto 402';
-                document.getElementById('f_parte_a_comuna').value = 'Providencia, Santiago';
+                setSafeText('lblStep1', 'Propietario');
+                setSafeText('lblStep2', 'Empresa');
+                setSafeText('step1Title', 'Paso 1: Datos del Propietario / Autorizante');
+                setSafeText('step1Desc', 'Identificación del dueño del inmueble que autoriza fijar el domicilio tributario.');
+                setSafeText('lbl_parte_a_nombre', 'Nombre Completo del Propietario *');
+                setSafeVal('f_parte_a_nombre', 'Juan Andrés Pérez González');
+                setSafeVal('f_parte_a_rut', '12.345.678-5');
+                setSafeVal('f_parte_a_civil', 'chileno, soltero');
+                setSafeVal('f_parte_a_profesion', 'Ingeniero Comercial');
+                setSafeVal('f_parte_a_domicilio', 'Av. Providencia 1234, Depto 402');
+                setSafeVal('f_parte_a_comuna', 'Providencia, Santiago');
 
-                document.getElementById('step2Title').innerText = 'Paso 2: Datos de la Empresa Beneficiaria';
-                document.getElementById('step2Desc').innerText = 'Razón Social, RUT y Representante Legal de la sociedad que fija su domicilio tributario ante el SII.';
-                document.getElementById('lbl_parte_b_nombre').innerText = 'Razón Social o Nombre de la Empresa *';
-                document.getElementById('f_parte_b_nombre').value = 'Servicios y Tecnologías SpA';
-                document.getElementById('f_parte_b_rut').value = '76.987.654-3';
-                document.getElementById('f_parte_b_civil').value = 'Giro: Consultoría en TI y Desarrollo de Software';
-                document.getElementById('f_parte_b_profesion').value = 'Rep. Legal: María José Valenzuela, C.I. 15.444.555-6';
-                document.getElementById('f_parte_b_domicilio').value = 'Av. Providencia 1234, Depto 402';
-                document.getElementById('f_parte_b_comuna').value = 'Providencia, Santiago';
+                setSafeText('step2Title', 'Paso 2: Datos de la Empresa Beneficiaria');
+                setSafeText('step2Desc', 'Razón Social, RUT y Representante Legal de la sociedad que fija su domicilio tributario ante el SII.');
+                setSafeText('lbl_parte_b_nombre', 'Razón Social o Nombre de la Empresa *');
+                setSafeVal('f_parte_b_nombre', 'Servicios y Tecnologías SpA');
+                setSafeVal('f_parte_b_rut', '76.987.654-3');
+                setSafeVal('f_parte_b_civil', 'Giro: Consultoría en TI y Desarrollo de Software');
+                setSafeVal('f_parte_b_profesion', 'Rep. Legal: María José Valenzuela, C.I. 15.444.555-6');
+                setSafeVal('f_parte_b_domicilio', 'Av. Providencia 1234, Depto 402');
+                setSafeVal('f_parte_b_comuna', 'Providencia, Santiago');
             } else if (CURRENT_TEMPLATE.slug === 'salvoconducto-mudanza') {
-                document.getElementById('lblStep1').innerText = 'Declarante';
-                document.getElementById('lblStep2').innerText = 'Datos Destino';
-                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Declarante / Propietario de Enseres';
-                document.getElementById('step1Desc').innerText = 'Identificación de la persona natural o jurídica que realiza el traslado de muebles y enseres.';
-                document.getElementById('lbl_parte_a_nombre').innerText = 'Nombre Completo o Razón Social *';
-                document.getElementById('f_parte_a_nombre').value = 'Juan Andrés Pérez González';
-                document.getElementById('f_parte_a_rut').value = '12.345.678-5';
-                document.getElementById('f_parte_a_civil').value = 'chileno, soltero';
-                document.getElementById('f_parte_a_profesion').value = 'Ingeniero Comercial';
-                document.getElementById('f_parte_a_domicilio').value = 'Av. Grecia 1234, Depto 301';
-                document.getElementById('f_parte_a_comuna').value = 'Ñuñoa, Santiago';
+                setSafeText('lblStep1', 'Declarante');
+                setSafeText('lblStep2', 'Datos Destino');
+                setSafeText('step1Title', 'Paso 1: Datos del Declarante / Propietario de Enseres');
+                setSafeText('step1Desc', 'Identificación de la persona natural o jurídica que realiza el traslado de muebles y enseres.');
+                setSafeText('lbl_parte_a_nombre', 'Nombre Completo o Razón Social *');
+                setSafeVal('f_parte_a_nombre', 'Juan Andrés Pérez González');
+                setSafeVal('f_parte_a_rut', '12.345.678-5');
+                setSafeVal('f_parte_a_civil', 'chileno, soltero');
+                setSafeVal('f_parte_a_profesion', 'Ingeniero Comercial');
+                setSafeVal('f_parte_a_domicilio', 'Av. Grecia 1234, Depto 301');
+                setSafeVal('f_parte_a_comuna', 'Ñuñoa, Santiago');
             } else if (CURRENT_TEMPLATE.slug === 'poder-especial-privado') {
-                document.getElementById('lblStep1').innerText = 'Mandante';
-                document.getElementById('lblStep2').innerText = 'Mandatario';
-                document.getElementById('step1Title').innerText = 'Paso 1: Datos del Mandante (Quien Otorga el Poder)';
-                document.getElementById('step1Desc').innerText = 'Identificación oficial de la persona que delega facultades específicas.';
-                document.getElementById('lbl_parte_a_nombre').innerText = 'Nombre Completo del Mandante *';
-                document.getElementById('f_parte_a_nombre').value = 'Juan Andrés Pérez González';
-                document.getElementById('f_parte_a_rut').value = '12.345.678-5';
-                document.getElementById('f_parte_a_civil').value = 'chileno, soltero';
-                document.getElementById('f_parte_a_profesion').value = 'Ingeniero Comercial';
-                document.getElementById('f_parte_a_domicilio').value = 'Av. Providencia 1234, Depto 402';
-                document.getElementById('f_parte_a_comuna').value = 'Providencia, Santiago';
+                setSafeText('lblStep1', 'Mandante');
+                setSafeText('lblStep2', 'Mandatario');
+                setSafeText('step1Title', 'Paso 1: Datos del Mandante (Quien Otorga el Poder)');
+                setSafeText('step1Desc', 'Identificación oficial de la persona que delega facultades específicas.');
+                setSafeText('lbl_parte_a_nombre', 'Nombre Completo del Mandante *');
+                setSafeVal('f_parte_a_nombre', 'Juan Andrés Pérez González');
+                setSafeVal('f_parte_a_rut', '12.345.678-5');
+                setSafeVal('f_parte_a_civil', 'chileno, soltero');
+                setSafeVal('f_parte_a_profesion', 'Ingeniero Comercial');
+                setSafeVal('f_parte_a_domicilio', 'Av. Providencia 1234, Depto 402');
+                setSafeVal('f_parte_a_comuna', 'Providencia, Santiago');
 
-                document.getElementById('step2Title').innerText = 'Paso 2: Datos del Apoderado / Mandatario';
-                document.getElementById('step2Desc').innerText = 'Identificación de la persona que recibe el encargo y actuará en representación del mandante.';
-                document.getElementById('lbl_parte_b_nombre').innerText = 'Nombre Completo del Mandatario *';
-                document.getElementById('f_parte_b_nombre').value = 'María José Valenzuela Soto';
-                document.getElementById('f_parte_b_rut').value = '15.444.555-6';
-                document.getElementById('f_parte_b_civil').value = 'chilena, soltera';
-                document.getElementById('f_parte_b_profesion').value = 'Abogada';
-                document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
-                document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
+                setSafeText('step2Title', 'Paso 2: Datos del Apoderado / Mandatario');
+                setSafeText('step2Desc', 'Identificación de la persona que recibe el encargo y actuará en representación del mandante.');
+                setSafeText('lbl_parte_b_nombre', 'Nombre Completo del Mandatario *');
+                setSafeVal('f_parte_b_nombre', 'María José Valenzuela Soto');
+                setSafeVal('f_parte_b_rut', '15.444.555-6');
+                setSafeVal('f_parte_b_civil', 'chilena, soltera');
+                setSafeVal('f_parte_b_profesion', 'Abogada');
+                setSafeVal('f_parte_b_domicilio', 'Av. Apoquindo 4500, Depto 801');
+                setSafeVal('f_parte_b_comuna', 'Las Condes, Santiago');
             }
 
             // Inyectar Selector de Modalidad en el Paso 1 para documentos con variantes
@@ -2600,6 +2648,22 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
             const emailB = document.getElementById('f_parte_b_email')?.value || 'trabajador@correo.cl';
             const telB = document.getElementById('f_parte_b_tel')?.value || '+56 9 8765 4321';
 
+            // Identificación y Representación Legal Dinámica
+            const esRepA_chk = document.getElementById('f_parte_a_es_rep')?.checked;
+            const empNomA = document.getElementById('f_parte_a_empresa_nombre')?.value || '';
+            const empRutA = document.getElementById('f_parte_a_empresa_rut')?.value || '';
+            const repA_clausula = esRepA_chk ? `, en representación convencional y legal de <span class="highlight-var" style="font-weight:700;">${escapeHtml(empNomA || 'Empresa Representada')}</span>, RUT N° <span class="highlight-var">${escapeHtml(empRutA || '76.XXX.XXX-X')}</span>` : '';
+
+            const esRepB_chk = document.getElementById('f_parte_b_es_rep')?.checked;
+            const empNomB = document.getElementById('f_parte_b_empresa_nombre')?.value || '';
+            const empRutB = document.getElementById('f_parte_b_empresa_rut')?.value || '';
+            const repB_clausula = esRepB_chk ? `, en representación convencional y legal de <span class="highlight-var" style="font-weight:700;">${escapeHtml(empNomB || 'Empresa Representada')}</span>, RUT N° <span class="highlight-var">${escapeHtml(empRutB || '76.XXX.XXX-X')}</span>` : '';
+
+            const tipoDocA = document.getElementById('f_parte_a_tipo_doc')?.value || 'RUT';
+            const docA_label = tipoDocA === 'PASAPORTE' ? 'pasaporte extranjero' : 'cédula nacional de identidad';
+            const tipoDocB = document.getElementById('f_parte_b_tipo_doc')?.value || 'RUT';
+            const docB_label = tipoDocB === 'PASAPORTE' ? 'pasaporte extranjero' : 'cédula nacional de identidad';
+
             // Actualizar firmas visuales
             const pvSignA = document.getElementById('pv_sign_parte_a');
             if (pvSignA) {
@@ -2863,8 +2927,8 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
             } else {
                 html = `
                     <p>En la ciudad de Santiago, República de Chile, a ${new Date().toLocaleDateString('es-CL')}, comparecen:</p>
-                    <p style="margin-top:0.6rem;"><strong>POR UNA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, de nacionalidad y estado civil <span class="highlight-var">${escapeHtml(civilA)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profA)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutA)}</span>, domiciliado en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, en adelante indistintamente como la "Parte Promitente Vendedora" o "Primer Compareciente";</p>
-                    <p style="margin-top:0.6rem;"><strong>Y POR LA OTRA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomB)}</span>, de nacionalidad y estado civil <span class="highlight-var">${escapeHtml(civilB)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profB)}</span>, cédula nacional de identidad número <span class="highlight-var">${escapeHtml(rutB)}</span>, domiciliado en <span class="highlight-var">${escapeHtml(domB)}</span>, comuna de <span class="highlight-var">${escapeHtml(comB)}</span>, en adelante indistintamente como la "Parte Promitente Compradora" o "Segunda Compareciente";</p>
+                    <p style="margin-top:0.6rem;"><strong>POR UNA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>${repA_clausula}, de nacionalidad y estado civil <span class="highlight-var">${escapeHtml(civilA)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profA)}</span>, ${docA_label} número <span class="highlight-var">${escapeHtml(rutA)}</span>, domiciliado en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, en adelante indistintamente como la "Parte Promitente Vendedora" o "Primer Compareciente";</p>
+                    <p style="margin-top:0.6rem;"><strong>Y POR LA OTRA PARTE:</strong> Don/Doña <span class="highlight-var">${escapeHtml(nomB)}</span>${repB_clausula}, de nacionalidad y estado civil <span class="highlight-var">${escapeHtml(civilB)}</span>, profesión u oficio <span class="highlight-var">${escapeHtml(profB)}</span>, ${docB_label} número <span class="highlight-var">${escapeHtml(rutB)}</span>, domiciliado en <span class="highlight-var">${escapeHtml(domB)}</span>, comuna de <span class="highlight-var">${escapeHtml(comB)}</span>, en adelante indistintamente como la "Parte Promitente Compradora" o "Segunda Compareciente";</p>
                     <p style="margin-top:0.6rem;">Ambos comparecientes mayores de edad, quienes acreditan su identidad con sus respectivas cédulas de identidad y declaran convenir en el otorgamiento del presente instrumento bajo las siguientes estipulaciones:</p>
                 `;
 
@@ -2963,7 +3027,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                         <p>En la ciudad de <strong>${escapeHtml(comA || 'Santiago')}</strong>, a <strong>${new Date().toLocaleDateString('es-CL')}</strong>, comparecen:</p>
                         
                         <p style="margin-top:0.6rem;">
-                            <strong>POR UNA PARTE:</strong> La entidad empleadora <span class="highlight-var">${escapeHtml(nomA)}</span>, RUT N° <span class="highlight-var">${escapeHtml(rutA)}</span>, Actividad / Giro: <span class="highlight-var">${escapeHtml(civilA)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, debidamente representada por <span class="highlight-var">${escapeHtml(profA)}</span>, en adelante indistintamente el <strong>«Empleador»</strong>; y
+                            <strong>POR UNA PARTE:</strong> ${esRepA_chk ? `La entidad empleadora <span class="highlight-var" style="font-weight:700;">${escapeHtml(empNomA || nomA)}</span>, RUT N° <span class="highlight-var">${escapeHtml(empRutA || rutA)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>, debidamente representada por Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, ${docA_label} N° <span class="highlight-var">${escapeHtml(rutA)}</span>` : `La parte empleadora Don/Doña <span class="highlight-var">${escapeHtml(nomA)}</span>, ${docA_label} N° <span class="highlight-var">${escapeHtml(rutA)}</span>, Actividad/Giro: <span class="highlight-var">${escapeHtml(civilA)}</span>, con domicilio en <span class="highlight-var">${escapeHtml(domA)}</span>, comuna de <span class="highlight-var">${escapeHtml(comA)}</span>`}, en adelante indistintamente el <strong>«Empleador»</strong>; y
                         </p>
                         
                         <p style="margin-top:0.6rem;">
