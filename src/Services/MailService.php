@@ -1,0 +1,107 @@
+<?php
+/**
+ * MailService - Servicio Centralizado de Notificaciones y Correos Transaccionales
+ * SinNotario.cl - Keystone Advisors
+ */
+
+class MailService {
+
+    /**
+     * Enviar correo HTML transaccional
+     */
+    public static function send($to, $subject, $htmlBody, $replyTo = null) {
+        $fromEmail = 'notificaciones@sinnotario.cl';
+        $fromName  = 'SinNotario.cl';
+
+        $headers = [];
+        $headers[] = 'MIME-Version: 1.0';
+        $headers[] = 'Content-type: text/html; charset=UTF-8';
+        $headers[] = "From: {$fromName} <{$fromEmail}>";
+        $headers[] = "Reply-To: " . ($replyTo ? $replyTo : "soporte@sinnotario.cl");
+        $headers[] = "X-Mailer: PHP/" . phpversion();
+
+        // Envolver en plantilla corporativa
+        $fullHtml = self::wrapTemplate($subject, $htmlBody);
+
+        return @mail($to, $subject, $fullHtml, implode("\r\n", $headers));
+    }
+
+    /**
+     * Enviar correo con enlace y código para restablecer contraseña
+     */
+    public static function sendPasswordReset($toEmail, $nombre, $resetLink, $tokenCode) {
+        $subject = "Recuperación de Contraseña — SinNotario.cl";
+        
+        $body = '
+            <p style="font-size:16px; color:#1E293B; margin-bottom:16px;">
+                Hola <strong>' . htmlspecialchars($nombre) . '</strong>,
+            </p>
+            <p style="font-size:14px; color:#475569; line-height:1.6; margin-bottom:20px;">
+                Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en <strong>SinNotario.cl</strong>. Si realizaste esta solicitud, puedes crear una nueva clave haciendo clic en el siguiente botón:
+            </p>
+            <div style="text-align:center; margin:30px 0;">
+                <a href="' . htmlspecialchars($resetLink) . '" style="background:#0066CC; color:#FFFFFF; text-decoration:none; padding:12px 28px; border-radius:8px; font-weight:700; font-size:15px; display:inline-block; box-shadow:0 4px 12px rgba(0,102,204,0.25);">
+                    Restablecer mi Contraseña
+                </a>
+            </div>
+            <p style="font-size:13px; color:#64748B; line-height:1.5; margin-bottom:12px;">
+                O si prefieres, copia y pega el siguiente enlace directo en tu navegador:<br>
+                <a href="' . htmlspecialchars($resetLink) . '" style="color:#0066CC; word-break:break-all;">' . htmlspecialchars($resetLink) . '</a>
+            </p>
+            <div style="background:#F8FAFC; border:1px dashed #CBD5E1; border-radius:8px; padding:14px; margin-top:20px; text-align:center;">
+                <span style="font-size:12px; color:#64748B; display:block; margin-bottom:4px;">Tu código de seguridad temporal:</span>
+                <strong style="font-size:18px; letter-spacing:3px; color:#0F2A4A;">' . htmlspecialchars(substr($tokenCode, 0, 8)) . '</strong>
+            </div>
+            <p style="font-size:12px; color:#94A3B8; line-height:1.5; margin-top:24px; border-top:1px solid #E2E8F0; padding-top:14px;">
+                ⚠️ Este enlace expirará en <strong>1 hora</strong> por motivos de seguridad. Si no solicitaste restablecer tu contraseña, puedes ignorar este correo de forma segura. Tu clave actual no sufrirá ningún cambio.
+            </p>
+        ';
+
+        return self::send($toEmail, $subject, $body);
+    }
+
+    /**
+     * Plantilla base corporativa HTML responsiva
+     */
+    private static function wrapTemplate($title, $contentHtml) {
+        return '<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>' . htmlspecialchars($title) . '</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F1F5F9; font-family:-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#F1F5F9; padding:30px 15px;">
+        <tr>
+            <td align="center">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:560px; background-color:#FFFFFF; border-radius:12px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.06); border:1px solid #E2E8F0;">
+                    <!-- Cabecera -->
+                    <tr>
+                        <td align="center" style="background:#0F2A4A; padding:24px 20px;">
+                            <span style="color:#FFFFFF; font-size:22px; font-weight:800; letter-spacing:-0.5px;">Sin<span style="color:#60A5FA;">Notario</span>.cl</span>
+                            <span style="display:block; color:#94A3B8; font-size:11px; margin-top:4px; text-transform:uppercase; letter-spacing:1px;">LegalTech &bull; Firma Electrónica Ley 19.799</span>
+                        </td>
+                    </tr>
+                    <!-- Cuerpo -->
+                    <tr>
+                        <td style="padding:32px 28px;">
+                            ' . $contentHtml . '
+                        </td>
+                    </tr>
+                    <!-- Pie de página -->
+                    <tr>
+                        <td align="center" style="background:#F8FAFC; border-top:1px solid #E2E8F0; padding:20px; font-size:11px; color:#94A3B8; line-height:1.5;">
+                            SinNotario.cl &bull; Keystone Advisors SpA<br>
+                            Plataforma de Firma Electrónica Avanzada y Contratos Legales Inteligentes.<br>
+                            Santiago de Chile &bull; Todos los derechos reservados.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>';
+    }
+}

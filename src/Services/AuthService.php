@@ -221,6 +221,112 @@ class AuthService {
     }
 
     /**
+     * Solicitar recuperación de contraseña (Genera token seguro y envía email)
+     */
+    public static function requestPasswordReset($email) {
+        $email = strtolower(trim($email));
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception("Por favor ingresa un correo electrónico válido.");
+        }
+
+        $stmt = self::getDb()->prepare("SELECT id, nombre, apellido, email, auth_provider FROM users WHERE LOWER(email) = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            // Por seguridad, retornamos éxito genérico para evitar enumeración de correos
+            return true;
+        }
+
+        if ($user['auth_provider'] === 'GOOGLE') {
+            throw new Exception("Esta cuenta utiliza autenticación con Google. Por favor ingresa haciendo clic en 'Continuar con Google'.");
+        }
+
+        // Invalidar tokens previos de este tipo
+        $stmtDel = self::getDb()->prepare("DELETE FROM user_tokens WHERE user_id = ? AND tipo = 'PASSWORD_RESET'");
+        $stmtDel->execute([$user['id']]);
+
+        // Generar nuevo token seguro y código
+        $token = bin2hex(random_bytes(32));
+        $expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+        $stmtToken = self::getDb()->prepare("
+            INSERT INTO user_tokens (user_id, tipo, token, expires_at, utilizado, created_at)
+            VALUES (?, 'PASSWORD_RESET', ?, ?, 0, datetime('now'))
+        ");
+        $stmtToken->execute([$user['id'], $token, $expires]);
+
+        // Construir link de recuperación
+        $baseUrl = getenv('APP_URL') ?: 'https://sinnotario.cl';
+        $resetLink = rtrim($baseUrl, '/') . "/recuperar.php?token=" . urlencode($token);
+
+        require_once __DIR__ . '/MailService.php';
+        MailService::sendPasswordReset($user['email'], $user['nombre'], $resetLink, $token);
+
+        return true;
+    }
+
+    /**
+     * Validar token de recuperación de contraseña
+     */
+    public static function validatePasswordResetToken($token) {
+        if (empty($token)) {
+            return false;
+        }
+
+        $stmt = self::getDb()->prepare("
+            SELECT t.*, u.email, u.nombre, u.apellido
+            FROM user_tokens t
+            JOIN users u ON u.id = t.user_id
+            WHERE t.token = ? AND t.tipo = 'PASSWORD_RESET' AND t.utilizado = 0 AND t.expires_at > datetime('now')
+        ");
+        $stmt->execute([$token]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Restablecer contraseña con token válido
+     */
+    public static function resetPasswordWithToken($token, $newPassword) {
+        if (empty($newPassword) || strlen($newPassword) < 6) {
+            throw new Exception("La nueva contraseña debe tener al menos 6 caracteres.");
+        }
+
+        $tokenData = self::validatePasswordResetToken($token);
+        if (!$tokenData) {
+            throw new Exception("El enlace de recuperación es inválido o ha expirado. Por favor solicita uno nuevo.");
+        }
+
+        $userId = $tokenData['user_id'];
+        $newHash = password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 11]);
+
+        self::getDb()->beginTransaction();
+        try {
+            // Actualizar contraseña
+            $stmtUpd = self::getDb()->prepare("
+                UPDATE users 
+                SET password_hash = ?, updated_at = datetime('now')
+                WHERE id = ?
+            ");
+            $stmtUpd->execute([$newHash, $userId]);
+
+            // Marcar token como utilizado
+            $stmtToken = self::getDb()->prepare("UPDATE user_tokens SET utilizado = 1 WHERE id = ?");
+            $stmtToken->execute([$tokenData['id']]);
+
+            // Revocar sesiones activas previas por seguridad
+            $stmtSess = self::getDb()->prepare("DELETE FROM user_sessions WHERE user_id = ?");
+            $stmtSess->execute([$userId]);
+
+            self::getDb()->commit();
+            return true;
+        } catch (Exception $e) {
+            self::getDb()->rollBack();
+            throw new Exception("Error al actualizar la contraseña: " . $e->getMessage());
+        }
+    }
+
+    /**
      * Establecer sesión local y generar token persistente
      */
     private static function establishSession($user, $remember = true) {

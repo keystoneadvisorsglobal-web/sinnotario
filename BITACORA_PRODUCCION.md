@@ -1,5 +1,28 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 13:56 UTC-3] - SOL-0059
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0059`
+- **Alcance de los Cambios:**
+  - **Módulo de Recuperación de Contraseña y Correos Transaccionales (`recuperar.php`):**
+    1. **Servicio de Correo Centralizado:**
+       - Se creó [`src/Services/MailService.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/src/Services/MailService.php) con diseño HTML corporativo responsivo bajo la marca SinNotario.cl, soporte de remitente oficial `notificaciones@sinnotario.cl` y código temporal de seguridad.
+    2. **Lógica Criptográfica de Tokens en Base de Datos:**
+       - Se implementaron los métodos `requestPasswordReset`, `validatePasswordResetToken` y `resetPasswordWithToken` en [`src/Services/AuthService.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/src/Services/AuthService.php).
+       - Los tokens se almacenan en la tabla `user_tokens` con caducidad estricta de 60 minutos y revocado automático de sesiones existentes tras el cambio de clave.
+    3. **Endpoints de API:**
+       - Se habilitaron `auth_forgot_password` y `auth_reset_password` en [`api/index.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/api/index.php).
+    4. **Frontend y UX:**
+       - Se desplegó la página [`recuperar.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/recuperar.php) con doble estado (solicitud de enlace y formulario de nueva clave validando coincidencia y longitud).
+       - Se agregó el enlace interactivo **"¿Olvidaste tu contraseña?"** en el formulario de login de [`login.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/login.php).
+- **Pruebas Validadas:**
+  - Validación sintáctica PHP Lint en servidor: 0 errores en todos los archivos modificados.
+  - Smoke tests HTTP en producción: `login.php` y `recuperar.php` respondiendo `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 13:45 UTC-3] - SOL-0058
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

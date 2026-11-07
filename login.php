@@ -302,6 +302,7 @@ if (empty($googleClientId)) {
                         <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:#475569;">
                             <input type="checkbox" id="loginRemember" checked> Recordarme en este equipo
                         </label>
+                        <a href="recuperar.php" style="color:#0066CC; text-decoration:none; font-weight:600;">¿Olvidaste tu contraseña?</a>
                     </div>
 
                     <button type="submit" class="btn-submit-auth" id="btnLoginSubmit">

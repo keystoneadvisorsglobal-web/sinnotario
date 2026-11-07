@@ -488,6 +488,39 @@ try {
             }
             break;
 
+        // 12b. Solicitar restablecimiento de contraseña (Forgot Password)
+        case 'auth_forgot_password':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+            $input = json_decode(file_get_contents('php://input'), true);
+            $email = $input['email'] ?? '';
+
+            try {
+                AuthService::requestPasswordReset($email);
+                jsonResponse(true, ['message' => 'Si el correo está registrado, recibirás un enlace de recuperación en los próximos minutos.']);
+            } catch (Exception $e) {
+                jsonResponse(false, null, $e->getMessage(), 400);
+            }
+            break;
+
+        // 12c. Restablecer contraseña con token
+        case 'auth_reset_password':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+            $input = json_decode(file_get_contents('php://input'), true);
+            $token = $input['token'] ?? '';
+            $password = $input['password'] ?? '';
+
+            try {
+                AuthService::resetPasswordWithToken($token, $password);
+                jsonResponse(true, ['message' => 'Tu contraseña ha sido restablecida exitosamente. Ya puedes iniciar sesión.']);
+            } catch (Exception $e) {
+                jsonResponse(false, null, $e->getMessage(), 400);
+            }
+            break;
+
         // 13. Obtener usuario autenticado actual
         case 'auth_current_user':
             $user = AuthService::getCurrentUser();
