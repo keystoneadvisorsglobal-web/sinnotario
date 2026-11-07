@@ -4,17 +4,19 @@
  */
 
 // Cargar variables de entorno si existe .env.production o .env
-function loadEnv($file) {
-    if (!file_exists($file)) return false;
-    $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if (empty($line) || strpos($line, '#') === 0) continue;
-        list($key, $value) = explode('=', $line, 2);
-        $_ENV[trim($key)] = trim($value);
-        putenv(trim($key) . '=' . trim($value));
+if (!function_exists('loadEnv')) {
+    function loadEnv($file) {
+        if (!file_exists($file)) return false;
+        $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line) || strpos($line, '#') === 0) continue;
+            list($key, $value) = explode('=', $line, 2);
+            $_ENV[trim($key)] = trim($value);
+            putenv(trim($key) . '=' . trim($value));
+        }
+        return true;
     }
-    return true;
 }
 
 $envFile = __DIR__ . '/../.env.production';

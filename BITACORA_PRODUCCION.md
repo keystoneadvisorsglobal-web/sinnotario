@@ -1,5 +1,23 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 12:55 UTC-3] - SOL-0057
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0057`
+- **Alcance de los Cambios:**
+  - **Hotfix Error 500 en `login.php` (Doble inclusión de `loadEnv`):**
+    1. **Identificación de la Causa:**
+       - En `login.php`, al consultar el `Google Client ID`, se invocaba `$config = require __DIR__ . '/config/app.php'`. Como `config/app.php` ya había sido incluido previamente con `require_once`, la función auxiliar `loadEnv()` intentaba redeclararse, generando un `Fatal error: Cannot redeclare loadEnv()`.
+    2. **Solución Implementada:**
+       - Se protegió la declaración en [`config/app.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/config/app.php) con `if (!function_exists('loadEnv'))`.
+       - En [`login.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/login.php) se simplificó la lectura de `GOOGLE_CLIENT_ID` utilizando directamente `getenv()` y la base de datos sin requerir nuevamente el archivo.
+- **Pruebas Validadas:**
+  - Ejecución CLI remota: 0 errores fatales.
+  - Smoke test HTTP en producción: `https://sinnotario.cl/login.php` respondiendo `HTTP/2 200 OK` de forma inmediata.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 05:13 UTC-3] - SOL-0055
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

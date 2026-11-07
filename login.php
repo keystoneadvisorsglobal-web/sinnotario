@@ -21,8 +21,7 @@ $pdo = Database::getInstance();
 $stmtG = $pdo->query("SELECT value FROM system_settings WHERE key = 'google_oauth_client_id'");
 $googleClientId = $stmtG ? $stmtG->fetchColumn() : '';
 if (empty($googleClientId)) {
-    $config = require __DIR__ . '/config/app.php';
-    $googleClientId = $config['google_oauth']['client_id'] ?? '';
+    $googleClientId = getenv('GOOGLE_CLIENT_ID') ?: '';
 }
 ?>
 <!DOCTYPE html>
