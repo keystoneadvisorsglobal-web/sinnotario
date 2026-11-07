@@ -1,5 +1,24 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 05:07 UTC-3] - SOL-0054
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0054`
+- **Alcance de los Cambios:**
+  - **Flexibilización de Esquema de Usuarios (RUT Opcional en Registro):**
+    1. **Resolución de Error de Integridad SQLite:**
+       - La definición original de `users` exigía `rut VARCHAR(12) NOT NULL UNIQUE`, lo cual generaba el error `SQLSTATE[23000]: Integrity constraint violation: 19 NOT NULL constraint failed: users.rut` cuando un cliente creaba su cuenta sin indicar el RUT en el formulario.
+    2. **Migración Segura en Producción:**
+       - Se ejecutó una migración transaccional con respaldo previo (`sinnotario.sqlite.bak_migration`) para redefinir `users` con `rut` como campo nullable.
+       - Se preservaron íntegramente las relaciones foráneas con `documents`, `user_sessions` y los datos existentes.
+    3. **Actualización de `Database.php`:**
+       - Se sincronizó la creación de esquemas futuros con la nueva definición sin restricciones rígidas en el alta.
+- **Pruebas Validadas:**
+  - Creación de cuenta en caliente con el correo `facturacion@keystoneadvisors.cl` sin ingresar RUT: retornó `{"success": true, "data": {"id": 2, ...}}` (`HTTP/2 200 OK`).
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 04:55 UTC-3] - SOL-0053
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

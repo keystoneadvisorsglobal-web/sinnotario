@@ -92,13 +92,20 @@ class Database {
             // Usuarios / Clientes
             "CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                rut VARCHAR(12) NOT NULL UNIQUE,
+                rut VARCHAR(12),
                 nombre VARCHAR(100) NOT NULL,
                 apellido VARCHAR(100) NOT NULL,
                 email VARCHAR(150) NOT NULL UNIQUE,
                 telefono VARCHAR(20),
                 password_hash VARCHAR(255),
                 tipo_persona VARCHAR(10) DEFAULT 'NATURAL', -- NATURAL / JURIDICA
+                auth_provider VARCHAR(20) DEFAULT 'LOCAL',
+                google_id VARCHAR(100),
+                avatar_url TEXT,
+                empresa_razon_social VARCHAR(200),
+                empresa_rut VARCHAR(20),
+                email_verificado BOOLEAN DEFAULT 0,
+                ultimo_login DATETIME,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );",
