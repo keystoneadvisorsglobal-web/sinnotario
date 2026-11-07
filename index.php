@@ -170,7 +170,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
                                 <i class="fas fa-file-excel"></i>
                             </div>
                             <h4>Carga Masiva desde Excel</h4>
-                            <p>Sube tu nómina en formato `.xlsx` o `.csv`. Nuestro Smart Bulk Wizard mapea y valida los RUTs con Módulo 11 y genera cientos de contratos individuales en segundos.</p>
+                            <p>Sube tu nómina en formato `.xlsx` o `.csv`. Nuestro Smart Bulk Wizard mapea y valida los RUTs y genera cientos de contratos individuales en segundos.</p>
                         </div>
 
                         <div class="b2b-card">
@@ -218,7 +218,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
         </section>
     </main>
 
-    <!-- Modal Wizard con Validación Módulo 11 -->
+    <!-- Modal Wizard con Validación de RUT -->
     <div id="wizardModal" class="modal-overlay">
         <div class="modal-content">
             <button class="modal-close" onclick="closeWizard()">&times;</button>

@@ -1,5 +1,21 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 00:58 UTC-3] - SOL-0044
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0044`
+- **Alcance de los Cambios:**
+  - **Limpieza de Nomenclatura UX (Supresión del texto técnico 'Módulo 11'):**
+    1. Reemplazo en todas las interfaces de usuario de `RUT (Módulo 11) *` por `RUT *`, `RUT de la Contraparte *` y `RUT Empresa *`.
+    2. Modificación de textos descriptivos y modales en `redactar.php`, `subir-documento.php`, `index.php`, `empresas.php` y comentarios en `app.js`.
+    3. Mantenimiento intacto del algoritmo matemático en background (`RutHelper.validate()` y `RutHelper.format()`) para asegurar la verificación del dígito verificador sin confundir al usuario común con tecnicismos matemáticos.
+- **Pruebas Validadas:**
+  - PHP Lint remoto en Hostinger: 0 errores de sintaxis.
+  - Smoke tests HTTP en producción: `subir-documento.php`, `redactar.php`, `index.php` y `empresas.php` retornando `HTTP/2 200 OK` con `Contains Módulo 11: False`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 00:50 UTC-3] - SOL-0043
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

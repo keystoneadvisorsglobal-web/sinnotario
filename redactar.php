@@ -330,7 +330,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                         Paso 1: Datos del Titular / Primer Compareciente
                     </h2>
                     <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.5rem;" id="step1Desc">
-                        Ingresa los datos de identificación oficial. Se validará con RUT Módulo 11 para la firma electrónica.
+                        Ingresa los datos de identificación oficial. Se validará con RUT para la firma electrónica.
                     </p>
 
                     <!-- CONTENEDOR DINÁMICO DEL SELECTOR DE MODALIDAD / VARIANTE DE PLANTILLA (PASO 1) -->
@@ -349,7 +349,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                                     <input type="text" id="f_parte_a_empresa_nombre" class="form-control" placeholder="Ej: Keystone Advisors SpA">
                                 </div>
                                 <div class="form-group">
-                                    <label>RUT Empresa Representada (Módulo 11) *</label>
+                                    <label>RUT Empresa Representada *</label>
                                     <input type="text" id="f_parte_a_empresa_rut" class="form-control" placeholder="Ej: 76.123.456-7" maxlength="12">
                                     <span id="err_parte_a_empresa_rut" class="rut-error-text">RUT inválido</span>
                                 </div>
@@ -377,7 +377,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                             <input type="text" id="f_parte_a_nombre" class="form-control" placeholder="Ej: Juan Andrés Pérez González" value="Juan Andrés Pérez González">
                         </div>
                         <div class="form-group">
-                            <label id="lbl_parte_a_rut">RUT (Módulo 11) *</label>
+                            <label id="lbl_parte_a_rut">RUT *</label>
                             <input type="text" id="f_parte_a_rut" class="form-control" placeholder="12.345.678-5" value="12.345.678-5" maxlength="25">
                             <span id="err_parte_a_rut" class="rut-error-text">RUT inválido</span>
                         </div>
@@ -447,7 +447,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                                         <input type="text" id="f_parte_b_empresa_nombre" class="form-control" placeholder="Ej: Servicios Profesionales Ltda.">
                                     </div>
                                     <div class="form-group">
-                                        <label>RUT Empresa Representada (Módulo 11) *</label>
+                                        <label>RUT Empresa Representada *</label>
                                         <input type="text" id="f_parte_b_empresa_rut" class="form-control" placeholder="Ej: 77.654.321-0" maxlength="12">
                                         <span id="err_parte_b_empresa_rut" class="rut-error-text">RUT inválido</span>
                                     </div>
@@ -475,7 +475,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                                 <input type="text" id="f_parte_b_nombre" class="form-control" placeholder="Ej: María José Valenzuela" value="María José Valenzuela">
                             </div>
                             <div class="form-group">
-                                <label id="lbl_parte_b_rut">RUT de la Contraparte (Módulo 11) *</label>
+                                <label id="lbl_parte_b_rut">RUT de la Contraparte *</label>
                                 <input type="text" id="f_parte_b_rut" class="form-control" placeholder="15.444.555-6" value="15.444.555-6" maxlength="25">
                                 <span id="err_parte_b_rut" class="rut-error-text">RUT inválido</span>
                             </div>
@@ -705,7 +705,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                 }
                 if (wrapPais) wrapPais.style.display = 'block';
             } else {
-                if (lbl) lbl.innerText = 'RUT (Módulo 11) *';
+                if (lbl) lbl.innerText = 'RUT *';
                 if (input) input.placeholder = '12.345.678-5';
                 if (wrapPais) wrapPais.style.display = 'none';
             }
@@ -726,7 +726,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                 }
                 if (wrapPais) wrapPais.style.display = 'block';
             } else {
-                if (lbl) lbl.innerText = 'RUT de la Contraparte (Módulo 11) *';
+                if (lbl) lbl.innerText = 'RUT de la Contraparte *';
                 if (input) input.placeholder = '15.444.555-6';
                 if (wrapPais) wrapPais.style.display = 'none';
             }
@@ -815,7 +815,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                 }
                 if (wrapPais) wrapPais.style.display = 'block';
             } else {
-                if (lbl) lbl.innerText = 'RUT (Módulo 11) *';
+                if (lbl) lbl.innerText = 'RUT *';
                 if (input) input.placeholder = '11.222.333-4';
                 if (wrapPais) wrapPais.style.display = 'none';
             }
@@ -2264,7 +2264,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                                     <input type="text" id="f_deuda_aval_nombre" class="form-control" value="Rodrigo Ignacio Morales Soto">
                                 </div>
                                 <div class="form-group">
-                                    <label>RUT del Aval / Codeudor (Módulo 11) *</label>
+                                    <label>RUT del Aval / Codeudor *</label>
                                     <input type="text" id="f_deuda_aval_rut" class="form-control" value="16.789.012-3">
                                 </div>
                             </div>

@@ -422,7 +422,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                                 Paso 2: Comparecientes / Firmantes
                             </h2>
                             <p style="font-size: 0.85rem; color: #64748B; margin: 0;">
-                                Individualiza a las partes que firmarán el documento con RUT Módulo 11 oficial.
+                                Individualiza a las partes que firmarán el documento con RUT oficial.
                             </p>
                         </div>
                         <button type="button" class="btn-cta btn-secondary" style="padding:0.4rem 0.85rem; font-size:0.82rem;" onclick="addSignerRow()">
@@ -452,7 +452,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                                         <input type="text" class="form-control sig-empresa-nombre" placeholder="Ej: Inversiones y Servicios SpA">
                                     </div>
                                     <div class="form-group">
-                                        <label>RUT Empresa (Módulo 11) *</label>
+                                        <label>RUT Empresa *</label>
                                         <input type="text" class="form-control sig-empresa-rut" placeholder="76.123.456-7" oninput="RutHelper.format(this.value)">
                                     </div>
                                 </div>
@@ -467,7 +467,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label class="lbl-id-num" id="lbl_id_0">RUT (Módulo 11) *</label>
+                                    <label class="lbl-id-num" id="lbl_id_0">RUT *</label>
                                     <input type="text" class="form-control sig-rut" placeholder="12.345.678-5" value="12.345.678-5">
                                 </div>
                                 <div class="form-group sig-pais-wrap" id="pais_wrap_0" style="display:none;">
@@ -520,7 +520,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                                         <input type="text" class="form-control sig-empresa-nombre" placeholder="Ej: Servicios Profesionales SpA">
                                     </div>
                                     <div class="form-group">
-                                        <label>RUT Empresa (Módulo 11) *</label>
+                                        <label>RUT Empresa *</label>
                                         <input type="text" class="form-control sig-empresa-rut" placeholder="77.987.654-3" oninput="RutHelper.format(this.value)">
                                     </div>
                                 </div>
@@ -535,7 +535,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label class="lbl-id-num" id="lbl_id_1">RUT (Módulo 11) *</label>
+                                    <label class="lbl-id-num" id="lbl_id_1">RUT *</label>
                                     <input type="text" class="form-control sig-rut" placeholder="15.444.555-6" value="15.444.555-6">
                                 </div>
                                 <div class="form-group sig-pais-wrap" id="pais_wrap_1" style="display:none;">
@@ -1002,7 +1002,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                 }
                 if (paisWrap) paisWrap.style.display = 'block';
             } else {
-                if (lbl) lbl.innerText = 'RUT (Módulo 11) *';
+                if (lbl) lbl.innerText = 'RUT *';
                 if (inputRut) {
                     inputRut.placeholder = '12.345.678-5';
                 }
@@ -1075,7 +1075,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                             <input type="text" class="form-control sig-empresa-nombre" placeholder="Ej: Empresa SpA">
                         </div>
                         <div class="form-group">
-                            <label>RUT Empresa (Módulo 11) *</label>
+                            <label>RUT Empresa *</label>
                             <input type="text" class="form-control sig-empresa-rut" placeholder="76.123.456-7" oninput="RutHelper.format(this.value)">
                         </div>
                     </div>
@@ -1090,7 +1090,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="lbl-id-num" id="lbl_id_${idx}">RUT (Módulo 11) *</label>
+                        <label class="lbl-id-num" id="lbl_id_${idx}">RUT *</label>
                         <input type="text" class="form-control sig-rut" placeholder="Ej: 11.222.333-4">
                     </div>
                     <div class="form-group sig-pais-wrap" id="pais_wrap_${idx}" style="display:none;">

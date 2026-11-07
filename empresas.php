@@ -73,7 +73,7 @@ require_once __DIR__ . '/config/app.php';
                 Smart Bulk Wizard: Carga Masiva y Firma en 1 Clic
             </h1>
             <p style="color: #64748B; font-size: 1rem; max-width: 700px; margin: 0 auto;">
-                Sube tu planilla de trabajadores o contratos de arriendo en Excel/CSV. Nuestro motor valida los RUTs con Módulo 11 y genera los contratos en bloque para firma masiva con ClaveÚnica.
+                Sube tu planilla de trabajadores o contratos de arriendo en Excel/CSV. Nuestro motor valida los RUTs y genera los contratos en bloque para firma masiva con ClaveÚnica.
             </p>
         </div>
 
@@ -96,7 +96,7 @@ require_once __DIR__ . '/config/app.php';
         <div id="parsedWrap" class="parsed-table-wrap">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
                 <div>
-                    <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary);">Nómina Procesada & Validación Módulo 11</h3>
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary);">Nómina Procesada & Validación de RUT</h3>
                     <p style="font-size: 0.85rem; color: #64748B;">Revisa los datos antes de emitir los contratos y despachar los WhatsApp.</p>
                 </div>
                 <button class="btn-cta btn-gold" onclick="alert('Generando lote de contratos y preparando firma masiva...')">
@@ -110,7 +110,7 @@ require_once __DIR__ . '/config/app.php';
                         <tr style="background:#F8FAFC; color:#64748B; text-align:left;">
                             <th style="padding:0.75rem;">Fila</th>
                             <th style="padding:0.75rem;">Nombre Colaborador</th>
-                            <th style="padding:0.75rem;">RUT (Módulo 11)</th>
+                            <th style="padding:0.75rem;">RUT</th>
                             <th style="padding:0.75rem;">Correo</th>
                             <th style="padding:0.75rem;">WhatsApp</th>
                             <th style="padding:0.75rem;">Cargo</th>

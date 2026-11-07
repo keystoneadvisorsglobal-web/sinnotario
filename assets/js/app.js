@@ -2,7 +2,7 @@
  * SinNotario.cl - Motor de Aplicación y Frontend Interactivo
  */
 
-// Utilidad Oficial: Validación y Formato de RUT Chileno (Módulo 11)
+// Utilidad Oficial: Validación y Formato de RUT Chileno 
 window.RutHelper = {
     clean(rut) {
         return typeof rut === 'string' ? rut.replace(/[^0-9kK]/g, '').toUpperCase() : '';
