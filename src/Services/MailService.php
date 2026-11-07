@@ -9,16 +9,30 @@ require_once __DIR__ . '/KeystoneSmtpClient.php';
 class MailService {
 
     /**
-     * Obtener configuración SMTP
+     * Obtener configuración SMTP (Prioriza base de datos system_settings, luego variables de entorno)
      */
     private static function getSmtpConfig() {
+        $dbConfig = [];
+        try {
+            require_once __DIR__ . '/../../database/Database.php';
+            $pdo = Database::getInstance();
+            $stmt = $pdo->query("SELECT key, value FROM system_settings WHERE key LIKE 'smtp_%'");
+            if ($stmt) {
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $dbConfig[$row['key']] = $row['value'];
+                }
+            }
+        } catch (Exception $e) {
+            // Silencioso
+        }
+
         return [
-            'smtp_host' => getenv('SMTP_HOST') ?: 'smtp.titan.email',
-            'smtp_port' => (int)(getenv('SMTP_PORT') ?: 465),
-            'smtp_user' => getenv('SMTP_USER') ?: 'contacto@keystoneadvisors.cl',
-            'smtp_pass' => getenv('SMTP_PASS') ?: 'Jaba10281029#123456',
-            'smtp_from' => getenv('SMTP_FROM') ?: 'contacto@keystoneadvisors.cl',
-            'smtp_name' => 'SinNotario.cl'
+            'smtp_host' => $dbConfig['smtp_host'] ?? (getenv('SMTP_HOST') ?: 'smtp.titan.email'),
+            'smtp_port' => (int)($dbConfig['smtp_port'] ?? (getenv('SMTP_PORT') ?: 465)),
+            'smtp_user' => $dbConfig['smtp_user'] ?? (getenv('SMTP_USER') ?: 'contacto@keystoneadvisors.cl'),
+            'smtp_pass' => $dbConfig['smtp_pass'] ?? (getenv('SMTP_PASS') ?: 'Jaba10281029#123456'),
+            'smtp_from' => $dbConfig['smtp_from'] ?? (getenv('SMTP_FROM') ?: 'contacto@keystoneadvisors.cl'),
+            'smtp_name' => $dbConfig['smtp_name'] ?? (getenv('SMTP_NAME') ?: 'SinNotario.cl')
         ];
     }
 

@@ -77,7 +77,16 @@ if (isset($_POST['save_pricing_settings'])) {
         $stmtG->execute([$gClientId]);
     }
 
-    $msgPricingSuccess = '¡Parámetros del sistema y tarifas actualizadas exitosamente!';
+    // Parámetros SMTP para Correos Transaccionales
+    $smtpFields = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'smtp_name'];
+    $stmtSmtp = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+    foreach ($smtpFields as $sf) {
+        if (isset($_POST[$sf])) {
+            $stmtSmtp->execute([$sf, trim($_POST[$sf])]);
+        }
+    }
+
+    $msgPricingSuccess = '¡Parámetros del sistema, credenciales y tarifas actualizadas exitosamente!';
 }
 
 // Cargar configuración de precios actual
@@ -475,6 +484,45 @@ $allTemplates = $stmtTemplates->fetchAll();
                                 ID de cliente de la consola de Google Cloud (ej: <code>xxxx.apps.googleusercontent.com</code>) para habilitar "Continuar con Google".
                             </p>
                             <input type="text" name="google_oauth_client_id" class="form-control" placeholder="Ej: 123456789-abcdef.apps.googleusercontent.com" value="<?= htmlspecialchars($sysSettings['google_oauth_client_id'] ?? '') ?>">
+                        </div>
+
+                        <!-- Configuración SMTP para Correos Transaccionales -->
+                        <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
+                            <div style="margin-bottom:1rem;">
+                                <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem; font-size:1rem;">
+                                    <i class="fas fa-envelope-open-text" style="color:#0284C7;"></i> Configuración SMTP (Servidor de Correos y Casilla Oficial)
+                                </label>
+                                <p style="font-size:0.78rem; color:#64748B; margin:0.15rem 0 0;">
+                                    Parámetros para el despacho de correos transaccionales (recuperación de contraseña, notificaciones de firma y comprobantes).
+                                </p>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem;">
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Servidor SMTP Host</label>
+                                    <input type="text" name="smtp_host" class="form-control" placeholder="smtp.titan.email" value="<?= htmlspecialchars($sysSettings['smtp_host'] ?? 'smtp.titan.email') ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Puerto (465 SSL / 587 TLS)</label>
+                                    <input type="number" name="smtp_port" class="form-control" placeholder="465" value="<?= htmlspecialchars($sysSettings['smtp_port'] ?? '465') ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Usuario / Casilla SMTP</label>
+                                    <input type="email" name="smtp_user" class="form-control" placeholder="contacto@keystoneadvisors.cl" value="<?= htmlspecialchars($sysSettings['smtp_user'] ?? 'contacto@keystoneadvisors.cl') ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Contraseña de Casilla SMTP</label>
+                                    <input type="password" name="smtp_pass" class="form-control" placeholder="••••••••" value="<?= htmlspecialchars($sysSettings['smtp_pass'] ?? 'Jaba10281029#123456') ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Correo Remitente (From)</label>
+                                    <input type="email" name="smtp_from" class="form-control" placeholder="contacto@keystoneadvisors.cl" value="<?= htmlspecialchars($sysSettings['smtp_from'] ?? 'contacto@keystoneadvisors.cl') ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Nombre del Remitente</label>
+                                    <input type="text" name="smtp_name" class="form-control" placeholder="SinNotario.cl" value="<?= htmlspecialchars($sysSettings['smtp_name'] ?? 'SinNotario.cl') ?>">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
