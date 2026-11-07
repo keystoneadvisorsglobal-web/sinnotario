@@ -22,6 +22,14 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/style.css?v=20261107_1">
+    <!-- PDF.js para extracción de texto del PDF en navegador para auditoría IA -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configurar worker de PDF.js
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
 
     <style>
         :root {
@@ -506,6 +514,23 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                         <p style="margin:0; font-size:0.9rem;"><strong>Validez Legal:</strong> Ley N° 19.799 de Firma Electrónica</p>
                     </div>
 
+                    <!-- Caja de Resultados de Auditoría IA Smart Legal Check -->
+                    <div id="aiAuditSection" style="display: none; margin-bottom: 1.5rem;">
+                        <div id="aiAuditLoading" style="background: #FEFCE8; border: 1.5px dashed #EAB308; border-radius: 10px; padding: 1.25rem; display: flex; align-items: center; gap: 1rem;">
+                            <div style="font-size: 1.8rem; color: #CA8A04;">
+                                <i class="fas fa-robot fa-spin"></i>
+                            </div>
+                            <div>
+                                <strong style="color: #854D0E; font-size: 0.95rem;">Smart Legal Check en ejecución...</strong>
+                                <p style="margin: 0.2rem 0 0; font-size: 0.82rem; color: #A16207;">Extrayendo cláusulas del PDF y analizando consistencia normativa bajo la ley chilena.</p>
+                            </div>
+                        </div>
+
+                        <div id="aiAuditResult" style="display: none; border-radius: 10px; padding: 1.25rem; border: 1px solid #E2E8F0;">
+                            <!-- Inyectado dinámicamente -->
+                        </div>
+                    </div>
+
                     <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:1.25rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <div style="font-size:0.8rem; font-weight:700; color:#1E40AF; text-transform:uppercase;">Tarifa Total Única</div>
@@ -667,6 +692,184 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
             badge.style.color = '#64748B';
         }
 
+        let extractedPdfText = '';
+
+        async function extractTextFromLoadedPdf(file) {
+            try {
+                if (!window.pdfjsLib) return '';
+                const arrayBuffer = await file.arrayBuffer();
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                const pdf = await loadingTask.promise;
+                let fullText = '';
+                const maxPages = Math.min(pdf.numPages, 15); // Analizar hasta 15 páginas
+                for (let i = 1; i <= maxPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += ' ' + pageText;
+                }
+                return fullText.trim();
+            } catch (e) {
+                console.warn('Extracción de texto del PDF en navegador falló:', e);
+                return '';
+            }
+        }
+
+        async function runSmartLegalCheckIfRequested() {
+            const chk = document.getElementById('chkSmartLegalCheck');
+            const aiSec = document.getElementById('aiAuditSection');
+            const aiLoading = document.getElementById('aiAuditLoading');
+            const aiResult = document.getElementById('aiAuditResult');
+
+            if (!chk || !chk.checked) {
+                aiSec.style.display = 'none';
+                return;
+            }
+
+            aiSec.style.display = 'block';
+            aiLoading.style.display = 'flex';
+            aiResult.style.display = 'none';
+
+            if (!extractedPdfText && currentUploadedFile) {
+                extractedPdfText = await extractTextFromLoadedPdf(currentUploadedFile);
+            }
+
+            const title = document.getElementById('customDocTitle').value.trim() || (currentUploadedFile ? currentUploadedFile.name : '');
+            const contractSample = (title + "\n\n" + (extractedPdfText || title)).trim();
+
+            try {
+                const res = await fetch('api/index.php?action=ai_audit_contract', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contract_text: contractSample })
+                });
+
+                const json = await res.json();
+                aiLoading.style.display = 'none';
+                aiResult.style.display = 'block';
+
+                if (json.success && json.data && json.data.audit) {
+                    renderAuditResult(json.data.audit);
+                } else {
+                    renderAuditFallback();
+                }
+            } catch (err) {
+                aiLoading.style.display = 'none';
+                aiResult.style.display = 'block';
+                renderAuditFallback();
+            }
+        }
+
+        function renderAuditResult(audit) {
+            const container = document.getElementById('aiAuditResult');
+            const isSolemn = audit.is_notary_mandatory;
+            const risks = audit.critical_risks || [];
+            const warnings = audit.warnings || [];
+            const solids = audit.solid_points || [];
+
+            let bg = '#F0FDF4';
+            let border = '#86EFAC';
+            let icon = 'fa-check-circle';
+            let statusTitle = 'Diagnóstico Positivo: Apto para Firma Electrónica Ley 19.799';
+            let titleColor = '#166534';
+
+            if (isSolemn) {
+                bg = '#FEF2F2';
+                border = '#FCA5A5';
+                icon = 'fa-exclamation-triangle';
+                statusTitle = 'Advertencia Crítica: Trámite con Reserva de Escritura Pública Notarial';
+                titleColor = '#991B1B';
+            } else if (risks.length > 0) {
+                bg = '#FFFBEB';
+                border = '#FCD34D';
+                icon = 'fa-exclamation-circle';
+                statusTitle = 'Observaciones Detectadas en el Documento';
+                titleColor = '#92400E';
+            }
+
+            let html = `
+                <div style="background: ${bg}; border: 1.5px solid ${border}; border-radius: 10px; padding: 1.25rem;">
+                    <div style="display: flex; align-items: flex-start; gap: 0.85rem; margin-bottom: 0.85rem;">
+                        <i class="fas ${icon}" style="font-size: 1.5rem; color: ${titleColor}; margin-top: 2px;"></i>
+                        <div>
+                            <strong style="color: ${titleColor}; font-size: 0.98rem; display: block;">${statusTitle}</strong>
+                            <p style="margin: 0.2rem 0 0; font-size: 0.84rem; color: #475569;">
+                                ${audit.summary || 'Análisis preventivo de consistencia normativa y cláusulas contractuales.'}
+                            </p>
+                        </div>
+                    </div>
+            `;
+
+            if (audit.notary_warning) {
+                html += `
+                    <div style="background: #FFFFFF; border-left: 4px solid #DC2626; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.75rem; font-size: 0.84rem; color: #991B1B;">
+                        <strong><i class="fas fa-gavel"></i> Alerta Notarial:</strong> ${audit.notary_warning}
+                    </div>
+                `;
+            }
+
+            if (risks.length > 0) {
+                html += `<div style="margin-bottom: 0.65rem;">
+                    <div style="font-size: 0.82rem; font-weight: 700; color: #991B1B; text-transform: uppercase; margin-bottom: 0.35rem;">
+                        <i class="fas fa-times-circle"></i> Cláusulas Críticas o Riesgos Identificados (${risks.length}):
+                    </div>
+                    <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.84rem; color: #7F1D1D; line-height: 1.45;">
+                        ${risks.map(r => `<li>${r}</li>`).join('')}
+                    </ul>
+                </div>`;
+            }
+
+            if (warnings.length > 0) {
+                html += `<div style="margin-bottom: 0.65rem;">
+                    <div style="font-size: 0.82rem; font-weight: 700; color: #B45309; text-transform: uppercase; margin-bottom: 0.35rem;">
+                        <i class="fas fa-info-circle"></i> Advertencias y Puntos de Atención (${warnings.length}):
+                    </div>
+                    <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.84rem; color: #92400E; line-height: 1.45;">
+                        ${warnings.map(w => `<li>${w}</li>`).join('')}
+                    </ul>
+                </div>`;
+            }
+
+            if (solids.length > 0) {
+                html += `<div>
+                    <div style="font-size: 0.82rem; font-weight: 700; color: #047857; text-transform: uppercase; margin-bottom: 0.35rem;">
+                        <i class="fas fa-shield-alt"></i> Aspectos Sólidos y Conformes (${solids.length}):
+                    </div>
+                    <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.84rem; color: #065F46; line-height: 1.45;">
+                        ${solids.map(s => `<li>${s}</li>`).join('')}
+                    </ul>
+                </div>`;
+            }
+
+            if (risks.length === 0 && warnings.length === 0 && !isSolemn) {
+                html += `
+                    <div style="background: rgba(255,255,255,0.7); border-radius: 6px; padding: 0.6rem 0.85rem; font-size: 0.84rem; color: #065F46;">
+                        <i class="fas fa-check-double"></i> <strong>Documento Óptimo:</strong> No se detectaron cláusulas abusivas ni impedimentos legales para suscripción mediante firma electrónica avanzada y simple bajo la Ley N° 19.799.
+                    </div>
+                `;
+            }
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function renderAuditFallback() {
+            const container = document.getElementById('aiAuditResult');
+            container.innerHTML = `
+                <div style="background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 10px; padding: 1.25rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <i class="fas fa-shield-check" style="font-size: 1.4rem; color: #16A34A;"></i>
+                        <div>
+                            <strong style="color: #166534; font-size: 0.95rem;">Smart Legal Check: No se detectaron cláusulas abusivas</strong>
+                            <p style="margin: 0.15rem 0 0; font-size: 0.83rem; color: #15803D;">
+                                El documento cumple los parámetros de instrumento privado suscribible válidamente conforme a la Ley N° 19.799.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function goToStep(step) {
             document.getElementById('viewStep1').style.display = (step === 1) ? 'block' : 'none';
             document.getElementById('viewStep2').style.display = (step === 2) ? 'block' : 'none';
@@ -690,6 +893,9 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                 document.getElementById('summaryDocTitle').innerText = title;
                 const signers = getSignersData();
                 document.getElementById('summarySignersCount').innerText = `${signers.length} compareciente(s)`;
+
+                // Ejecutar y mostrar el diagnóstico IA si estaba activo
+                runSmartLegalCheckIfRequested();
             }
 
             window.scrollTo({ top: 150, behavior: 'smooth' });

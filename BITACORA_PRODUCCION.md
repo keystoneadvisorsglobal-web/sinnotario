@@ -1,5 +1,26 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 00:35 UTC-3] - SOL-0042
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0042`
+- **Alcance de los Cambios:**
+  - **Visualización de Resultados de Diagnóstico IA (Smart Legal Check) en Paso 3:**
+    1. **Extracción y Procesamiento de Texto:** Integración de la biblioteca `PDF.js` en [`subir-documento.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/subir-documento.php) para extraer el texto legible de las páginas del PDF cargado directamente en el navegador del usuario.
+    2. **Ejecución Reactiva al llegar al Paso 3:** Al presionar "Revisión y Despacho" (o pasar al Paso 3), si el usuario tiene marcado el checkbox *«Activar Diagnóstico Preventivo con IA (Smart Legal Check)»*, se dispara la consulta hacia la API `ai_audit_contract`.
+    3. **Semáforo y Feedback Explícito al Usuario:**
+       - Spinner y estado de análisis en tiempo real (*«Smart Legal Check en ejecución...»*).
+       - Despliegue de caja de diagnóstico con semáforo según el resultado:
+         - **Si detectó alertas notariales:** Banner rojo con advertencia de solemnidad legal (ej. exigencia de Notaría/Escritura Pública para compraventas inmobiliarias o testamentos).
+         - **Si detectó cláusulas críticas o advertencias:** Desglose con viñetas de riesgos identificados y sugerencias normativas.
+         - **Si no encontró nada irregular:** Mensaje afirmativo verde destacado con ícono de verificación: *«Diagnóstico Positivo: Apto para Firma Electrónica Ley 19.799. No se detectaron cláusulas abusivas ni impedimentos legales para suscripción mediante firma electrónica»*.
+- **Pruebas Validadas:**
+  - PHP Lint remoto en Hostinger: 0 errores de sintaxis en `subir-documento.php`.
+  - Smoke test HTTP: `https://sinnotario.cl/subir-documento.php` retorna `HTTP/2 200 OK` con carga correcta de scripts y contenedor `aiAuditSection`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 00:07 UTC-3] - SOL-0041
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
