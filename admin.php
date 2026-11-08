@@ -952,7 +952,7 @@ $allTemplates = $stmtTemplates->fetchAll();
                                 <p style="font-size:0.78rem; color:#64748B; margin:0.15rem 0 0.4rem;">
                                     Monto que se suma al total por cada firmante que exceda al 1er firmante base.
                                 </p>
-                                <input type="number" name="precio_firma_extra" class="form-control" style="font-weight:800; font-size:1.1rem; color:#1E40AF;" value="<?= $currentPrecioExtra ?>" min="0" step="500" required>
+                                <input type="number" name="precio_firma_extra" class="form-control" style="font-weight:800; font-size:1.1rem; color:#1E40AF;" value="<?= $currentPrecioExtra ?>" min="0" step="1" required>
                             </div>
 
                             <div class="form-group">
@@ -962,7 +962,7 @@ $allTemplates = $stmtTemplates->fetchAll();
                                 <p style="font-size:0.78rem; color:#64748B; margin:0.15rem 0 0.4rem;">
                                     Tarifa base para documentos redactados por el cliente (incluye 1 firmante + bóveda R2).
                                 </p>
-                                <input type="number" name="precio_base_subir_pdf" class="form-control" style="font-weight:800; font-size:1.1rem; color:#065F46;" value="<?= $currentPrecioBasePdf ?>" min="0" step="500" required>
+                                <input type="number" name="precio_base_subir_pdf" class="form-control" style="font-weight:800; font-size:1.1rem; color:#065F46;" value="<?= $currentPrecioBasePdf ?>" min="0" step="1" required>
                             </div>
                         </div>
 
@@ -1058,7 +1058,7 @@ $allTemplates = $stmtTemplates->fetchAll();
                                         <td>
                                             <div style="display:flex; align-items:center; gap:0.35rem;">
                                                 <span style="font-weight:700; color:#64748B;">$</span>
-                                                <input type="number" name="tpl_prices[<?= $tpl['id'] ?>]" class="form-control" style="font-weight:800; text-align:right;" value="<?= (int)$tpl['precio_base'] ?>" min="0" step="500" required>
+                                                <input type="number" name="tpl_prices[<?= $tpl['id'] ?>]" class="form-control" style="font-weight:800; text-align:right;" value="<?= (int)$tpl['precio_base'] ?>" min="0" step="1" required>
                                                 <span style="font-size:0.75rem; color:#64748B;">CLP</span>
                                             </div>
                                         </td>
