@@ -374,6 +374,18 @@ def create_document():
     add_bullet("Línea de tiempo interactiva post-pago que indica quién ya firmó y quién está pendiente, con botón de reenvío de enlace por WhatsApp en un clic.", "Live Tracker de Firmas: ")
     add_bullet("Interfaz formal orientada a bancos y juzgados para validar documentos por Folio o cálculo forense de Hash SHA-256 de archivos PDF subidos.", "Validador Público (/verificar): ")
 
+    add_h2("3.13. Módulo 13: Motor de Facturación Electrónica Automática SII (Boletas y Facturas DTE)")
+    add_body("Cumplimiento normativo estricto ante el Servicio de Impuestos Internos (SII) de Chile con emisión inmediata de comprobantes tributarios electrónicos tras la confirmación de pago.")
+    add_bullet("Paso previo al pago donde el cliente decide entre: A) Boleta Electrónica (DTE 39) para personas naturales con prellenado de RUT/email; o B) Factura Electrónica Afecta con 19% IVA (DTE 33) para empresas, capturando RUT, Razón Social, Giro Comercial, Dirección Tributaria, Comuna y Correo DTE.", "Bifurcación Tributaria Obligatoria en Checkout: ")
+    add_bullet("Doble alternativa técnica: Integración ágil vía API DTE homologada (SimpleBoleta, LibreDTE, Haulmer/OpenFactura) o Conexión directa SOAP al SII con Certificado Digital del Representante Legal (.pfx/.p12) y timbrado CAF.", "Arquitectura de Conexión y Timbrado SII: ")
+    add_bullet("Entrega automática del archivo XML legal y PDF con Timbre Electrónico del SII (TED/PDF417) al correo del cliente y disponibilidad permanente en 'Mi Bóveda' (/mi-cuenta).", "Despacho y Resguardo Tributario: ")
+
+    add_h2("3.14. Módulo 14: Infraestructura de Correo Transaccional Oficial (Titan Mail SMTP & Casillas Operativas)")
+    add_body("Infraestructura de correo empresarial de alta reputación para erradicar el spam y asegurar entrega garantizada en bandeja principal de entrada.")
+    add_bullet("notificaciones@sinnotario.cl (casilla operativa principal para despachos de firma, tokens de seguridad, contratos timbrados y DTEs); contacto@sinnotario.cl (buzón de respuesta y atención general configurado en Reply-To); soporte@sinnotario.cl (mesa de ayuda técnica); y legal@sinnotario.cl (visación de abogados).", "Casillas Oficiales del Ecosistema: ")
+    add_bullet("Implementación en PHP nativo de alta velocidad (KeystoneSmtpClient) con conexión cifrada SSL (puerto 465) a smtp.titan.email, autenticación AUTH LOGIN, cabeceras MIME blindadas y registros de ciberseguridad DNS (SPF, DKIM 2048-bit y DMARC).", "Cliente Socket SMTP con Titan Mail: ")
+    add_bullet("Módulo de supervisión en /admin para editar en vivo credenciales SMTP, buzón emisor y visualizar bitácora de respuestas SMTP en tiempo real sin reiniciar servidores.", "Consola de Gestión Administrativa en Caliente: ")
+
     # SECCIÓN 4
     add_h1("4. Modelo Híbrido: Plataforma Digital + Red de Oficinas Físicas")
     add_body("La Oficina Física de SinNotario.cl humaniza la tecnología y atiende la brecha digital mediante interfaces operativas especializadas para el personal de sucursal, cabinas de firma privada en tablets seguras y salas de asesoría legal presencial con abogados.")

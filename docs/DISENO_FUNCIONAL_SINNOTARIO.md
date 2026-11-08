@@ -20,6 +20,8 @@
    - [3.3 Módulo 3: Pasarela de Pagos y Notificaciones Omnicanal](#33-módulo-3-pasarela-de-pagos-y-notificaciones-omnicanal)
    - [3.4 Módulo 4: Verificación Pública y Trazabilidad](#34-módulo-4-verificación-pública-y-trazabilidad)
    - [3.5 Módulo 5: Backend Administrativo y Consola de Configuración de la Plataforma](#35-módulo-5-backend-administrativo-y-consola-de-configuración-de-la-plataforma)
+   - [3.13 Módulo 13: Motor de Facturación Electrónica Automática SII (Boletas y Facturas DTE)](#313-módulo-13-motor-de-facturación-electrónica-automática-sii-boletas-y-facturas-dte)
+   - [3.14 Módulo 14: Infraestructura de Correo Transaccional Oficial (Titan Mail SMTP & Casillas Operativas)](#314-módulo-14-infraestructura-de-correo-transaccional-oficial-titan-mail-smtp--casillas-operativas)
 4. [Modelo Híbrido: Plataforma Digital + Oficina Física](#4-modelo-híbrido-plataforma-digital--oficina-física)
    - [4.1 Por qué una Oficina Física (Resolución de Brechas)](#41-por-qué-una-oficina-física-resolución-de-brechas)
    - [4.2 Servicios de la Oficina Física](#42-servicios-de-la-oficina-física)
@@ -1115,6 +1117,104 @@ flowchart TD
   * Permite guardar datos recurrentes (ej: los datos del arrendador o empresa para no reescribirlos cada mes).
 * **Gestión de Boletas y Facturas:**
   * Historial tributario de los pagos realizados en Webpay o Flow con descarga de comprobante electrónico emitido ante el SII.
+
+---
+
+### 3.13 Módulo 13: Motor de Facturación Electrónica Automática SII (Boletas y Facturas DTE)
+
+Conforme a la normativa del **Servicio de Impuestos Internos (SII)** de Chile (Resolución Exenta N° 74/2020 y complementarias sobre obligatoriedad de boletas y facturas electrónicas en línea), **SinNotario.cl** integra un motor automatizado de tributación electrónica en tiempo real que se dispara inmediatamente tras confirmarse el pago exitoso en la pasarela.
+
+#### A. Interfaz de Decisión Tributaria en el Checkout ("¿Boleta o Factura?")
+
+Previo a efectuar el pago (tanto en el Wizard de Redacción 60/40 como en la Carga de PDF Propio o contratación B2B), la interfaz presenta de forma obligatoria el selector de comprobante legal:
+
+```mermaid
+flowchart TD
+    A["Cliente completa formulario / Carga PDF"] --> B["Pantalla de Checkout / Resumen de Cobro"]
+    B --> C{"¿Qué documento tributario necesitas?"}
+    C -->|Opción A| D["🧾 Boleta Electrónica (DTE 39)<br/>Persona Natural / Uso Particular"]
+    C -->|Opción B| E["🏢 Factura Electrónica Afecta (DTE 33)<br/>Empresa / Crédito Fiscal IVA (19%)"]
+    D --> F["Captura Automática:<br/>Nombre, RUT chileno y Email de envío"]
+    E --> G["Formulario de Datos de Facturación:<br/>RUT Empresa, Razón Social, Giro Comercial,<br/>Dirección Tributaria, Comuna/Ciudad y Email DTE"]
+    F --> H["Confirmación de Pasarela de Pagos (Webpay / Fintoc / POS)"]
+    G --> H
+    H -->|Pago Aprobado| I["Motor DTE / WebService SII"]
+    I --> J["Emisión, Timbrado Electrónico (TED) y Envío al SII"]
+    J --> K["Entrega Inmediata de PDF/XML al Cliente vía Correo Oficial"]
+```
+
+* **Modalidad Boleta Electrónica (DTE 39):**
+  * Diseñada para personas naturales.
+  * Si el usuario se encuentra autenticado (mediante Google o Email), el sistema pre-completa su RUT y Correo Electrónico.
+  * El monto cobrado incluye el 19% de IVA desglosado internamente en el XML del SII.
+* **Modalidad Factura Electrónica Afecta (DTE 33):**
+  * Diseñada para empresas o personas con iniciación de actividades de 1ª Categoría que necesitan aprovechar el crédito fiscal del servicio legaltech.
+  * Campos obligatorios validados en cliente y servidor:
+    1. **RUT Empresa:** Con validación algorítmica Módulo 11 y formato oficial `XX.XXX.XXX-X`.
+    2. **Razón Social:** Nombre legal registrado ante el SII.
+    3. **Giro Comercial:** Actividad económica tributaria.
+    4. **Dirección Tributaria:** Calle y número fiscal.
+    5. **Comuna y Ciudad:** Mapeo homologado con el catálogo geográfico del SII.
+    6. **Correo de Intercambio DTE:** Casilla de correo inscrita para recibir los archivos XML y PDF de la factura.
+
+#### B. Arquitectura Técnica de Emisión y Conexión con el SII
+
+El sistema soporta una arquitectura dual de despacho tributario:
+
+1. **Integración vía API DTE Certificada (Ruta Rápida y de Alta Resiliencia):**
+   * Conexión REST a proveedor homologado ante el SII (ej: LibreDTE, SimpleBoleta, Haulmer/OpenFactura).
+   * Al recibir el webhook `payment_approved`, el backend ejecuta un `POST /api/dte/emit` con el payload JSON del cobro.
+   * El proveedor firma digitalmente el documento con certificado tributario, genera el **Timbre Electrónico del SII (TED / Código de Barras Bidimensional PDF417)** y lo reporta de forma asíncrona a las bases del SII (`palena.sii.cl`).
+   * Retorna al instante la URL pública del PDF timbrado y el archivo XML legal.
+2. **Conexión Directa al WebService del SII (Arquitectura Propietaria):**
+   * Utiliza el Certificado Digital del Representante Legal (`.pfx` / `.p12`) almacenado con cifrado AES-256 en variables del servidor.
+   * Obtención del Token de Sesión (`getSeed` y `getToken` con firma XML-DSig).
+   * Consumo de folios desde el archivo CAF (Código de Autorización de Folios) asignado por el SII a la sociedad titular de SinNotario.
+   * Generación y firma del Envelope SOAP hacia los servidores de producción del SII.
+
+#### C. Bóveda Tributaria en el Área Privada de Clientes (`/mi-cuenta`)
+* En la pestaña **"Mis Facturas y Boletas"**, el cliente dispone de una tabla histórica con el Folio tributario asignado por el SII, fecha de emisión, monto neto, IVA (19%), total cancelado y dos botones de acción inmediata:
+  * `[ Descargar PDF Timbrado (TED) ]`
+  * `[ Descargar XML Legal ]`
+
+---
+
+### 3.14 Módulo 14: Infraestructura de Correo Transaccional Oficial (Titan Mail SMTP & Casillas Operativas)
+
+Para erradicar cualquier riesgo de falsificación de identidad (Spoofing), garantizar una tasa de entrega en bandeja de entrada principal superior al 99% y proyectar la máxima seriedad institucional, **SinNotario.cl** desacopla el despacho de correos de la función básica `mail()` de los servidores web y adopta una infraestructura corporativa **SMTP Socket Autenticado con Titan Mail**.
+
+#### A. Definición de Casillas de Operación del Ecosistema
+
+| Casilla Oficial | Protocolo / Propósito | Uso en la Plataforma |
+| :--- | :--- | :--- |
+| **`notificaciones@sinnotario.cl`** | **SMTP Saliente Automatizado (Daemon)** | **Casilla operativa principal del sistema.** Despacho automático de enlaces de firma, códigos de seguridad (OTP), alertas de nuevos comparecientes, entrega de contratos definitivos timbrados y boletas/facturas electrónicas del SII. |
+| **`contacto@sinnotario.cl`** | **Atención y Respuesta (Inbound/Outbound)** | Casilla configurada en el encabezado `Reply-To` de todos los correos transaccionales para que si un cliente presiona "Responder", su consulta llegue al equipo de operaciones y ejecutivos legales. |
+| **`soporte@sinnotario.cl`** | **Mesa de Ayuda y Post-Venta** | Canal formal para consultas de validación de identidad, incidencias técnicas con ClaveÚnica o solicitudes de rectificación. |
+| **`legal@sinnotario.cl`** | **Visación y Asesoría Humana** | Canal exclusivo para la revisión de contratos por parte de abogados titulados y emisión de certificados de fe de firma presencial en sucursales. |
+
+#### B. Especificación del Cliente SMTP Socket (`KeystoneSmtpClient`)
+
+El servicio de correos se implementa en PHP puro de alto rendimiento ([`src/Services/KeystoneSmtpClient.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/src/Services/KeystoneSmtpClient.php)) sin requerir librerías pesadas de terceros:
+* **Conexión Cifrada SSL:** Conexión directa mediante sockets `ssl://smtp.titan.email:465` (con fallback a TLS en puerto 587).
+* **Autenticación Fuerte:** Handshake con protocolo `AUTH LOGIN` en Base64.
+* **Firma de Encabezados MIME:**
+  * `From: SinNotario.cl <notificaciones@sinnotario.cl>`
+  * `Reply-To: contacto@sinnotario.cl`
+  * `X-Mailer: SinNotario-Enterprise-Mailer/2.0`
+  * `Message-ID` criptográfico único por cada correo despachado.
+* **Soporte de Adjuntos Binarios:** Capacidad para incrustar el PDF final con firma electrónica y el DTE del SII en Base64 con encabezados `Content-Disposition: attachment`.
+* **Alineación DNS de Ciberseguridad (SPF, DKIM y DMARC):**
+  * Registro **SPF**: `v=spf1 include:spf.titan.email ~all` autorizando a Titan Mail como emisor legítimo.
+  * Llave **DKIM** de 2048 bits firmando cada cuerpo de correo.
+  * Registro **DMARC**: `p=quarantine; rua=mailto:dmarc-reports@sinnotario.cl` para bloquear cualquier intento externo de suplantación de la marca.
+
+#### C. Gestión Administrativa Visual en Tiempo Real (`/admin`)
+
+Desde la Consola de Administración ([`admin.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/admin.php)), los directores pueden supervisar y modificar en caliente sin alterar código:
+* Servidor SMTP Host y Puerto activo.
+* Usuario y contraseña del buzón operativo.
+* Dirección de correo y nombre del remitente visual.
+* Logs detallados de cada intento de conexión SMTP con códigos de retorno (`250 OK`, `354 Enter mail`, `235 Auth successful`).
 
 ---
 
