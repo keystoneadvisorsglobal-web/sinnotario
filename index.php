@@ -193,8 +193,8 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
                         <button id="btnToggleB2B" class="btn-outline-white" onclick="toggleB2BDetails()">
                             <i class="fas fa-info-circle"></i> Conocer Solución Empresas <i id="b2bIconChevron" class="fas fa-chevron-down" style="font-size: 0.8rem;"></i>
                         </button>
-                        <a href="https://wa.me/56984180479?text=Hola,%20me%20interesa%20la%20solución%20empresas%20de%20SinNotario.cl" target="_blank" class="btn-cta btn-gold" style="padding: 0.65rem 1.4rem; font-size: 0.92rem;">
-                            <i class="fab fa-whatsapp"></i> Contactar a Ventas B2B
+                        <a href="login.php?tab=registro&redirect=empresas.php" class="btn-cta btn-gold" style="padding: 0.65rem 1.4rem; font-size: 0.92rem;">
+                            <i class="fas fa-user-plus"></i> Regístrate gratis y comienza hoy mismo
                         </a>
                     </div>
                 </div>
@@ -249,6 +249,12 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
                             <h4>Bolsas Prepagadas con Descuento</h4>
                             <p>Planes corporativos flexibles con tarifas reducidas desde $1.990 por firma electrónica, facturación mensual exenta de IVA y soporte prioritario 24/7.</p>
                         </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.25rem;">
+                        <a href="login.php?tab=registro&redirect=empresas.php" class="btn-cta btn-gold" style="font-size: 1rem; padding: 0.75rem 1.8rem;">
+                            <i class="fas fa-user-plus"></i> Crear Cuenta Empresa Gratis y Comenzar Hoy Mismo
+                        </a>
                     </div>
                 </div>
             </div>

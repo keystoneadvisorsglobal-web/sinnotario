@@ -1,5 +1,25 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-08 01:21 UTC-3] - SOL-0069
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0069`
+- **Alcance de los Cambios:**
+  - **Sustitución de CTA B2B hacia Onboarding Autoservicio Inmediato (`index.php`):**
+    1. **Eliminación de Fricción de Ventas:**
+       - En la sección principal de RRHH y Corredores en la portada, se retiró el botón asistido *"Contactar a Ventas B2B"*.
+       - Se sustituyó por el llamado a la acción directo:
+         👉 **"Regístrate gratis y comienza hoy mismo"** (`login.php?tab=registro&redirect=empresas.php`).
+    2. **Refuerzo al Pie del Desplegable:**
+       - Al expandir las 6 bondades corporativas, se añadió un botón de cierre:
+         👉 **"Crear Cuenta Empresa Gratis y Comenzar Hoy Mismo"**, permitiendo que cualquier departamento de RRHH o corredor cree su cuenta y opere de inmediato bajo el modelo prepago sin barreras.
+- **Pruebas Validadas:**
+  - Validación sintáctica PHP Lint en servidor: 0 errores.
+  - Comprobación de redirección limpia a la pestaña de registro con campos de empresa y retorno a `empresas.php`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-08 01:19 UTC-3] - SOL-0068
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
