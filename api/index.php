@@ -764,7 +764,7 @@ try {
             exit;
             break;
 
-        // 22. Recargar Bolsa Prepagada de Firmas
+        // 22. Recargar Bolsa Prepagada de Firmas (Vía Mercado Pago o Directo)
         case 'b2b_recharge_bag':
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 jsonResponse(false, null, 'Método no permitido', 405);
@@ -778,8 +778,46 @@ try {
                 jsonResponse(false, null, 'ID de empresa inválido', 400);
             }
 
-            $resRecarga = B2BService::rechargePrepagoBag($companyId, $packType);
-            jsonResponse(true, $resRecarga);
+            // Obtener datos de la empresa
+            $stmtC = $pdo->prepare("SELECT * FROM companies WHERE id = ?");
+            $stmtC->execute([$companyId]);
+            $company = $stmtC->fetch(PDO::FETCH_ASSOC);
+
+            if (!$company) {
+                jsonResponse(false, null, 'Empresa no encontrada', 404);
+            }
+
+            $packs = B2BService::getPrepaidPacks();
+            if (!isset($packs[$packType])) {
+                jsonResponse(false, null, 'Bolsa seleccionada no válida', 400);
+            }
+
+            // Integración Mercado Pago
+            require_once __DIR__ . '/../src/Services/MercadoPagoService.php';
+            $mp = new MercadoPagoService();
+
+            if ($mp->isConfigured()) {
+                $sessionUser = $_SESSION['user_id'] ?? ($company['user_id'] ?? 0);
+                $prefResult = $mp->createB2BPackPreference($companyId, $packType, $packs[$packType], $company, (int)$sessionUser);
+                jsonResponse(true, $prefResult);
+            } else {
+                // Modo simulador / abono administrativo hasta configurar credenciales en admin.php
+                $resRecarga = B2BService::rechargePrepagoBag($companyId, $packType);
+                jsonResponse(true, $resRecarga);
+            }
+            break;
+
+        // 22C. Webhook de Notificaciones de Mercado Pago (IPN)
+        case 'mp_webhook':
+            $inputRaw = file_get_contents('php://input');
+            $data = json_decode($inputRaw, true) ?: [];
+            $topic = $_GET['topic'] ?? ($_GET['type'] ?? ($data['type'] ?? 'payment'));
+            $id = $_GET['id'] ?? ($_GET['data.id'] ?? ($data['data']['id'] ?? null));
+
+            if ($topic === 'payment' && $id) {
+                error_log("MP Webhook recibido para pago #{$id}");
+            }
+            jsonResponse(true, ['status' => 'received']);
             break;
 
         // 22B. Obtener Catálogo Dinámico de Packs Prepagados

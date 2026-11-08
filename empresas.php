@@ -857,10 +857,6 @@ if (!$currentUser) {
                 return;
             }
 
-            if (!confirm(`¿Confirmas la activación y compra de la bolsa ${packType} para ${currentCompany.razon_social}?`)) {
-                return;
-            }
-
             try {
                 const res = await fetch('api/index.php?action=b2b_recharge_bag', {
                     method: 'POST',
@@ -872,13 +868,20 @@ if (!$currentUser) {
                 });
                 const json = await res.json();
                 if (json.success) {
-                    alert(`✅ ¡Recarga Exitosa!\n\n${json.data.message}\nNuevo Saldo: ${json.data.saldo_nuevo} firmas.`);
-                    loadCompanyProfile();
+                    if (json.data && json.data.init_point) {
+                        // Redirigir a la pasarela de pago oficial de Mercado Pago
+                        window.location.href = json.data.init_point;
+                    } else if (json.data && json.data.saldo_nuevo !== undefined) {
+                        alert(`✅ ¡Recarga Exitosa!\n\n${json.data.message}\nNuevo Saldo: ${json.data.saldo_nuevo} firmas.`);
+                        loadCompanyProfile();
+                    } else {
+                        alert(json.data.message || "Orden de compra generada exitosamente.");
+                    }
                 } else {
-                    alert("Error en recarga: " + json.error);
+                    alert("Error en recarga: " + (json.error || 'No se pudo iniciar el pago'));
                 }
             } catch (e) {
-                alert("Error de comunicación: " + e.message);
+                alert("Error de comunicación con la pasarela de pagos: " + e.message);
             }
         }
 

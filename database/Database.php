@@ -135,6 +135,31 @@ class Database {
                 FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
             );");
 
+            // Tabla de Órdenes y Pagos Online (Mercado Pago, Webpay, Khipu)
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS payment_orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                external_reference VARCHAR(100) NOT NULL UNIQUE,
+                payment_type VARCHAR(30) NOT NULL, -- B2B_PACK, DOCUMENT_RETAIL
+                company_id INTEGER,
+                user_id INTEGER,
+                document_id INTEGER,
+                pack_key VARCHAR(50),
+                monto_neto INTEGER DEFAULT 0,
+                monto_total INTEGER NOT NULL,
+                moneda VARCHAR(10) DEFAULT 'CLP',
+                estado VARCHAR(30) DEFAULT 'PENDIENTE', -- PENDIENTE, APROBADO, RECHAZADO, CANCELADO
+                gateway VARCHAR(30) DEFAULT 'MERCADO_PAGO',
+                preference_id VARCHAR(150),
+                mp_payment_id VARCHAR(100),
+                metadata_json TEXT,
+                raw_response TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+                FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE SET NULL
+            );");
+
             // Paso 2: Plantillas Propias de la Empresa con Variables Dinámicas (SOL-0066)
             $this->pdo->exec("CREATE TABLE IF NOT EXISTS company_templates (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

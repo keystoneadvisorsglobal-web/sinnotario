@@ -117,6 +117,15 @@ if (isset($_POST['save_pricing_settings'])) {
         }
     }
 
+    // Parámetros Mercado Pago (Pasarela de Pagos)
+    $mpFields = ['mp_public_key', 'mp_access_token', 'mp_mode'];
+    $stmtMp = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+    foreach ($mpFields as $mpf) {
+        if (isset($_POST[$mpf])) {
+            $stmtMp->execute([$mpf, trim($_POST[$mpf])]);
+        }
+    }
+
     $msgPricingSuccess = '¡Parámetros del sistema, credenciales y tarifas actualizadas exitosamente!';
 }
 
@@ -975,6 +984,44 @@ $allTemplates = $stmtTemplates->fetchAll();
                                 ID de cliente de la consola de Google Cloud (ej: <code>xxxx.apps.googleusercontent.com</code>) para habilitar "Continuar con Google".
                             </p>
                             <input type="text" name="google_oauth_client_id" class="form-control" placeholder="Ej: 123456789-abcdef.apps.googleusercontent.com" value="<?= htmlspecialchars($sysSettings['google_oauth_client_id'] ?? '') ?>">
+                        </div>
+
+                        <!-- Configuración Pasarela de Pagos: Mercado Pago Chile -->
+                        <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
+                            <div style="margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                                <div>
+                                    <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem; font-size:1rem;">
+                                        <i class="fas fa-credit-card" style="color:#009EE3;"></i> Pasarela de Pagos Online: Mercado Pago Chile
+                                    </label>
+                                    <p style="font-size:0.78rem; color:#64748B; margin:0.15rem 0 0;">
+                                        Permite recibir pagos automáticos con Tarjetas de Crédito, Redcompra/Débito y Dinero en cuenta para bolsas prepagadas B2B y trámites particulares.
+                                    </p>
+                                </div>
+                                <span style="background:<?= !empty($sysSettings['mp_access_token']) ? '#DCFCE7' : '#FEF3C7' ?>; color:<?= !empty($sysSettings['mp_access_token']) ? '#15803D' : '#B45309' ?>; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px;">
+                                    <?= !empty($sysSettings['mp_access_token']) ? '<i class="fas fa-check-circle"></i> CONECTADO EN PRODUCCIÓN' : '<i class="fas fa-clock"></i> PENDIENTE DE CREDENCIALES' ?>
+                                </span>
+                            </div>
+
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem;">
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Ambiente / Modo Operativo</label>
+                                    <select name="mp_mode" class="form-control">
+                                        <option value="production" <?= ($sysSettings['mp_mode'] ?? 'production') === 'production' ? 'selected' : '' ?>>Producción Oficial (En Vivo)</option>
+                                        <option value="sandbox" <?= ($sysSettings['mp_mode'] ?? '') === 'sandbox' ? 'selected' : '' ?>>Sandbox (Pruebas de Desarrollo)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Public Key (Frontend)</label>
+                                    <input type="text" name="mp_public_key" class="form-control" placeholder="APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="<?= htmlspecialchars($sysSettings['mp_public_key'] ?? '') ?>">
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Access Token (Privado / Backend)</label>
+                                    <input type="password" name="mp_access_token" class="form-control" placeholder="APP_USR-xxxxxxxxxxxx-xxxxxx-xxxxxxxxxxxxxxxx-xxxxxxxx" value="<?= htmlspecialchars($sysSettings['mp_access_token'] ?? '') ?>">
+                                    <small style="color:#64748B; font-size:0.75rem; display:block; margin-top:3px;">
+                                        Obtén tus credenciales de producción en: <a href="https://www.mercadopago.cl/developers" target="_blank" style="color:#009EE3; font-weight:700;">mercadopago.cl/developers</a>.
+                                    </small>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Configuración SMTP para Correos Transaccionales -->
