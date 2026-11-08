@@ -19,10 +19,17 @@ class MercadoPagoService {
         $this->accessToken = trim($settings['mp_access_token'] ?? (getenv('MP_ACCESS_TOKEN') ?: ''));
         $this->publicKey = trim($settings['mp_public_key'] ?? (getenv('MP_PUBLIC_KEY') ?: ''));
         $this->isSandbox = ($settings['mp_mode'] ?? 'production') === 'sandbox';
+        $this->enabled = ($settings['mp_enabled'] ?? '1') === '1';
     }
 
+    private bool $enabled;
+
     public function isConfigured(): bool {
-        return !empty($this->accessToken);
+        return $this->enabled && !empty($this->accessToken);
+    }
+
+    public function isEnabled(): bool {
+        return $this->enabled;
     }
 
     public function getPublicKey(): string {

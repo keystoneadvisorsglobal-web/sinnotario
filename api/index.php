@@ -64,6 +64,30 @@ try {
             jsonResponse(true, $template);
             break;
 
+        // 2B. Obtener Pasarelas de Pago Habilitadas (para selectores dinámicos en Checkout)
+        case 'get_payment_gateways':
+            $stmtGw = $pdo->query("SELECT key, value FROM system_settings WHERE key IN ('mp_enabled', 'khipu_enabled')");
+            $gwSettings = $stmtGw ? $stmtGw->fetchAll(PDO::FETCH_KEY_PAIR) : [];
+            
+            $mpEnabled = ($gwSettings['mp_enabled'] ?? '1') === '1';
+            $khipuEnabled = ($gwSettings['khipu_enabled'] ?? '1') === '1';
+
+            jsonResponse(true, [
+                'mercadopago' => [
+                    'id' => 'MERCADO_PAGO',
+                    'nombre' => 'Mercado Pago',
+                    'descripcion' => 'Tarjetas de Crédito, Débito / Redcompra',
+                    'enabled' => $mpEnabled
+                ],
+                'khipu' => [
+                    'id' => 'KHIPU',
+                    'nombre' => 'Khipu',
+                    'descripcion' => 'Transferencia Bancaria Directa',
+                    'enabled' => $khipuEnabled
+                ]
+            ]);
+            break;
+
         // 3B. Iniciar Pago de Documento Retail (Persona Natural - Redactar o Subir PDF)
         case 'pay_document':
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -109,15 +133,21 @@ try {
             if ($gateway === 'KHIPU') {
                 require_once __DIR__ . '/../src/Services/KhipuService.php';
                 $khipu = new KhipuService();
+                if (!$khipu->isEnabled()) {
+                    jsonResponse(false, null, 'El medio de pago Khipu se encuentra temporalmente deshabilitado por mantención.', 400);
+                }
                 if ($khipu->isConfigured()) {
                     $khipuRes = $khipu->createRetailDocumentPayment($docId, $verifCode, $docTitle, $montoTotal, $payerData, $sessionUser);
                     jsonResponse(true, $khipuRes);
                 }
             }
 
-            // Por defecto Mercado Pago
+            // Mercado Pago
             require_once __DIR__ . '/../src/Services/MercadoPagoService.php';
             $mp = new MercadoPagoService();
+            if (!$mp->isEnabled()) {
+                jsonResponse(false, null, 'El medio de pago Mercado Pago se encuentra temporalmente deshabilitado por mantención.', 400);
+            }
             if ($mp->isConfigured()) {
                 $prefResult = $mp->createRetailDocumentPreference($docId, $verifCode, $docTitle, $montoTotal, $payerData, $sessionUser);
                 jsonResponse(true, $prefResult);
@@ -868,15 +898,21 @@ try {
             if ($gateway === 'KHIPU') {
                 require_once __DIR__ . '/../src/Services/KhipuService.php';
                 $khipu = new KhipuService();
+                if (!$khipu->isEnabled()) {
+                    jsonResponse(false, null, 'El medio de pago Khipu se encuentra temporalmente deshabilitado por mantención.', 400);
+                }
                 if ($khipu->isConfigured()) {
                     $khipuRes = $khipu->createB2BPackPayment($companyId, $packType, $packs[$packType], $company, (int)$sessionUser);
                     jsonResponse(true, $khipuRes);
                 }
             }
 
-            // Por defecto Mercado Pago
+            // Mercado Pago
             require_once __DIR__ . '/../src/Services/MercadoPagoService.php';
             $mp = new MercadoPagoService();
+            if (!$mp->isEnabled()) {
+                jsonResponse(false, null, 'El medio de pago Mercado Pago se encuentra temporalmente deshabilitado por mantención.', 400);
+            }
 
             if ($mp->isConfigured()) {
                 $prefResult = $mp->createB2BPackPreference($companyId, $packType, $packs[$packType], $company, (int)$sessionUser);

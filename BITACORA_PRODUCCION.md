@@ -1409,3 +1409,20 @@
   - Validación sintáctica remota (`php -l`) en `index.php`, `verificar.php` y `empresas.php` con 0 errores.
   - Smoke tests HTTP/2 200 OK con verificación visual de renderizado en `https://sinnotario.cl/`, `https://sinnotario.cl/verificar.php` y `https://sinnotario.cl/empresas.php`.
 - **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+### Registro de Despliegue: SOL-0088
+- **Fecha y Hora:** 2026-11-08 13:15:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0088`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Implementación integral del sistema de activación y desactivación dinámica de medios y pasarelas de pago (Mercado Pago y Khipu) desde la consola de administración:
+  1) **Panel de Control (`admin.php#tarifas`):** Se incorporaron switches de activación (`mp_enabled` y `khipu_enabled`) dentro de las tarjetas de configuración de credenciales de Mercado Pago y Khipu, persistidos en `system_settings` y acompañados de badges de estado en vivo (`ACTIVA & CONECTADA`, `PENDIENTE CREDENCIALES` o `DESACTIVADA`).
+  2) **Capa de Servicios (`MercadoPagoService.php` y `KhipuService.php`):** Se adaptó `isConfigured()` para exigir tanto credenciales válidas como el flag `isEnabled()` activo.
+  3) **API Backend (`api/index.php`):** Se añadió el endpoint `get_payment_gateways` y se blindaron las acciones de cobro `pay_document` (personas) y `b2b_recharge_bag` (empresas) para rechazar intentos de pago por pasarelas desactivadas con mensaje explicativo.
+  4) **Frontend Reactivo (`redactar.php`, `subir-documento.php`, `empresas.php`):** Los selectores de pasarela de pago ahora leen server-side el estado de cada pasarela, ocultando la opción deshabilitada, auto-seleccionando la pasarela disponible o mostrando aviso de mantención si ambas estuvieran temporalmente inactivas.
+- **Pruebas Validadas:**
+  - `php -l` remoto en los 7 archivos modificados con 0 errores de sintaxis.
+  - Smoke tests HTTP 200 en `admin.php`, `api/index.php?action=get_payment_gateways`, `redactar.php`, `subir-documento.php` y `empresas.php`.
+  - Prueba dinámica de desactivación en caliente vía base de datos SQLite reflejada de inmediato por la API y restablecimiento a estado activo.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.

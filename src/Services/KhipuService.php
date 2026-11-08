@@ -11,6 +11,7 @@ class KhipuService {
     private string $receiverId;
     private string $secretKey;
     private bool $isSandbox;
+    private bool $enabled;
 
     public function __construct() {
         $pdo = Database::getInstance();
@@ -20,10 +21,15 @@ class KhipuService {
         $this->receiverId = trim($settings['khipu_receiver_id'] ?? (getenv('KHIPU_RECEIVER_ID') ?: ''));
         $this->secretKey = trim($settings['khipu_secret_key'] ?? (getenv('KHIPU_SECRET_KEY') ?: ''));
         $this->isSandbox = ($settings['khipu_mode'] ?? 'production') === 'sandbox';
+        $this->enabled = ($settings['khipu_enabled'] ?? '1') === '1';
     }
 
     public function isConfigured(): bool {
-        return !empty($this->receiverId) && !empty($this->secretKey);
+        return $this->enabled && !empty($this->receiverId) && !empty($this->secretKey);
+    }
+
+    public function isEnabled(): bool {
+        return $this->enabled;
     }
 
     public function getReceiverId(): string {

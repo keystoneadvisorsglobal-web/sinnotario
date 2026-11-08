@@ -4,6 +4,7 @@
  * Keystone Advisors
  */
 require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/database/Database.php';
 require_once __DIR__ . '/src/Services/AuthService.php';
 require_once __DIR__ . '/src/Services/B2BService.php';
 
@@ -13,6 +14,17 @@ if (!$currentUser) {
     header('Location: login.php?redirect=' . urlencode('empresas.php') . '&msg=b2b_auth_required');
     exit;
 }
+
+$pdo = Database::getInstance();
+$stmtSets = $pdo->query("SELECT * FROM system_settings");
+$settingsRows = $stmtSets ? $stmtSets->fetchAll(PDO::FETCH_ASSOC) : [];
+$b2bSettings = [];
+foreach ($settingsRows as $sr) {
+    $b2bSettings[$sr['key']] = $sr['value'];
+}
+$mpB2bActive = ($b2bSettings['mp_enabled'] ?? '1') === '1';
+$khipuB2bActive = ($b2bSettings['khipu_enabled'] ?? '1') === '1';
+$defaultB2bGateway = $mpB2bActive ? 'MERCADO_PAGO' : ($khipuB2bActive ? 'KHIPU' : 'NONE');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -849,13 +861,24 @@ if (!$currentUser) {
             </div>
 
             <!-- Paso 2: Elegir Medio de Pago -->
+            <?php if (!$mpB2bActive && !$khipuB2bActive): ?>
+                <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:1.25rem; margin-bottom:1.5rem; text-align:center;">
+                    <div style="color:#B45309; font-weight:700; margin-bottom:4px;">
+                        <i class="fas fa-exclamation-triangle"></i> Pasarelas de Pago en Mantención
+                    </div>
+                    <p style="color:#92400E; font-size:0.85rem; margin:0;">
+                        Los pagos electrónicos están temporalmente deshabilitados por mantención programada. Por favor contáctanos a soporte@sinnotario.cl.
+                    </p>
+                </div>
+            <?php else: ?>
             <div style="margin-bottom:1.5rem;">
                 <label style="display:block; font-size:0.85rem; font-weight:800; color:#1E293B; margin-bottom:8px;">
                     2. Selecciona la Pasarela de Pago:
                 </label>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
-                    <label style="border:2px solid #009EE3; background:#F0F9FF; border-radius:10px; padding:1rem; cursor:pointer; display:flex; align-items:center; gap:10px;" id="labelGatewayMP" onclick="selectCheckoutGateway('MERCADO_PAGO')">
-                        <input type="radio" name="checkout_gateway" value="MERCADO_PAGO" checked style="accent-color:#009EE3;">
+                <div style="display:grid; grid-template-columns:<?php echo ($mpB2bActive && $khipuB2bActive) ? '1fr 1fr' : '1fr'; ?>; gap:0.75rem;">
+                    <?php if ($mpB2bActive): ?>
+                    <label style="border:2px solid <?php echo ($defaultB2bGateway === 'MERCADO_PAGO') ? '#009EE3' : '#CBD5E1'; ?>; background:<?php echo ($defaultB2bGateway === 'MERCADO_PAGO') ? '#F0F9FF' : '#FFFFFF'; ?>; border-radius:10px; padding:1rem; cursor:pointer; display:flex; align-items:center; gap:10px;" id="labelGatewayMP" onclick="selectCheckoutGateway('MERCADO_PAGO')">
+                        <input type="radio" name="checkout_gateway" value="MERCADO_PAGO" <?php echo ($defaultB2bGateway === 'MERCADO_PAGO') ? 'checked' : ''; ?> style="accent-color:#009EE3;">
                         <div>
                             <div style="font-weight:800; color:#0369A1; font-size:0.92rem;">
                                 <i class="fas fa-credit-card"></i> Mercado Pago
@@ -863,9 +886,11 @@ if (!$currentUser) {
                             <div style="font-size:0.75rem; color:#64748B;">Tarjetas de Crédito, Débito / Webpay</div>
                         </div>
                     </label>
+                    <?php endif; ?>
 
-                    <label style="border:2px solid #CBD5E1; border-radius:10px; padding:1rem; cursor:pointer; display:flex; align-items:center; gap:10px;" id="labelGatewayKhipu" onclick="selectCheckoutGateway('KHIPU')">
-                        <input type="radio" name="checkout_gateway" value="KHIPU" style="accent-color:#6366F1;">
+                    <?php if ($khipuB2bActive): ?>
+                    <label style="border:2px solid <?php echo ($defaultB2bGateway === 'KHIPU') ? '#6366F1' : '#CBD5E1'; ?>; background:<?php echo ($defaultB2bGateway === 'KHIPU') ? '#EEF2FF' : '#FFFFFF'; ?>; border-radius:10px; padding:1rem; cursor:pointer; display:flex; align-items:center; gap:10px;" id="labelGatewayKhipu" onclick="selectCheckoutGateway('KHIPU')">
+                        <input type="radio" name="checkout_gateway" value="KHIPU" <?php echo ($defaultB2bGateway === 'KHIPU') ? 'checked' : ''; ?> style="accent-color:#6366F1;">
                         <div>
                             <div style="font-weight:800; color:#4338CA; font-size:0.92rem;">
                                 <i class="fas fa-university"></i> Khipu
@@ -873,8 +898,10 @@ if (!$currentUser) {
                             <div style="font-size:0.75rem; color:#64748B;">Transferencia Bancaria Directa</div>
                         </div>
                     </label>
+                    <?php endif; ?>
                 </div>
             </div>
+            <?php endif; ?>
 
             <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:0.85rem; display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; font-size:0.85rem;">
                 <span style="color:#64748B;"><i class="fas fa-file-invoice-dollar" style="color:#059669;"></i> Emisión automática de Factura Electrónica afecta a IVA (DTE 33).</span>
@@ -1008,23 +1035,27 @@ if (!$currentUser) {
             selectedGateway = gw;
             const labelMP = document.getElementById('labelGatewayMP');
             const labelKhipu = document.getElementById('labelGatewayKhipu');
-            const radioMP = labelMP.querySelector('input[type="radio"]');
-            const radioKhipu = labelKhipu.querySelector('input[type="radio"]');
+            const radioMP = labelMP ? labelMP.querySelector('input[type="radio"]') : null;
+            const radioKhipu = labelKhipu ? labelKhipu.querySelector('input[type="radio"]') : null;
 
-            if (gw === 'MERCADO_PAGO') {
+            if (gw === 'MERCADO_PAGO' && labelMP) {
                 labelMP.style.borderColor = '#009EE3';
                 labelMP.style.background = '#F0F9FF';
-                labelKhipu.style.borderColor = '#CBD5E1';
-                labelKhipu.style.background = '#FFFFFF';
-                radioMP.checked = true;
-                radioKhipu.checked = false;
-            } else {
+                if (labelKhipu) {
+                    labelKhipu.style.borderColor = '#CBD5E1';
+                    labelKhipu.style.background = '#FFFFFF';
+                }
+                if (radioMP) radioMP.checked = true;
+                if (radioKhipu) radioKhipu.checked = false;
+            } else if (labelKhipu) {
                 labelKhipu.style.borderColor = '#6366F1';
                 labelKhipu.style.background = '#EEF2FF';
-                labelMP.style.borderColor = '#CBD5E1';
-                labelMP.style.background = '#FFFFFF';
-                radioKhipu.checked = true;
-                radioMP.checked = false;
+                if (labelMP) {
+                    labelMP.style.borderColor = '#CBD5E1';
+                    labelMP.style.background = '#FFFFFF';
+                }
+                if (radioKhipu) radioKhipu.checked = true;
+                if (radioMP) radioMP.checked = false;
             }
         }
 

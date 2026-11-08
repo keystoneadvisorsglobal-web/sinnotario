@@ -21,6 +21,9 @@ foreach ($settingsRows as $sr) {
 $precioFirmaPropia = (int)($settings['precio_base_subir_pdf'] ?? 7990);
 $precioFirmaExtra = (int)($settings['precio_firma_extra'] ?? 2990);
 $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
+$mpSubirActive = ($settings['mp_enabled'] ?? '1') === '1';
+$khipuSubirActive = ($settings['khipu_enabled'] ?? '1') === '1';
+$defaultSubirGateway = $mpSubirActive ? 'MERCADO_PAGO' : ($khipuSubirActive ? 'KHIPU' : 'NONE');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -637,27 +640,44 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                     </div>
 
                     <!-- Selector de Pasarela de Pago para Documento Propio -->
+                    <!-- Selector de Pasarela de Pago para Subir Documento -->
+                    <?php if (!$mpSubirActive && !$khipuSubirActive): ?>
+                        <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:1.25rem; margin-bottom:1.5rem; text-align:center;">
+                            <div style="color:#B45309; font-weight:700; margin-bottom:4px;">
+                                <i class="fas fa-exclamation-triangle"></i> Pasarelas de Pago en Mantención
+                            </div>
+                            <p style="color:#92400E; font-size:0.85rem; margin:0;">
+                                Los pagos electrónicos están temporalmente deshabilitados por mantención programada. Por favor contáctanos a soporte@sinnotario.cl.
+                            </p>
+                        </div>
+                    <?php else: ?>
                     <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:10px; padding:1.25rem; margin-bottom:1.5rem;">
                         <label style="display:block; font-size:0.88rem; font-weight:800; color:#0F2A4A; margin-bottom:0.75rem;">
                             <i class="fas fa-credit-card" style="color:var(--upload-primary);"></i> Selecciona tu Medio de Pago Electrónico:
                         </label>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
-                            <label style="border:2px solid #009EE3; background:#F0F9FF; border-radius:8px; padding:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px;" id="labelSubirMP">
-                                <input type="radio" name="subir_gateway" value="MERCADO_PAGO" checked style="accent-color:#009EE3;" onchange="updateSubirGatewayUI()">
+                        <div style="display:grid; grid-template-columns:<?php echo ($mpSubirActive && $khipuSubirActive) ? '1fr 1fr' : '1fr'; ?>; gap:0.75rem;">
+                            <?php if ($mpSubirActive): ?>
+                            <label style="border:2px solid <?php echo ($defaultSubirGateway === 'MERCADO_PAGO') ? '#009EE3' : '#CBD5E1'; ?>; background:<?php echo ($defaultSubirGateway === 'MERCADO_PAGO') ? '#F0F9FF' : '#FFFFFF'; ?>; border-radius:8px; padding:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px;" id="labelSubirMP">
+                                <input type="radio" name="subir_gateway" value="MERCADO_PAGO" <?php echo ($defaultSubirGateway === 'MERCADO_PAGO') ? 'checked' : ''; ?> style="accent-color:#009EE3;" onchange="updateSubirGatewayUI()">
                                 <div>
                                     <div style="font-weight:700; color:#0369A1; font-size:0.88rem;">Mercado Pago</div>
                                     <div style="font-size:0.72rem; color:#64748B;">Tarjetas de Crédito / Redcompra</div>
                                 </div>
                             </label>
-                            <label style="border:2px solid #CBD5E1; border-radius:8px; padding:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px;" id="labelSubirKhipu">
-                                <input type="radio" name="subir_gateway" value="KHIPU" style="accent-color:#6366F1;" onchange="updateSubirGatewayUI()">
+                            <?php endif; ?>
+
+                            <?php if ($khipuSubirActive): ?>
+                            <label style="border:2px solid <?php echo ($defaultSubirGateway === 'KHIPU') ? '#6366F1' : '#CBD5E1'; ?>; background:<?php echo ($defaultSubirGateway === 'KHIPU') ? '#EEF2FF' : '#FFFFFF'; ?>; border-radius:8px; padding:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px;" id="labelSubirKhipu">
+                                <input type="radio" name="subir_gateway" value="KHIPU" <?php echo ($defaultSubirGateway === 'KHIPU') ? 'checked' : ''; ?> style="accent-color:#6366F1;" onchange="updateSubirGatewayUI()">
                                 <div>
                                     <div style="font-weight:700; color:#4338CA; font-size:0.88rem;">Khipu</div>
                                     <div style="font-size:0.72rem; color:#64748B;">Transferencia Bancaria Directa</div>
                                 </div>
                             </label>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
 
                     <div style="display:flex; justify-content:space-between;">
                         <button type="button" class="btn-cta btn-secondary" onclick="goToStep(2)">
@@ -1405,18 +1425,13 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
             const isMP = document.querySelector('input[name="subir_gateway"]:checked')?.value === 'MERCADO_PAGO';
             const lMP = document.getElementById('labelSubirMP');
             const lKh = document.getElementById('labelSubirKhipu');
-            if (lMP && lKh) {
-                if (isMP) {
-                    lMP.style.borderColor = '#009EE3';
-                    lMP.style.background = '#F0F9FF';
-                    lKh.style.borderColor = '#CBD5E1';
-                    lKh.style.background = '#FFFFFF';
-                } else {
-                    lKh.style.borderColor = '#6366F1';
-                    lKh.style.background = '#EEF2FF';
-                    lMP.style.borderColor = '#CBD5E1';
-                    lMP.style.background = '#FFFFFF';
-                }
+            if (lMP) {
+                lMP.style.borderColor = isMP ? '#009EE3' : '#CBD5E1';
+                lMP.style.background = isMP ? '#F0F9FF' : '#FFFFFF';
+            }
+            if (lKh) {
+                lKh.style.borderColor = !isMP ? '#6366F1' : '#CBD5E1';
+                lKh.style.background = !isMP ? '#EEF2FF' : '#FFFFFF';
             }
         }
 

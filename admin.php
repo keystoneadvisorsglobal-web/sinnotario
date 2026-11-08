@@ -133,6 +133,10 @@ if (isset($_POST['save_pricing_settings'])) {
     }
 
     // Parámetros Mercado Pago (Pasarela de Pagos)
+    $mpEnabled = isset($_POST['mp_enabled']) && $_POST['mp_enabled'] === '1' ? '1' : '0';
+    $stmtMpEn = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('mp_enabled', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+    $stmtMpEn->execute([$mpEnabled]);
+
     $mpFields = ['mp_public_key', 'mp_access_token', 'mp_mode'];
     $stmtMp = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
     foreach ($mpFields as $mpf) {
@@ -142,6 +146,10 @@ if (isset($_POST['save_pricing_settings'])) {
     }
 
     // Parámetros Khipu (Transferencias Bancarias Simplificadas)
+    $khipuEnabled = isset($_POST['khipu_enabled']) && $_POST['khipu_enabled'] === '1' ? '1' : '0';
+    $stmtKhEn = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('khipu_enabled', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+    $stmtKhEn->execute([$khipuEnabled]);
+
     $khipuFields = ['khipu_receiver_id', 'khipu_secret_key', 'khipu_mode'];
     $stmtKhipu = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
     foreach ($khipuFields as $kf) {
@@ -1157,6 +1165,7 @@ $allTemplates = $stmtTemplates->fetchAll();
 
                         <!-- Configuración Pasarela de Pagos: Mercado Pago Chile -->
                         <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
+                            <?php $isMpActive = ($sysSettings['mp_enabled'] ?? '1') === '1'; ?>
                             <div style="margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
                                 <div>
                                     <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem; font-size:1rem;">
@@ -1166,9 +1175,15 @@ $allTemplates = $stmtTemplates->fetchAll();
                                         Permite recibir pagos automáticos con Tarjetas de Crédito, Redcompra/Débito y Dinero en cuenta para bolsas prepagadas B2B y trámites particulares.
                                     </p>
                                 </div>
-                                <span style="background:<?= !empty($sysSettings['mp_access_token']) ? '#DCFCE7' : '#FEF3C7' ?>; color:<?= !empty($sysSettings['mp_access_token']) ? '#15803D' : '#B45309' ?>; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px;">
-                                    <?= !empty($sysSettings['mp_access_token']) ? '<i class="fas fa-check-circle"></i> CONECTADO EN PRODUCCIÓN' : '<i class="fas fa-clock"></i> PENDIENTE DE CREDENCIALES' ?>
-                                </span>
+                                <div style="display:flex; align-items:center; gap:0.75rem;">
+                                    <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; background:<?= $isMpActive ? '#EFF6FF' : '#F1F5F9' ?>; padding:4px 10px; border-radius:6px; border:1px solid <?= $isMpActive ? '#BFDBFE' : '#CBD5E1' ?>; font-size:0.82rem; font-weight:700; color:<?= $isMpActive ? '#1D4ED8' : '#64748B' ?>;">
+                                        <input type="checkbox" name="mp_enabled" value="1" <?= $isMpActive ? 'checked' : '' ?> style="accent-color:#009EE3;">
+                                        Habilitar Pasarela
+                                    </label>
+                                    <span style="background:<?= ($isMpActive && !empty($sysSettings['mp_access_token'])) ? '#DCFCE7' : ($isMpActive ? '#FEF3C7' : '#F1F5F9') ?>; color:<?= ($isMpActive && !empty($sysSettings['mp_access_token'])) ? '#15803D' : ($isMpActive ? '#B45309' : '#64748B') ?>; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px;">
+                                        <?= !$isMpActive ? '<i class="fas fa-ban"></i> DESACTIVADA' : (!empty($sysSettings['mp_access_token']) ? '<i class="fas fa-check-circle"></i> ACTIVA & CONECTADA' : '<i class="fas fa-clock"></i> PENDIENTE CREDENCIALES') ?>
+                                    </span>
+                                </div>
                             </div>
 
                             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem;">
@@ -1195,6 +1210,7 @@ $allTemplates = $stmtTemplates->fetchAll();
 
                         <!-- Configuración Pasarela de Pagos: Khipu Chile -->
                         <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
+                            <?php $isKhActive = ($sysSettings['khipu_enabled'] ?? '1') === '1'; ?>
                             <div style="margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
                                 <div>
                                     <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem; font-size:1rem;">
@@ -1204,9 +1220,15 @@ $allTemplates = $stmtTemplates->fetchAll();
                                         Ideal para montos altos de empresas (baja comisión ~1,5%). Permite pagar cuenta a cuenta sin topar cupos de tarjetas.
                                     </p>
                                 </div>
-                                <span style="background:<?= !empty($sysSettings['khipu_secret_key']) ? '#DCFCE7' : '#FEF3C7' ?>; color:<?= !empty($sysSettings['khipu_secret_key']) ? '#15803D' : '#B45309' ?>; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px;">
-                                    <?= !empty($sysSettings['khipu_secret_key']) ? '<i class="fas fa-check-circle"></i> CONECTADO EN PRODUCCIÓN' : '<i class="fas fa-clock"></i> PENDIENTE DE CREDENCIALES' ?>
-                                </span>
+                                <div style="display:flex; align-items:center; gap:0.75rem;">
+                                    <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; background:<?= $isKhActive ? '#EEF2FF' : '#F1F5F9' ?>; padding:4px 10px; border-radius:6px; border:1px solid <?= $isKhActive ? '#C7D2FE' : '#CBD5E1' ?>; font-size:0.82rem; font-weight:700; color:<?= $isKhActive ? '#4338CA' : '#64748B' ?>;">
+                                        <input type="checkbox" name="khipu_enabled" value="1" <?= $isKhActive ? 'checked' : '' ?> style="accent-color:#6366F1;">
+                                        Habilitar Pasarela
+                                    </label>
+                                    <span style="background:<?= ($isKhActive && !empty($sysSettings['khipu_secret_key'])) ? '#DCFCE7' : ($isKhActive ? '#FEF3C7' : '#F1F5F9') ?>; color:<?= ($isKhActive && !empty($sysSettings['khipu_secret_key'])) ? '#15803D' : ($isKhActive ? '#B45309' : '#64748B') ?>; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px;">
+                                        <?= !$isKhActive ? '<i class="fas fa-ban"></i> DESACTIVADA' : (!empty($sysSettings['khipu_secret_key']) ? '<i class="fas fa-check-circle"></i> ACTIVA & CONECTADA' : '<i class="fas fa-clock"></i> PENDIENTE CREDENCIALES') ?>
+                                    </span>
+                                </div>
                             </div>
 
                             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem;">
