@@ -1,5 +1,37 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 23:49 UTC-3] - SOL-0064
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0064`
+- **Alcance de los Cambios:**
+  - **Blindaje de Acceso Corporativo, Suscripción de Planes y Control de Consumo B2B:**
+    1. **Autenticación Obligatoria:**
+       - Se interceptó el acceso a `empresas.php` exigiendo sesión corporativa activa vía `AuthService::getCurrentUser()`.
+       - En caso de acceso no autorizado, se redirige con código HTTP 302 a `login.php?redirect=empresas.php&msg=b2b_auth_required`.
+       - Se integró un banner corporativo en `login.php` alertando al cliente que requiere identificarse con credenciales o Google Workspace empresarial.
+    2. **Esquema de Suscripción y Gastos en Base de Datos:**
+       - Se actualizaron las columnas de la tabla `companies`:
+         - `plan_nombre`: Identificador del plan contratado (`PLAN_INICIAL`, `PLAN_PYME`, `PLAN_PRO`, `PLAN_ENTERPRISE`).
+         - `plan_estado`: Estado de la suscripción (`ACTIVO`, `SUSPENDIDO`, `PRUEBA`, `VENCIDO`).
+         - `firmas_totales_plan`: Cupo base mensual de firmas incluidas.
+         - `firmas_utilizadas`: Contador acumulado en caliente de firmas emitidas.
+         - `costo_mensual_uf`: Tarifa base recurrente en UF.
+         - `costo_firma_extra_clp`: Valor unitario por firma excedente.
+    3. **Lógica de Bloqueo y Control de Consumo (`B2BService.php`):**
+       - El motor de firma en lote valida que el estado del plan no sea `SUSPENDIDO` ni `VENCIDO`.
+       - Cada firma masiva exitosa actualiza automáticamente el consumo en `companies.firmas_utilizadas`.
+    4. **Dashboard y UX de Suscripción (`empresas.php`):**
+       - Se añadió un widget superior en tiempo real con barra de estado del plan, total de firmas consumidas vs. disponibles del período.
+       - Modal de configuración ampliado con desglose financiero del plan (cupo, costo mensual en UF, costo de firma adicional y enlace para ampliación de plan vía WhatsApp).
+- **Pruebas Validadas:**
+  - Validación sintáctica PHP Lint en servidor: 0 errores.
+  - Verificación de redirección HTTP 302 al entrar sin estar logueado.
+  - Verificación del banner informativo en `login.php`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 23:15 UTC-3] - SOL-0063
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

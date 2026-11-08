@@ -5,7 +5,13 @@
  */
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/src/Services/AuthService.php';
+
 $currentUser = AuthService::getCurrentUser();
+if (!$currentUser) {
+    // Si no ha iniciado sesión, redirigir al portal de acceso institucional
+    header('Location: login.php?redirect=' . urlencode('empresas.php') . '&msg=b2b_auth_required');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -13,6 +19,7 @@ $currentUser = AuthService::getCurrentUser();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suite B2B Empresas & Emisión Masiva | SinNotario.cl</title>
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/sinnotario-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
@@ -112,22 +119,33 @@ $currentUser = AuthService::getCurrentUser();
             </p>
         </div>
 
-        <!-- Barra de Empresa y Configuración del Emisor -->
+        <!-- Barra de Empresa y Métricas de Plan / Suscripción -->
         <div class="company-badge-bar">
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <div style="width: 48px; height: 48px; border-radius: 10px; background: #0A1C33; color: #D4AF37; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
                     <i class="fas fa-building"></i>
                 </div>
                 <div>
-                    <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary);" id="dispRazonSocial">Keystone Advisors SpA</div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-weight: 800; font-size: 1.1rem; color: var(--primary);" id="dispRazonSocial">Keystone Advisors SpA</span>
+                        <span style="background:#DCFCE7; color:#15803D; font-size:0.75rem; font-weight:800; padding:2px 8px; border-radius:12px;" id="dispPlanEstado">PLAN ACTIVO</span>
+                    </div>
                     <div style="font-size: 0.85rem; color: #64748B;">
-                        RUT Empresa: <strong id="dispRutEmpresa">78.089.686-8</strong> | Rep. Legal: <strong id="dispRepLegal">Maritza Vásquez (17.297.004-4)</strong>
+                        RUT: <strong id="dispRutEmpresa">78.089.686-8</strong> | Rep. Legal: <strong id="dispRepLegal">Maritza Vásquez (17.297.004-4)</strong>
                     </div>
                 </div>
             </div>
-            <div>
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <!-- Widget de Consumo y Cupo de Firmas del Plan -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 0.5rem 1rem; text-align: right;">
+                    <div style="font-size: 0.75rem; color: #64748B; font-weight: 600;">CUPO PLAN MENSUAL (<span id="dispPlanNombre">INICIAL</span>)</div>
+                    <div style="font-size: 1.05rem; font-weight: 800; color: var(--primary);">
+                        <span id="dispFirmasUsadas" style="color: #0A1C33;">0</span> / <span id="dispFirmasTotales">50</span> firmas
+                    </div>
+                    <div style="font-size: 0.72rem; color: #10B981; font-weight: 600;" id="dispFirmasDisponibles">50 disponibles</div>
+                </div>
                 <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important; border:1px solid #CBD5E1; font-size:0.85rem;" onclick="openCompanyModal()">
-                    <i class="fas fa-cog"></i> Configurar Empresa
+                    <i class="fas fa-cog"></i> Perfil & Plan
                 </button>
             </div>
         </div>
@@ -227,13 +245,28 @@ $currentUser = AuthService::getCurrentUser();
 
     </main>
 
-    <!-- Modal de Configuración de Empresa -->
+    <!-- Modal de Configuración de Empresa y Plan -->
     <div id="companyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
-        <div style="background:#FFF; max-width:550px; width:90%; border-radius:12px; padding:2rem; box-shadow:var(--shadow-lg);">
+        <div style="background:#FFF; max-width:600px; width:90%; border-radius:12px; padding:2rem; box-shadow:var(--shadow-lg);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-                <h3 style="font-weight:800; color:var(--primary); margin:0;">Datos Corporativos de la Empresa</h3>
+                <h3 style="font-weight:800; color:var(--primary); margin:0;">Perfil de Empresa & Plan Contratado</h3>
                 <button type="button" style="background:none; border:none; font-size:1.5rem; cursor:pointer;" onclick="closeCompanyModal()">&times;</button>
             </div>
+            
+            <!-- Resumen de Plan y Costos -->
+            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:1rem; margin-bottom:1.5rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <span style="font-weight:700; color:#334155; font-size:0.9rem;">Suscripción Corporativa Actual:</span>
+                    <span style="background:#DCFCE7; color:#15803D; font-weight:800; font-size:0.78rem; padding:2px 8px; border-radius:10px;" id="modalPlanBadge">PLAN PYME ACTIVO</span>
+                </div>
+                <div style="font-size:0.83rem; color:#64748B; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <div>Cupo Base: <strong id="modalPlanCupo">50 firmas / mes</strong></div>
+                    <div>Costo Base: <strong id="modalPlanCosto">2.50 UF + IVA / mes</strong></div>
+                    <div>Consumo Actual: <strong id="modalPlanConsumo">0 firmas</strong></div>
+                    <div>Firma Adicional: <strong id="modalPlanExtra">$2.490 CLP</strong></div>
+                </div>
+            </div>
+
             <form id="companyForm" onsubmit="saveCompanyData(event)">
                 <div style="margin-bottom:1rem;">
                     <label style="font-size:0.85rem; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Razón Social Empresa</label>
@@ -263,9 +296,14 @@ $currentUser = AuthService::getCurrentUser();
                         <input type="email" id="cfgRepEmail" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #CBD5E1; border-radius:6px;" required value="contacto@sinnotario.cl">
                     </div>
                 </div>
-                <div style="display:flex; justify-content:flex-end; gap:1rem;">
-                    <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="closeCompanyModal()">Cancelar</button>
-                    <button type="submit" class="btn-cta btn-gold">Guardar Configuración</button>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <a href="https://wa.me/56984180479?text=Hola,%20solicito%20ampliar%20el%20cupo%20de%20firmas%20de%20mi%20plan%20empresas%20en%20SinNotario.cl" target="_blank" style="font-size:0.85rem; color:var(--primary); font-weight:700; text-decoration:underline;">
+                        <i class="fas fa-arrow-up"></i> Ampliar Plan o Cupo
+                    </a>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="closeCompanyModal()">Cancelar</button>
+                        <button type="submit" class="btn-cta btn-gold">Guardar Configuración</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -316,6 +354,25 @@ $currentUser = AuthService::getCurrentUser();
             document.getElementById('dispRutEmpresa').textContent = currentCompany.rut || '78.089.686-8';
             document.getElementById('dispRepLegal').textContent = (currentCompany.rep_legal_nombre || 'Maritza Vásquez') + ' (' + (currentCompany.rep_legal_rut || '17.297.004-4') + ')';
             
+            // Plan y gastos
+            const totalPlan = parseInt(currentCompany.firmas_totales_plan || 50);
+            const usadas = parseInt(currentCompany.firmas_utilizadas || 0);
+            const disponibles = Math.max(0, totalPlan - usadas);
+            const planNombre = (currentCompany.plan_nombre || 'PLAN_INICIAL').replace('_', ' ');
+
+            document.getElementById('dispPlanNombre').textContent = planNombre;
+            document.getElementById('dispFirmasUsadas').textContent = usadas;
+            document.getElementById('dispFirmasTotales').textContent = totalPlan;
+            document.getElementById('dispFirmasDisponibles').textContent = disponibles + ' disponibles';
+            document.getElementById('dispPlanEstado').textContent = currentCompany.plan_estado || 'ACTIVO';
+            
+            // Modal
+            document.getElementById('modalPlanBadge').textContent = (currentCompany.plan_estado || 'ACTIVO') + ' - ' + planNombre;
+            document.getElementById('modalPlanCupo').textContent = totalPlan + ' firmas / mes';
+            document.getElementById('modalPlanCosto').textContent = (currentCompany.costo_mensual_uf || '2.50') + ' UF + IVA / mes';
+            document.getElementById('modalPlanConsumo').textContent = usadas + ' firmas';
+            document.getElementById('modalPlanExtra').textContent = '$' + (currentCompany.costo_firma_extra_clp ? Number(currentCompany.costo_firma_extra_clp).toLocaleString('es-CL') : '2.490') + ' CLP';
+
             // Modal fields
             document.getElementById('cfgRazonSocial').value = currentCompany.razon_social || '';
             document.getElementById('cfgRutEmpresa').value = currentCompany.rut || '';

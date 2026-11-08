@@ -15,6 +15,7 @@ if ($currentUser) {
 
 $tab = isset($_GET['tab']) && $_GET['tab'] === 'registro' ? 'registro' : 'login';
 $redirectUrl = isset($_GET['redirect']) ? htmlspecialchars($_GET['redirect']) : 'mi-cuenta.php';
+$msg = isset($_GET['msg']) ? trim($_GET['msg']) : '';
 
 // Consultar Google Client ID configurado (en BD o .env)
 $pdo = Database::getInstance();
@@ -243,6 +244,15 @@ if (empty($googleClientId)) {
 
     <div class="auth-wrapper">
         <div class="auth-card">
+            <?php if ($msg === 'b2b_auth_required'): ?>
+                <div style="background:#EFF6FF; border:1px solid #93C5FD; color:#1E40AF; padding:0.85rem 1rem; border-radius:8px; font-size:0.88rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:10px;">
+                    <i class="fas fa-lock fa-lg" style="color:#2563EB;"></i>
+                    <div>
+                        <strong>Acceso Corporativo Protegido:</strong>
+                        <div>Inicia sesión con tu cuenta corporativa autorizada para acceder a la Suite B2B de Empresas y consultar tu plan y firmas.</div>
+                    </div>
+                </div>
+            <?php endif; ?>
             <div class="auth-header">
                 <h1>Zona Privada de Clientes</h1>
                 <p>Accede a tu bóveda de contratos, tracker de firmas y documentos oficiales</p>

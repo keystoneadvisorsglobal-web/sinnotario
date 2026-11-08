@@ -1,0 +1,19 @@
+# robots.txt para SinNotario.cl
+User-agent: *
+Disallow: /database/
+Disallow: /config/
+Disallow: /src/
+Disallow: /templates/
+Disallow: /empresas.php
+Disallow: /recuperar.php
+Disallow: /mi-cuenta.php
+
+# Permitir indexación del portal público
+Allow: /
+Allow: /redactar.php
+Allow: /subir-documento.php
+Allow: /verificar.php
+Allow: /marco-legal.php
+Allow: /terminos-condiciones.php
+Allow: /politica-privacidad.php
+Allow: /asesoria-legal.php

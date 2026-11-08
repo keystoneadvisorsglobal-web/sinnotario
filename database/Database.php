@@ -82,11 +82,26 @@ class Database {
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );");
 
-            // Tablas B2B Corporativas (SOL-0063)
+            // Migrar columnas B2B en tabla companies si ya existía previamente
+            $compColsStmt = $this->pdo->query("PRAGMA table_info(companies);");
+            $compCols = $compColsStmt ? $compColsStmt->fetchAll(PDO::FETCH_COLUMN, 1) : [];
+            $missingCompCols = [
+                'plan_nombre' => "ALTER TABLE companies ADD COLUMN plan_nombre VARCHAR(50) DEFAULT 'PLAN_INICIAL';",
+                'plan_estado' => "ALTER TABLE companies ADD COLUMN plan_estado VARCHAR(20) DEFAULT 'ACTIVO';",
+                'firmas_totales_plan' => "ALTER TABLE companies ADD COLUMN firmas_totales_plan INTEGER DEFAULT 50;",
+                'firmas_utilizadas' => "ALTER TABLE companies ADD COLUMN firmas_utilizadas INTEGER DEFAULT 0;",
+                'costo_mensual_uf' => "ALTER TABLE companies ADD COLUMN costo_mensual_uf DECIMAL(6,2) DEFAULT 2.50;",
+                'costo_firma_extra_clp' => "ALTER TABLE companies ADD COLUMN costo_firma_extra_clp INTEGER DEFAULT 2490;"
+            ];
+            foreach ($missingCompCols as $cCol => $cSql) {
+                if (!in_array($cCol, $compCols)) {
+                    $this->pdo->exec($cSql);
+                }
+            }
             $this->pdo->exec("CREATE TABLE IF NOT EXISTS companies (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
-                rut VARCHAR(20) NOT NULL,
+                rut VARCHAR(20) NOT NULL UNIQUE,
                 razon_social VARCHAR(200) NOT NULL,
                 giro VARCHAR(200),
                 direccion VARCHAR(255),
@@ -97,6 +112,12 @@ class Database {
                 rep_legal_email VARCHAR(150),
                 whatsapp_phone VARCHAR(30),
                 whatsapp_instance_id VARCHAR(100),
+                plan_nombre VARCHAR(50) DEFAULT 'PLAN_INICIAL', -- PLAN_INICIAL, PLAN_PYME, PLAN_PRO, PLAN_ENTERPRISE
+                plan_estado VARCHAR(20) DEFAULT 'ACTIVO', -- ACTIVO, SUSPENDIDO, PRUEBA, VENCIDO
+                firmas_totales_plan INTEGER DEFAULT 50, -- cupo mensual contratado
+                firmas_utilizadas INTEGER DEFAULT 0, -- consumo acumulado
+                costo_mensual_uf DECIMAL(6,2) DEFAULT 2.50, -- valor mensual en UF o CLP
+                costo_firma_extra_clp INTEGER DEFAULT 2490, -- valor por firma extra
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL

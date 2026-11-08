@@ -60,8 +60,9 @@ class B2BService {
                 INSERT INTO companies (
                     user_id, rut, razon_social, giro, direccion, comuna, ciudad,
                     rep_legal_nombre, rep_legal_rut, rep_legal_email,
-                    whatsapp_phone, whatsapp_instance_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    whatsapp_phone, whatsapp_instance_id,
+                    plan_nombre, plan_estado, firmas_totales_plan, firmas_utilizadas, costo_mensual_uf, costo_firma_extra_clp
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PLAN_INICIAL', 'ACTIVO', 50, 0, 2.50, 2490)
             ");
             $stmtIns->execute([
                 $userId,
@@ -230,8 +231,9 @@ class B2BService {
         $pdo = Database::getInstance();
 
         $stmtBatch = $pdo->prepare("
-            SELECT b.*, c.razon_social, c.rut as empresa_rut, c.direccion as empresa_dir,
-                   c.rep_legal_nombre, c.rep_legal_rut
+            SELECT b.*, c.id as comp_id, c.razon_social, c.rut as empresa_rut, c.direccion as empresa_dir,
+                   c.rep_legal_nombre, c.rep_legal_rut, c.plan_nombre, c.plan_estado,
+                   c.firmas_totales_plan, c.firmas_utilizadas, c.costo_firma_extra_clp
             FROM b2b_batches b
             LEFT JOIN companies c ON b.company_id = c.id
             WHERE b.id = ?
@@ -250,6 +252,11 @@ class B2BService {
 
         if (empty($items)) {
             throw new Exception("El lote no contiene registros válidos para emitir contratos.");
+        }
+
+        // Validar estado del plan de la empresa
+        if ($batch['plan_estado'] === 'SUSPENDIDO' || $batch['plan_estado'] === 'VENCIDO') {
+            throw new Exception("El plan corporativo de su empresa se encuentra " . $batch['plan_estado'] . ". Regularice su suscripción para continuar firmando.");
         }
 
         // Obtener template
@@ -366,6 +373,16 @@ class B2BService {
         // Actualizar estado del lote
         $stmtUpdBatch = $pdo->prepare("UPDATE b2b_batches SET status = 'EN_FIRMA', updated_at = datetime('now') WHERE id = ?");
         $stmtUpdBatch->execute([$batchId]);
+
+        // Incrementar firmas consumidas en la empresa para control de plan y gastos
+        if (!empty($batch['company_id'])) {
+            $stmtUpdComp = $pdo->prepare("
+                UPDATE companies 
+                SET firmas_utilizadas = COALESCE(firmas_utilizadas, 0) + ?, updated_at = datetime('now') 
+                WHERE id = ?
+            ");
+            $stmtUpdComp->execute([$signedCount, $batch['company_id']]);
+        }
 
         return [
             'batch_id' => $batchId,
