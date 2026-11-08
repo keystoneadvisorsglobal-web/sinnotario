@@ -165,7 +165,7 @@ if (isset($_POST['admin_b2b_action'])) {
         $modalidad = trim($_POST['modalidad_cobro'] ?? 'PREPAGO');
         $saldoExtra = (int)($_POST['saldo_firmas_prepago'] ?? 50);
         $umbral = (int)($_POST['umbral_max_postpago'] ?? 200);
-        $tarifa = (int)($_POST['tarifa_tramo_clp'] ?? 2490);
+        $tarifa = (int)($_POST['tarifa_tramo_clp'] ?? 7990);
 
         $stmtUpdComp = $pdo->prepare("
             UPDATE companies 
@@ -1716,7 +1716,7 @@ $allTemplates = $stmtTemplates->fetchAll();
                     </div>
                     <div>
                         <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Tarifa por Firma (CLP)</label>
-                        <input type="number" name="tarifa_tramo_clp" id="editCompTarifa" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #CBD5E1; border-radius:6px;" value="2490">
+                        <input type="number" name="tarifa_tramo_clp" id="editCompTarifa" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #CBD5E1; border-radius:6px;" value="7990">
                     </div>
                 </div>
 
@@ -1754,7 +1754,7 @@ $allTemplates = $stmtTemplates->fetchAll();
             document.getElementById('editCompModalidad').value = c.modalidad_cobro || 'PREPAGO';
             document.getElementById('editCompEstado').value = c.plan_estado || 'ACTIVO';
             document.getElementById('editCompPlanNombre').value = c.plan_nombre || 'PLAN_INICIAL';
-            document.getElementById('editCompTarifa').value = c.tarifa_tramo_clp || 2490;
+            document.getElementById('editCompTarifa').value = c.tarifa_tramo_clp || 7990;
             document.getElementById('editCompSaldo').value = c.saldo_firmas_prepago || 0;
             document.getElementById('editCompUmbral').value = c.umbral_max_postpago || 200;
             document.getElementById('adminEditCompModal').style.display = 'flex';

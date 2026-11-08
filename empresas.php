@@ -924,7 +924,7 @@ if (!$currentUser) {
         function updateCompanyUI() {
             document.getElementById('dispRazonSocial').textContent = currentCompany.razon_social || 'Keystone Advisors SpA';
             document.getElementById('dispRutEmpresa').textContent = currentCompany.rut || '78.089.686-8';
-            document.getElementById('dispTarifaTramo').textContent = '$' + Number(currentCompany.tarifa_tramo_clp || 2490).toLocaleString('es-CL') + ' CLP';
+            document.getElementById('dispTarifaTramo').textContent = '$' + Number(currentCompany.tarifa_tramo_clp || 7990).toLocaleString('es-CL') + ' CLP';
             document.getElementById('dispPlanEstado').textContent = currentCompany.plan_estado || 'ACTIVO';
             
             const modalidad = currentCompany.modalidad_cobro || 'PREPAGO';

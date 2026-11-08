@@ -700,10 +700,10 @@ class B2BService {
 
         $stmtUpd = $pdo->prepare("
             UPDATE companies 
-            SET saldo_firmas_prepago = ?, tarifa_tramo_clp = ?, updated_at = datetime('now')
+            SET saldo_firmas_prepago = ?, updated_at = datetime('now')
             WHERE id = ?
         ");
-        $stmtUpd->execute([$nuevoSaldo, $pack['precio_unit'], $companyId]);
+        $stmtUpd->execute([$nuevoSaldo, $companyId]);
 
         // Registrar movimiento
         $stmtLog = $pdo->prepare("

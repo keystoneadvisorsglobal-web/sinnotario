@@ -1375,3 +1375,20 @@
   - Verificación sintáctica remota (`php -l domains/sinnotario.cl/public_html/index.php`) con cero errores.
   - Smoke tests HTTP/2 200 OK en `https://sinnotario.cl/` con validación de elementos ampliados.
 - **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+---
+
+### Registro de Despliegue: SOL-0086
+- **Fecha y Hora:** 2026-11-08 03:15:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0086`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Implementación del blindaje de tarifa fija por empresa (**Opción A**):
+  1) **Preservación de Tarifa Manual:** En `B2BService::rechargePrepagoBag`, se eliminó la actualización de `tarifa_tramo_clp` al comprar o simular bolsas prepago. Ahora cualquier recarga de packs abona exclusivamente la cantidad de firmas correspondiente al `saldo_firmas_prepago` y registra el movimiento contable en `b2b_billing_logs`, preservando intacta la tarifa por firma individual fijada por el administrador (ej. $7.990 CLP).
+  2) **Homologación de Valores por Defecto en Admin y Suite B2B:** Se actualizaron los modales de edición en `admin.php` y la vista reactiva en `empresas.php` para utilizar como valor por defecto $7.990 CLP.
+  3) **Verificación en Base de Datos de Producción:** Se confirmó mediante consulta directa en SQLite que las empresas registradas (`Keystone Solutions` y `Keystone Advisors SpA`) mantienen su tarifa fija en $7.990 CLP con cero errores.
+- **Pruebas Validadas:**
+  - Validación sintáctica remota (`php -l`) en `B2BService.php`, `admin.php` y `empresas.php` con 0 errores.
+  - Smoke tests HTTP/2 200 OK en `https://sinnotario.cl/empresas.php` y `https://sinnotario.cl/admin.php`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
