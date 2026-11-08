@@ -626,6 +626,29 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                         </div>
                     </div>
 
+                    <!-- Selector de Pasarela de Pago para Persona Natural -->
+                    <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:10px; padding:1.25rem; margin-bottom:1.5rem;">
+                        <label style="display:block; font-size:0.88rem; font-weight:800; color:#0F2A4A; margin-bottom:0.75rem;">
+                            <i class="fas fa-credit-card" style="color:var(--gold);"></i> Selecciona tu Medio de Pago Electrónico:
+                        </label>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                            <label style="border:2px solid #009EE3; background:#F0F9FF; border-radius:8px; padding:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px;" id="labelRetailMP">
+                                <input type="radio" name="retail_gateway" value="MERCADO_PAGO" checked style="accent-color:#009EE3;" onchange="updateRetailGatewayUI()">
+                                <div>
+                                    <div style="font-weight:700; color:#0369A1; font-size:0.88rem;">Mercado Pago</div>
+                                    <div style="font-size:0.72rem; color:#64748B;">Tarjetas de Crédito / Redcompra</div>
+                                </div>
+                            </label>
+                            <label style="border:2px solid #CBD5E1; border-radius:8px; padding:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px;" id="labelRetailKhipu">
+                                <input type="radio" name="retail_gateway" value="KHIPU" style="accent-color:#6366F1;" onchange="updateRetailGatewayUI()">
+                                <div>
+                                    <div style="font-weight:700; color:#4338CA; font-size:0.88rem;">Khipu</div>
+                                    <div style="font-size:0.72rem; color:#64748B;">Transferencia Bancaria Directa</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     <div style="margin-bottom:1.5rem;">
                         <label style="display:flex; align-items:flex-start; gap:0.5rem; font-size:0.85rem; color:#475569; cursor:pointer;">
                             <input type="checkbox" id="chk_terminos" checked style="margin-top:2px;">
@@ -4095,6 +4118,25 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
             window.scrollTo({ top: 80, behavior: 'smooth' });
         }
 
+        function updateRetailGatewayUI() {
+            const isMP = document.querySelector('input[name="retail_gateway"]:checked')?.value === 'MERCADO_PAGO';
+            const lMP = document.getElementById('labelRetailMP');
+            const lKh = document.getElementById('labelRetailKhipu');
+            if (lMP && lKh) {
+                if (isMP) {
+                    lMP.style.borderColor = '#009EE3';
+                    lMP.style.background = '#F0F9FF';
+                    lKh.style.borderColor = '#CBD5E1';
+                    lKh.style.background = '#FFFFFF';
+                } else {
+                    lKh.style.borderColor = '#6366F1';
+                    lKh.style.background = '#EEF2FF';
+                    lMP.style.borderColor = '#CBD5E1';
+                    lMP.style.background = '#FFFFFF';
+                }
+            }
+        }
+
         async function emitirUniversalFinal() {
             const chkTerminos = document.getElementById('chk_terminos');
             if (!chkTerminos || !chkTerminos.checked) {
@@ -4241,8 +4283,37 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
                 const json = await res.json();
 
                 if (json.success && json.data) {
-                    alert(`¡Borrador Creado con Éxito!\n\nDocumento: ${CURRENT_TEMPLATE.nombre}\nCódigo Único: ${json.data.codigo_verificacion}\n\nPróximo paso: Activación del circuito de firma digital y pasarela de pago.`);
-                    window.location.href = `index.php#verificar`;
+                    const docId = json.data.document_id;
+                    const vCode = json.data.codigo_verificacion;
+                    const chosenGw = document.querySelector('input[name="retail_gateway"]:checked')?.value || 'MERCADO_PAGO';
+
+                    // Iniciar pago automático hacia la pasarela elegida
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando con pasarela segura...';
+                    try {
+                        const payRes = await fetch('api/index.php?action=pay_document', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ document_id: docId, gateway: chosenGw })
+                        });
+                        const payJson = await payRes.json();
+
+                        if (payJson.success && payJson.data) {
+                            if (payJson.data.init_point) {
+                                // Redirección a Mercado Pago
+                                window.location.href = payJson.data.init_point;
+                                return;
+                            } else if (payJson.data.payment_url) {
+                                // Redirección a Khipu
+                                window.location.href = payJson.data.payment_url;
+                                return;
+                            }
+                        }
+                    } catch (ePay) {
+                        console.warn("Pasarela no configurada aún, pasando a verificación directa:", ePay);
+                    }
+
+                    alert(`¡Borrador Creado con Éxito!\n\nDocumento: ${CURRENT_TEMPLATE.nombre}\nCódigo Único: ${vCode}\n\nLos enlaces de firma han sido preparados.`);
+                    window.location.href = `verificar.php?code=${encodeURIComponent(vCode)}`;
                 } else {
                     alert('Error al generar borrador: ' + (json.error || 'Error en servidor'));
                     btn.disabled = false;

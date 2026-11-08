@@ -636,6 +636,29 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                         </div>
                     </div>
 
+                    <!-- Selector de Pasarela de Pago para Documento Propio -->
+                    <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:10px; padding:1.25rem; margin-bottom:1.5rem;">
+                        <label style="display:block; font-size:0.88rem; font-weight:800; color:#0F2A4A; margin-bottom:0.75rem;">
+                            <i class="fas fa-credit-card" style="color:var(--upload-primary);"></i> Selecciona tu Medio de Pago Electrónico:
+                        </label>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                            <label style="border:2px solid #009EE3; background:#F0F9FF; border-radius:8px; padding:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px;" id="labelSubirMP">
+                                <input type="radio" name="subir_gateway" value="MERCADO_PAGO" checked style="accent-color:#009EE3;" onchange="updateSubirGatewayUI()">
+                                <div>
+                                    <div style="font-weight:700; color:#0369A1; font-size:0.88rem;">Mercado Pago</div>
+                                    <div style="font-size:0.72rem; color:#64748B;">Tarjetas de Crédito / Redcompra</div>
+                                </div>
+                            </label>
+                            <label style="border:2px solid #CBD5E1; border-radius:8px; padding:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px;" id="labelSubirKhipu">
+                                <input type="radio" name="subir_gateway" value="KHIPU" style="accent-color:#6366F1;" onchange="updateSubirGatewayUI()">
+                                <div>
+                                    <div style="font-weight:700; color:#4338CA; font-size:0.88rem;">Khipu</div>
+                                    <div style="font-size:0.72rem; color:#64748B;">Transferencia Bancaria Directa</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     <div style="display:flex; justify-content:space-between;">
                         <button type="button" class="btn-cta btn-secondary" onclick="goToStep(2)">
                             <i class="fas fa-arrow-left"></i> Modificar Firmantes
@@ -1378,6 +1401,25 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
             return signers;
         }
 
+        function updateSubirGatewayUI() {
+            const isMP = document.querySelector('input[name="subir_gateway"]:checked')?.value === 'MERCADO_PAGO';
+            const lMP = document.getElementById('labelSubirMP');
+            const lKh = document.getElementById('labelSubirKhipu');
+            if (lMP && lKh) {
+                if (isMP) {
+                    lMP.style.borderColor = '#009EE3';
+                    lMP.style.background = '#F0F9FF';
+                    lKh.style.borderColor = '#CBD5E1';
+                    lKh.style.background = '#FFFFFF';
+                } else {
+                    lKh.style.borderColor = '#6366F1';
+                    lKh.style.background = '#EEF2FF';
+                    lMP.style.borderColor = '#CBD5E1';
+                    lMP.style.background = '#FFFFFF';
+                }
+            }
+        }
+
         async function submitCustomDocument() {
             if (!currentUploadedFile) {
                 alert('Debes seleccionar un archivo PDF.');
@@ -1423,8 +1465,34 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
                     const json = await response.json();
 
                     if (json.success && json.data) {
-                        alert(`¡Documento sellado exitosamente!\n\nCódigo de Verificación: ${json.data.codigo_verificacion}\nLos enlaces de firma digital han sido preparados y quedarán disponibles para despacho.`);
-                        window.location.href = `verificar.php?code=${encodeURIComponent(json.data.codigo_verificacion)}`;
+                        const docId = json.data.document_id;
+                        const vCode = json.data.codigo_verificacion;
+                        const chosenGw = document.querySelector('input[name="subir_gateway"]:checked')?.value || 'MERCADO_PAGO';
+
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando con pasarela segura...';
+                        try {
+                            const payRes = await fetch('api/index.php?action=pay_document', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ document_id: docId, gateway: chosenGw })
+                            });
+                            const payJson = await payRes.json();
+
+                            if (payJson.success && payJson.data) {
+                                if (payJson.data.init_point) {
+                                    window.location.href = payJson.data.init_point;
+                                    return;
+                                } else if (payJson.data.payment_url) {
+                                    window.location.href = payJson.data.payment_url;
+                                    return;
+                                }
+                            }
+                        } catch (ePay) {
+                            console.warn("Pasarela no configurada aún, pasando a verificación directa:", ePay);
+                        }
+
+                        alert(`¡Documento sellado exitosamente!\n\nCódigo de Verificación: ${vCode}\nLos enlaces de firma digital han sido preparados y quedarán disponibles para despacho.`);
+                        window.location.href = `verificar.php?code=${encodeURIComponent(vCode)}`;
                     } else {
                         alert('Error al procesar el documento: ' + (json.error || 'Respuesta inválida del servidor'));
                         btn.disabled = false;

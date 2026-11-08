@@ -170,5 +170,85 @@ class KhipuService {
             'monto_total' => $totalConIva
         ];
     }
+
+    /**
+     * Crea un cobro en Khipu para documentos de Personas Naturales (Redactar o Subir PDF)
+     */
+    public function createRetailDocumentPayment(int $docId, string $verifCode, string $docTitle, int $montoTotal, array $payerData, ?int $userId = null): array {
+        $externalReference = "RETAIL_KHIPU_DOC_{$docId}_" . time();
+        $siteUrl = 'https://sinnotario.cl';
+
+        $pdo = Database::getInstance();
+        $stmtOrder = $pdo->prepare("
+            INSERT INTO payment_orders (
+                external_reference, payment_type, document_id, user_id,
+                monto_neto, monto_total, moneda, estado, gateway, metadata_json
+            ) VALUES (?, 'DOCUMENT_RETAIL', ?, ?, ?, ?, 'CLP', 'PENDIENTE', 'KHIPU', ?)
+        ");
+        $metadata = [
+            'payment_type' => 'DOCUMENT_RETAIL',
+            'gateway' => 'KHIPU',
+            'document_id' => $docId,
+            'codigo_verificacion' => $verifCode,
+            'monto_total' => $montoTotal,
+            'user_id' => $userId
+        ];
+        $stmtOrder->execute([
+            $externalReference,
+            $docId,
+            $userId,
+            (int)round($montoTotal / 1.19),
+            $montoTotal,
+            json_encode($metadata, JSON_UNESCAPED_UNICODE)
+        ]);
+        $orderId = $pdo->lastInsertId();
+
+        if (!$this->isConfigured()) {
+            return [
+                'success' => true,
+                'configured' => false,
+                'order_id' => $orderId,
+                'external_reference' => $externalReference,
+                'monto_total' => $montoTotal,
+                'payment_url' => null,
+                'message' => 'Orden de Khipu registrada. Configure credenciales en admin.php para cobro bancario directo.'
+            ];
+        }
+
+        $params = [
+            'subject' => "SinNotario - {$docTitle}",
+            'body' => "Certificación digital de documento privado Ley N° 19.799 (Cód: {$verifCode})",
+            'amount' => $montoTotal,
+            'currency' => 'CLP',
+            'transaction_id' => $externalReference,
+            'custom' => json_encode(['order_id' => $orderId, 'document_id' => $docId]),
+            'return_url' => "{$siteUrl}/verificar.php?code={$verifCode}&khipu_status=success&external_ref={$externalReference}",
+            'cancel_url' => "{$siteUrl}/verificar.php?code={$verifCode}&khipu_status=cancelled&external_ref={$externalReference}",
+            'notify_url' => "{$siteUrl}/api/index.php?action=khipu_webhook",
+            'notify_api_version' => '1.3',
+            'payer_email' => $payerData['email'] ?: 'contacto@sinnotario.cl'
+        ];
+
+        $res = $this->request('/payments', 'POST', $params);
+        if (!$res['success']) {
+            return $res;
+        }
+
+        $paymentUrl = $res['data']['payment_url'] ?? null;
+        $paymentId = $res['data']['payment_id'] ?? null;
+
+        $stmtUpd = $pdo->prepare("UPDATE payment_orders SET preference_id = ? WHERE id = ?");
+        $stmtUpd->execute([$paymentId, $orderId]);
+
+        return [
+            'success' => true,
+            'configured' => true,
+            'order_id' => $orderId,
+            'payment_id' => $paymentId,
+            'payment_url' => $paymentUrl,
+            'external_reference' => $externalReference,
+            'monto_total' => $montoTotal
+        ];
+    }
 }
 

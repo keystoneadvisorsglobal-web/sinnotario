@@ -64,6 +64,76 @@ try {
             jsonResponse(true, $template);
             break;
 
+        // 3B. Iniciar Pago de Documento Retail (Persona Natural - Redactar o Subir PDF)
+        case 'pay_document':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $docId = (int)($input['document_id'] ?? 0);
+            $gateway = strtoupper(trim($input['gateway'] ?? 'MERCADO_PAGO')); // MERCADO_PAGO o KHIPU
+
+            if ($docId <= 0) {
+                jsonResponse(false, null, 'ID de documento requerido', 400);
+            }
+
+            $stmtDoc = $pdo->prepare("SELECT * FROM documents WHERE id = ?");
+            $stmtDoc->execute([$docId]);
+            $doc = $stmtDoc->fetch(PDO::FETCH_ASSOC);
+
+            if (!$doc) {
+                jsonResponse(false, null, 'Documento no encontrado', 404);
+            }
+
+            // Obtener firmante principal o datos del pagador
+            $stmtPayer = $pdo->prepare("SELECT nombre_completo, email, rut FROM document_signers WHERE document_id = ? ORDER BY id ASC LIMIT 1");
+            $stmtPayer->execute([$docId]);
+            $payer = $stmtPayer->fetch(PDO::FETCH_ASSOC) ?: [
+                'nombre_completo' => 'Cliente SinNotario',
+                'email' => 'contacto@sinnotario.cl',
+                'rut' => '11111111-1'
+            ];
+
+            $montoTotal = (int)($doc['monto_pagado'] ?? 4990);
+            $verifCode = $doc['codigo_verificacion'];
+            $docTitle = $doc['titulo'] ?: 'Certificación Digital de Documento';
+            $sessionUser = $_SESSION['user_id'] ?? ($doc['user_id'] ?? null);
+
+            $payerData = [
+                'nombre' => $payer['nombre_completo'],
+                'email' => $payer['email'],
+                'rut' => $payer['rut']
+            ];
+
+            if ($gateway === 'KHIPU') {
+                require_once __DIR__ . '/../src/Services/KhipuService.php';
+                $khipu = new KhipuService();
+                if ($khipu->isConfigured()) {
+                    $khipuRes = $khipu->createRetailDocumentPayment($docId, $verifCode, $docTitle, $montoTotal, $payerData, $sessionUser);
+                    jsonResponse(true, $khipuRes);
+                }
+            }
+
+            // Por defecto Mercado Pago
+            require_once __DIR__ . '/../src/Services/MercadoPagoService.php';
+            $mp = new MercadoPagoService();
+            if ($mp->isConfigured()) {
+                $prefResult = $mp->createRetailDocumentPreference($docId, $verifCode, $docTitle, $montoTotal, $payerData, $sessionUser);
+                jsonResponse(true, $prefResult);
+            } else {
+                // Modo simulador demo
+                jsonResponse(true, [
+                    'configured' => false,
+                    'document_id' => $docId,
+                    'codigo_verificacion' => $verifCode,
+                    'monto_total' => $montoTotal,
+                    'redirect_url' => "verificar.php?code={$verifCode}",
+                    'message' => 'Modo demostración: Las credenciales de pago están pendientes de configuración en el panel admin.'
+                ]);
+            }
+            break;
+
         // 3. Verificación de documento público (/verificar)
         case 'verify_by_hash':
             $hash = isset($_GET['hash']) ? trim($_GET['hash']) : '';

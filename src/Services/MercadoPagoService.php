@@ -174,6 +174,99 @@ class MercadoPagoService {
     }
 
     /**
+     * Crea una preferencia de pago para documentos de Personas Naturales (Redactar o Subir PDF)
+     */
+    public function createRetailDocumentPreference(int $docId, string $verifCode, string $docTitle, int $montoTotal, array $payerData, ?int $userId = null): array {
+        $externalReference = "RETAIL_DOC_{$docId}_" . time();
+        $siteUrl = 'https://sinnotario.cl';
+
+        $preferenceData = [
+            'items' => [
+                [
+                    'id' => "DOC-{$docId}",
+                    'title' => "SinNotario - {$docTitle}",
+                    'description' => "Certificación digital de documento privado Ley N° 19.799 (Cód: {$verifCode})",
+                    'quantity' => 1,
+                    'currency_id' => 'CLP',
+                    'unit_price' => $montoTotal
+                ]
+            ],
+            'payer' => [
+                'name' => $payerData['nombre'] ?: 'Cliente SinNotario',
+                'email' => $payerData['email'] ?: 'contacto@sinnotario.cl',
+                'identification' => [
+                    'type' => 'RUT',
+                    'number' => preg_replace('/[^0-9kK]/', '', $payerData['rut'] ?? '')
+                ]
+            ],
+            'back_urls' => [
+                'success' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=success&external_ref={$externalReference}",
+                'pending' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=pending&external_ref={$externalReference}",
+                'failure' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=failure&external_ref={$externalReference}"
+            ],
+            'auto_return' => 'approved',
+            'external_reference' => $externalReference,
+            'statement_descriptor' => 'SINNOTARIO',
+            'metadata' => [
+                'payment_type' => 'DOCUMENT_RETAIL',
+                'document_id' => $docId,
+                'codigo_verificacion' => $verifCode,
+                'monto_total' => $montoTotal,
+                'user_id' => $userId
+            ]
+        ];
+
+        $pdo = Database::getInstance();
+        $stmtOrder = $pdo->prepare("
+            INSERT INTO payment_orders (
+                external_reference, payment_type, document_id, user_id,
+                monto_neto, monto_total, moneda, estado, metadata_json
+            ) VALUES (?, 'DOCUMENT_RETAIL', ?, ?, ?, ?, 'CLP', 'PENDIENTE', ?)
+        ");
+        $stmtOrder->execute([
+            $externalReference,
+            $docId,
+            $userId,
+            (int)round($montoTotal / 1.19),
+            $montoTotal,
+            json_encode($preferenceData['metadata'], JSON_UNESCAPED_UNICODE)
+        ]);
+        $orderId = $pdo->lastInsertId();
+
+        if (!$this->isConfigured()) {
+            return [
+                'success' => true,
+                'configured' => false,
+                'order_id' => $orderId,
+                'external_reference' => $externalReference,
+                'monto_total' => $montoTotal,
+                'init_point' => null,
+                'message' => 'Orden de pago registrada. Configura Mercado Pago en la administración para cobro automático.'
+            ];
+        }
+
+        $res = $this->request('/checkout/preferences', 'POST', $preferenceData);
+        if (!$res['success']) {
+            return $res;
+        }
+
+        $initPoint = $this->isSandbox ? ($res['data']['sandbox_init_point'] ?? $res['data']['init_point']) : $res['data']['init_point'];
+
+        $stmtUpd = $pdo->prepare("UPDATE payment_orders SET preference_id = ? WHERE id = ?");
+        $stmtUpd->execute([$res['data']['id'], $orderId]);
+
+        return [
+            'success' => true,
+            'configured' => true,
+            'order_id' => $orderId,
+            'preference_id' => $res['data']['id'],
+            'init_point' => $initPoint,
+            'external_reference' => $externalReference,
+            'monto_total' => $montoTotal
+        ];
+    }
+
+    /**
      * Procesa la confirmación de pago (Webhook de Mercado Pago o retorno verificado)
      */
     public static function processApprovedPayment(string $externalRef, string $paymentId = null, array $rawPayload = []): array {
