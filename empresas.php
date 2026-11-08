@@ -161,12 +161,18 @@ if (!$currentUser) {
         </div>
 
         <!-- Banner de Selección de Bolsas con Descuento -->
+        <?php 
+        $activePacks = B2BService::getPrepaidPacks(); 
+        $p50 = $activePacks['PACK_50'];
+        $p200 = $activePacks['PACK_200'];
+        $p500 = $activePacks['PACK_500'];
+        ?>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
             <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
                 <div>
-                    <span style="font-size:0.75rem; font-weight:800; color:#2563EB; background:#EFF6FF; padding:2px 8px; border-radius:4px;">PACK 50 FIRMAS</span>
-                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$3.490 <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
-                    <p style="margin:0; font-size:0.78rem; color:#64748B;">Ahorro 30% vs tarifa estándar ($174.500 CLP)</p>
+                    <span style="font-size:0.75rem; font-weight:800; color:#2563EB; background:#EFF6FF; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($p50['badge']) ?></span>
+                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($p50['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                    <p style="margin:0; font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($p50['ahorro_desc']) ?> ($<?= number_format($p50['total'], 0, '', '.') ?> CLP)</p>
                 </div>
                 <button type="button" class="btn-cta" style="background:#0F2A4A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_50')">
                     Recargar
@@ -174,11 +180,11 @@ if (!$currentUser) {
             </div>
 
             <div style="background:#FFFFFF; border:2px solid #D4AF37; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm); position:relative;">
-                <span style="position:absolute; top:-10px; right:15px; background:#D4AF37; color:#0A1C33; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:10px;">MÁS POPULAR</span>
+                <span style="position:absolute; top:-10px; right:15px; background:#D4AF37; color:#0A1C33; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:10px;"><?= htmlspecialchars($p200['badge']) ?></span>
                 <div>
-                    <span style="font-size:0.75rem; font-weight:800; color:#B45309; background:#FEF3C7; padding:2px 8px; border-radius:4px;">PACK 200 FIRMAS</span>
-                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$2.790 <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
-                    <p style="margin:0; font-size:0.78rem; color:#64748B;">Ahorro 45% vs tarifa estándar ($558.000 CLP)</p>
+                    <span style="font-size:0.75rem; font-weight:800; color:#B45309; background:#FEF3C7; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($p200['nombre']) ?></span>
+                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($p200['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                    <p style="margin:0; font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($p200['ahorro_desc']) ?> ($<?= number_format($p200['total'], 0, '', '.') ?> CLP)</p>
                 </div>
                 <button type="button" class="btn-cta btn-gold" style="padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_200')">
                     Recargar
@@ -187,9 +193,9 @@ if (!$currentUser) {
 
             <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
                 <div>
-                    <span style="font-size:0.75rem; font-weight:800; color:#15803D; background:#DCFCE7; padding:2px 8px; border-radius:4px;">PACK 500+ ENTERPRISE</span>
-                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$1.990 <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
-                    <p style="margin:0; font-size:0.78rem; color:#64748B;">Tarifa mínima garantizada ($995.000 CLP)</p>
+                    <span style="font-size:0.75rem; font-weight:800; color:#15803D; background:#DCFCE7; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($p500['badge']) ?></span>
+                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($p500['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                    <p style="margin:0; font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($p500['ahorro_desc']) ?> ($<?= number_format($p500['total'], 0, '', '.') ?> CLP)</p>
                 </div>
                 <button type="button" class="btn-cta" style="background:#0F2A4A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_500')">
                     Recargar

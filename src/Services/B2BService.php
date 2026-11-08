@@ -631,16 +631,52 @@ class B2BService {
     }
 
     /**
+     * Obtiene el catálogo de packs prepagados configurados en el sistema
+     */
+    public static function getPrepaidPacks() {
+        $pdo = Database::getInstance();
+        $stmt = $pdo->query("SELECT key, value FROM system_settings WHERE key LIKE 'b2b_pack_%'");
+        $settings = $stmt ? $stmt->fetchAll(PDO::FETCH_KEY_PAIR) : [];
+
+        // Valores por defecto o sobreescritos dinámicamente desde la administración
+        return [
+            'PACK_50' => [
+                'id' => 'PACK_50',
+                'nombre' => $settings['b2b_pack_50_nombre'] ?? 'Pack 50 Firmas',
+                'firmas' => (int)($settings['b2b_pack_50_firmas'] ?? 50),
+                'precio_unit' => (int)($settings['b2b_pack_50_precio_unit'] ?? 3490),
+                'total' => (int)($settings['b2b_pack_50_firmas'] ?? 50) * (int)($settings['b2b_pack_50_precio_unit'] ?? 3490),
+                'ahorro_desc' => $settings['b2b_pack_50_ahorro'] ?? 'Ahorro 30% vs tarifa estándar',
+                'badge' => $settings['b2b_pack_50_badge'] ?? 'PACK 50 FIRMAS'
+            ],
+            'PACK_200' => [
+                'id' => 'PACK_200',
+                'nombre' => $settings['b2b_pack_200_nombre'] ?? 'Pack 200 Firmas',
+                'firmas' => (int)($settings['b2b_pack_200_firmas'] ?? 200),
+                'precio_unit' => (int)($settings['b2b_pack_200_precio_unit'] ?? 2790),
+                'total' => (int)($settings['b2b_pack_200_firmas'] ?? 200) * (int)($settings['b2b_pack_200_precio_unit'] ?? 2790),
+                'ahorro_desc' => $settings['b2b_pack_200_ahorro'] ?? 'Ahorro 45% vs tarifa estándar',
+                'badge' => $settings['b2b_pack_200_badge'] ?? 'MÁS POPULAR'
+            ],
+            'PACK_500' => [
+                'id' => 'PACK_500',
+                'nombre' => $settings['b2b_pack_500_nombre'] ?? 'Pack 500 Enterprise',
+                'firmas' => (int)($settings['b2b_pack_500_firmas'] ?? 500),
+                'precio_unit' => (int)($settings['b2b_pack_500_precio_unit'] ?? 1990),
+                'total' => (int)($settings['b2b_pack_500_firmas'] ?? 500) * (int)($settings['b2b_pack_500_precio_unit'] ?? 1990),
+                'ahorro_desc' => $settings['b2b_pack_500_ahorro'] ?? 'Tarifa mínima garantizada',
+                'badge' => $settings['b2b_pack_500_badge'] ?? 'PACK 500+ ENTERPRISE'
+            ]
+        ];
+    }
+
+    /**
      * Recargar bolsa de firmas prepagadas
      */
     public static function rechargePrepagoBag($companyId, $packType) {
         $pdo = Database::getInstance();
 
-        $packs = [
-            'PACK_50' => ['firmas' => 50, 'precio_unit' => 3490, 'total' => 174500, 'nombre' => 'Bolsa 50 Firmas'],
-            'PACK_200' => ['firmas' => 200, 'precio_unit' => 2790, 'total' => 558000, 'nombre' => 'Bolsa 200 Firmas'],
-            'PACK_500' => ['firmas' => 500, 'precio_unit' => 1990, 'total' => 995000, 'nombre' => 'Bolsa 500 Firmas Enterprise']
-        ];
+        $packs = self::getPrepaidPacks();
 
         if (!isset($packs[$packType])) {
             throw new Exception("Tipo de bolsa no válida.");

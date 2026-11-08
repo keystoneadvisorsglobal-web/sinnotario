@@ -1,5 +1,28 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-08 01:32 UTC-3] - SOL-0071
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0071`
+- **Alcance de los Cambios:**
+  - **Módulo de Definición Dinámica de Packs Prepagados y Tarifario B2B en Consola Administrativa (`admin.php`):**
+    1. **Motor Dinámico de Packs en `B2BService.php`:**
+       - Creación del método `getPrepaidPacks()` que consulta `system_settings` para obtener nombre, cantidad de firmas, precio unitario CLP, glosa de ahorro y badges de los paquetes.
+       - Desacoplamiento de valores estáticos hardcodeados en el proceso de recarga (`rechargePrepagoBag`), garantizando que cualquier ajuste de precio o tamaño de bolsa se aplique automáticamente al cálculo y facturación.
+    2. **Panel de Gestión de Tarifario en `admin.php` (Sección Empresas & B2B):**
+       - Nueva tarjeta administrativa *"Definición de Packs Prepagados y Tarifario B2B"* con formulario para personalizar los 3 tramos (Pack Inicial, Pack Crecimiento y Pack Enterprise).
+       - Procesamiento seguro con `admin_b2b_action = update_b2b_packs` persistiendo los valores en `system_settings`.
+    3. **Renderizado Reactivo en Portal B2B (`empresas.php`) y API REST:**
+       - El banner de compra de bolsas en `empresas.php` ahora lee dinámicamente los packs vigentes desde `B2BService::getPrepaidPacks()`.
+       - Nuevo endpoint `GET api/index.php?action=b2b_get_packs` para sincronización con frontend y aplicaciones cliente.
+- **Pruebas Validadas:**
+  - Validación sintáctica PHP Lint (`php -l`): 0 errores en `B2BService.php`, `api/index.php`, `admin.php` y `empresas.php`.
+  - Prueba de llamada API `b2b_get_packs`: entrega de catálogo JSON con los 3 packs configurados.
+  - Verificación de consistencia en base de datos SQLite y renderizado 200 OK en producción.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-08 01:28 UTC-3] - SOL-0070
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

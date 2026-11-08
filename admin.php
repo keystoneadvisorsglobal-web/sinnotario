@@ -7,6 +7,7 @@ session_start();
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/database/Database.php';
 require_once __DIR__ . '/api/adapters/StorageR2Adapter.php';
+require_once __DIR__ . '/src/Services/B2BService.php';
 
 // Control de Sesión Administrativa Básica
 $auth = isset($_SESSION['admin_auth']) && $_SESSION['admin_auth'] === true;
@@ -143,6 +144,19 @@ if (isset($_POST['admin_b2b_action'])) {
         ");
         $stmtLog->execute([$targetCompId, $firmasAdd]);
         $msgB2BSuccess = "Se abonaron {$firmasAdd} firmas a la empresa #{$targetCompId}.";
+    } elseif ($actionType === 'update_b2b_packs') {
+        $packKeys = [
+            'b2b_pack_50_nombre', 'b2b_pack_50_firmas', 'b2b_pack_50_precio_unit', 'b2b_pack_50_ahorro', 'b2b_pack_50_badge',
+            'b2b_pack_200_nombre', 'b2b_pack_200_firmas', 'b2b_pack_200_precio_unit', 'b2b_pack_200_ahorro', 'b2b_pack_200_badge',
+            'b2b_pack_500_nombre', 'b2b_pack_500_firmas', 'b2b_pack_500_precio_unit', 'b2b_pack_500_ahorro', 'b2b_pack_500_badge'
+        ];
+        $stmtSavePack = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+        foreach ($packKeys as $pk) {
+            if (isset($_POST[$pk])) {
+                $stmtSavePack->execute([$pk, trim($_POST[$pk])]);
+            }
+        }
+        $msgB2BSuccess = "¡Packs corporativos de prepago y valores unitarios actualizados exitosamente en todo el portal!";
     }
 
     // Recargar lista de empresas
@@ -564,6 +578,123 @@ $allTemplates = $stmtTemplates->fetchAll();
                             </tbody>
                         </table>
                     </div>
+                </div>
+
+                <!-- Configuración de Bolsas Prepago y Tarifario B2B (SOL-0071) -->
+                <?php $currentPacks = B2BService::getPrepaidPacks(); ?>
+                <div class="table-wrap" style="border: 2px solid #E2E8F0; background:#FFF;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
+                        <div>
+                            <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary); margin:0;">
+                                <i class="fas fa-tags" style="color:var(--gold);"></i> Definición de Packs Prepagados y Tarifario B2B
+                            </h3>
+                            <p style="font-size:0.83rem; color:#64748B; margin:4px 0 0;">
+                                Configura la cantidad de firmas, precios unitarios y etiquetas de ahorro que verán las empresas en el portal.
+                            </p>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="admin.php#empresas">
+                        <input type="hidden" name="admin_b2b_action" value="update_b2b_packs">
+
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem; margin-bottom:1.5rem;">
+                            <!-- Pack 50 -->
+                            <div style="border:1px solid #CBD5E1; border-radius:10px; padding:1.25rem; background:#F8FAFC;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                                    <span style="font-size:0.75rem; font-weight:800; color:#2563EB; background:#EFF6FF; padding:3px 8px; border-radius:4px;">PACK 1</span>
+                                    <strong style="color:var(--primary); font-size:0.85rem;">Bolsa Inicial</strong>
+                                </div>
+                                <div style="margin-bottom:0.75rem;">
+                                    <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Nombre Visible</label>
+                                    <input type="text" name="b2b_pack_50_nombre" value="<?= htmlspecialchars($currentPacks['PACK_50']['nombre']) ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.85rem; border:1px solid #CBD5E1; border-radius:6px;" required>
+                                </div>
+                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; margin-bottom:0.75rem;">
+                                    <div>
+                                        <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Firmas Incluidas</label>
+                                        <input type="number" name="b2b_pack_50_firmas" value="<?= $currentPacks['PACK_50']['firmas'] ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.85rem; border:1px solid #CBD5E1; border-radius:6px;" min="1" required>
+                                    </div>
+                                    <div>
+                                        <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Precio Unitario CLP</label>
+                                        <input type="number" name="b2b_pack_50_precio_unit" value="<?= $currentPacks['PACK_50']['precio_unit'] ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.85rem; border:1px solid #CBD5E1; border-radius:6px;" min="500" required>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom:0.75rem;">
+                                    <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Glosa de Ahorro / Subtexto</label>
+                                    <input type="text" name="b2b_pack_50_ahorro" value="<?= htmlspecialchars($currentPacks['PACK_50']['ahorro_desc']) ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.82rem; border:1px solid #CBD5E1; border-radius:6px;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Insignia / Badge</label>
+                                    <input type="text" name="b2b_pack_50_badge" value="<?= htmlspecialchars($currentPacks['PACK_50']['badge']) ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.82rem; border:1px solid #CBD5E1; border-radius:6px;">
+                                </div>
+                            </div>
+
+                            <!-- Pack 200 -->
+                            <div style="border:2px solid #D4AF37; border-radius:10px; padding:1.25rem; background:#FFFBF0;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                                    <span style="font-size:0.75rem; font-weight:800; color:#B45309; background:#FEF3C7; padding:3px 8px; border-radius:4px;">PACK 2 (POPULAR)</span>
+                                    <strong style="color:var(--primary); font-size:0.85rem;">Bolsa Crecimiento</strong>
+                                </div>
+                                <div style="margin-bottom:0.75rem;">
+                                    <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Nombre Visible</label>
+                                    <input type="text" name="b2b_pack_200_nombre" value="<?= htmlspecialchars($currentPacks['PACK_200']['nombre']) ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.85rem; border:1px solid #CBD5E1; border-radius:6px;" required>
+                                </div>
+                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; margin-bottom:0.75rem;">
+                                    <div>
+                                        <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Firmas Incluidas</label>
+                                        <input type="number" name="b2b_pack_200_firmas" value="<?= $currentPacks['PACK_200']['firmas'] ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.85rem; border:1px solid #CBD5E1; border-radius:6px;" min="1" required>
+                                    </div>
+                                    <div>
+                                        <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Precio Unitario CLP</label>
+                                        <input type="number" name="b2b_pack_200_precio_unit" value="<?= $currentPacks['PACK_200']['precio_unit'] ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.85rem; border:1px solid #CBD5E1; border-radius:6px;" min="500" required>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom:0.75rem;">
+                                    <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Glosa de Ahorro / Subtexto</label>
+                                    <input type="text" name="b2b_pack_200_ahorro" value="<?= htmlspecialchars($currentPacks['PACK_200']['ahorro_desc']) ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.82rem; border:1px solid #CBD5E1; border-radius:6px;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Insignia / Badge</label>
+                                    <input type="text" name="b2b_pack_200_badge" value="<?= htmlspecialchars($currentPacks['PACK_200']['badge']) ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.82rem; border:1px solid #CBD5E1; border-radius:6px;">
+                                </div>
+                            </div>
+
+                            <!-- Pack 500 -->
+                            <div style="border:1px solid #CBD5E1; border-radius:10px; padding:1.25rem; background:#F8FAFC;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                                    <span style="font-size:0.75rem; font-weight:800; color:#15803D; background:#DCFCE7; padding:3px 8px; border-radius:4px;">PACK 3 (ENTERPRISE)</span>
+                                    <strong style="color:var(--primary); font-size:0.85rem;">Bolsa Escala</strong>
+                                </div>
+                                <div style="margin-bottom:0.75rem;">
+                                    <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Nombre Visible</label>
+                                    <input type="text" name="b2b_pack_500_nombre" value="<?= htmlspecialchars($currentPacks['PACK_500']['nombre']) ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.85rem; border:1px solid #CBD5E1; border-radius:6px;" required>
+                                </div>
+                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; margin-bottom:0.75rem;">
+                                    <div>
+                                        <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Firmas Incluidas</label>
+                                        <input type="number" name="b2b_pack_500_firmas" value="<?= $currentPacks['PACK_500']['firmas'] ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.85rem; border:1px solid #CBD5E1; border-radius:6px;" min="1" required>
+                                    </div>
+                                    <div>
+                                        <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Precio Unitario CLP</label>
+                                        <input type="number" name="b2b_pack_500_precio_unit" value="<?= $currentPacks['PACK_500']['precio_unit'] ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.85rem; border:1px solid #CBD5E1; border-radius:6px;" min="500" required>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom:0.75rem;">
+                                    <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Glosa de Ahorro / Subtexto</label>
+                                    <input type="text" name="b2b_pack_500_ahorro" value="<?= htmlspecialchars($currentPacks['PACK_500']['ahorro_desc']) ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.82rem; border:1px solid #CBD5E1; border-radius:6px;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Insignia / Badge</label>
+                                    <input type="text" name="b2b_pack_500_badge" value="<?= htmlspecialchars($currentPacks['PACK_500']['badge']) ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.82rem; border:1px solid #CBD5E1; border-radius:6px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:flex-end;">
+                            <button type="submit" class="btn-cta btn-gold" style="font-size:0.95rem; padding:0.65rem 1.75rem;">
+                                <i class="fas fa-save"></i> Guardar Configuración de Packs y Valores
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 

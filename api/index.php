@@ -754,6 +754,12 @@ try {
             jsonResponse(true, $resRecarga);
             break;
 
+        // 22B. Obtener Catálogo Dinámico de Packs Prepagados
+        case 'b2b_get_packs':
+            $packs = B2BService::getPrepaidPacks();
+            jsonResponse(true, $packs);
+            break;
+
         // 23. Obtener Historial de Facturación y Consumo B2B
         case 'b2b_get_billing_logs':
             $companyId = (int)($_GET['company_id'] ?? 0);
