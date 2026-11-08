@@ -1,5 +1,31 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-08 01:19 UTC-3] - SOL-0068
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0068`
+- **Alcance de los Cambios:**
+  - **Módulo de Administración B2B y Control de Empresas en la Consola Operativa (`admin.php`):**
+    1. **Sección Administrativa '🏢 Empresas & B2B':**
+       - Se integró la nueva vista en el menú lateral izquierdo de [`admin.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/admin.php) accesible mediante el selector `#empresas`.
+    2. **Métricas y KPIs Financieros en Tiempo Real:**
+       - Total de empresas clientes registradas.
+       - Bolsa global de firmas prepagadas activas en custodia.
+       - Total histórico de firmas masivas emitidas por empresas.
+       - Monto acumulado devengado en modalidad Postpago listo para emitir Factura Electrónica (DTE 33) al cierre de mes.
+    3. **Gestión de Cartera de Empresas:**
+       - Tabla detallada con Razón Social, RUT, datos del representante legal, modalidad de cobro (`PREPAGO` vs. `POSTPAGO`), saldo de firmas, consumo acumulado, tarifa vigente y estado del plan (`ACTIVO`, `SUSPENDIDO`, etc.).
+       - Botón **"Abonar Saldo"**: modal para acreditar manualmente bolsas de firmas a cualquier empresa cliente con registro automático en `b2b_billing_logs`.
+       - Botón **"Editar"**: modal para modificar tarifas unitarias, planes, umbrales de crédito postpago y estado del servicio.
+    4. **Bitácora Contable y Recargas:**
+       - Historial cronológico con cada movimiento de recarga y consumo, saldo anterior, saldo nuevo y monto en CLP.
+- **Pruebas Validadas:**
+  - Validación sintáctica PHP Lint: 0 errores en `admin.php`.
+  - Prueba de renderizado con autenticación administrativa completada exitosamente (`HTTP/2 200 OK`).
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-08 00:40 UTC-3] - SOL-0067
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

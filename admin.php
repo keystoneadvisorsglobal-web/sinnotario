@@ -39,6 +39,25 @@ $documents = $stmtDocs->fetchAll();
 $stmtAllSigners = $pdo->query("SELECT s.*, d.codigo_verificacion FROM document_signers s JOIN documents d ON s.document_id = d.id ORDER BY s.id DESC");
 $signersList = $stmtAllSigners->fetchAll();
 
+// Consultas B2B Empresas
+$stmtCompanies = $pdo->query("
+    SELECT c.*,
+           (SELECT COUNT(*) FROM b2b_batches WHERE company_id = c.id) as total_batches,
+           (SELECT COUNT(*) FROM worker_folders WHERE company_id = c.id) as total_workers
+    FROM companies c
+    ORDER BY c.id DESC
+");
+$allCompanies = $stmtCompanies ? $stmtCompanies->fetchAll(PDO::FETCH_ASSOC) : [];
+
+$stmtBillingLogs = $pdo->query("
+    SELECT b.*, c.razon_social, c.rut as empresa_rut
+    FROM b2b_billing_logs b
+    LEFT JOIN companies c ON b.company_id = c.id
+    ORDER BY b.id DESC
+    LIMIT 100
+");
+$allBillingLogs = $stmtBillingLogs ? $stmtBillingLogs->fetchAll(PDO::FETCH_ASSOC) : [];
+
 $totalEmitidos = count($documents);
 $totalMonto = array_sum(array_column($documents, 'monto_pagado'));
 $stmtTplCount = $pdo->query("SELECT COUNT(*) FROM templates");
@@ -87,6 +106,54 @@ if (isset($_POST['save_pricing_settings'])) {
     }
 
     $msgPricingSuccess = '¡Parámetros del sistema, credenciales y tarifas actualizadas exitosamente!';
+}
+
+// Procesar acciones de gestión B2B desde Consola Administrativa
+$msgB2BSuccess = '';
+if (isset($_POST['admin_b2b_action'])) {
+    $actionType = $_POST['admin_b2b_action'];
+    $targetCompId = (int)($_POST['target_company_id'] ?? 0);
+
+    if ($actionType === 'update_plan' && $targetCompId > 0) {
+        $nuevoPlan = trim($_POST['plan_nombre'] ?? 'PLAN_INICIAL');
+        $nuevoEstado = trim($_POST['plan_estado'] ?? 'ACTIVO');
+        $modalidad = trim($_POST['modalidad_cobro'] ?? 'PREPAGO');
+        $saldoExtra = (int)($_POST['saldo_firmas_prepago'] ?? 50);
+        $umbral = (int)($_POST['umbral_max_postpago'] ?? 200);
+        $tarifa = (int)($_POST['tarifa_tramo_clp'] ?? 2490);
+
+        $stmtUpdComp = $pdo->prepare("
+            UPDATE companies 
+            SET plan_nombre = ?, plan_estado = ?, modalidad_cobro = ?,
+                saldo_firmas_prepago = ?, umbral_max_postpago = ?, tarifa_tramo_clp = ?,
+                updated_at = datetime('now')
+            WHERE id = ?
+        ");
+        $stmtUpdComp->execute([$nuevoPlan, $nuevoEstado, $modalidad, $saldoExtra, $umbral, $tarifa, $targetCompId]);
+        $msgB2BSuccess = "Empresa #{$targetCompId} actualizada exitosamente.";
+    } elseif ($actionType === 'add_saldo' && $targetCompId > 0) {
+        $firmasAdd = (int)($_POST['firmas_agregar'] ?? 50);
+        $stmtAdd = $pdo->prepare("UPDATE companies SET saldo_firmas_prepago = saldo_firmas_prepago + ?, updated_at = datetime('now') WHERE id = ?");
+        $stmtAdd->execute([$firmasAdd, $targetCompId]);
+
+        // Registrar movimiento
+        $stmtLog = $pdo->prepare("
+            INSERT INTO b2b_billing_logs (company_id, tipo_movimiento, modalidad, cantidad_firmas, monto_clp, descripcion)
+            VALUES (?, 'RECARGA_MANUAL_ADMIN', 'PREPAGO', ?, 0, 'Abono manual administrativo de firmas')
+        ");
+        $stmtLog->execute([$targetCompId, $firmasAdd]);
+        $msgB2BSuccess = "Se abonaron {$firmasAdd} firmas a la empresa #{$targetCompId}.";
+    }
+
+    // Recargar lista de empresas
+    $stmtCompanies = $pdo->query("
+        SELECT c.*,
+               (SELECT COUNT(*) FROM b2b_batches WHERE company_id = c.id) as total_batches,
+               (SELECT COUNT(*) FROM worker_folders WHERE company_id = c.id) as total_workers
+        FROM companies c
+        ORDER BY c.id DESC
+    ");
+    $allCompanies = $stmtCompanies ? $stmtCompanies->fetchAll(PDO::FETCH_ASSOC) : [];
 }
 
 // Cargar configuración de precios actual
@@ -303,6 +370,7 @@ $allTemplates = $stmtTemplates->fetchAll();
 
             <nav style="flex: 1;">
                 <a href="#dashboard" class="admin-nav-item active" data-tab="dashboard"><i class="fas fa-chart-line"></i> Dashboard General</a>
+                <a href="#empresas" class="admin-nav-item" data-tab="empresas" style="color:#D4AF37; font-weight:800;"><i class="fas fa-building"></i> Empresas & B2B</a>
                 <a href="#precios" class="admin-nav-item" data-tab="precios" style="color:var(--accent); font-weight:700;"><i class="fas fa-tags"></i> Precios & Tarifas</a>
                 <a href="#documentos" class="admin-nav-item" data-tab="documentos"><i class="fas fa-file-contract"></i> Monitor Contratos</a>
                 <a href="#whatsapp" class="admin-nav-item" data-tab="whatsapp"><i class="fab fa-whatsapp"></i> Instancias WhatsApp</a>
@@ -331,6 +399,171 @@ $allTemplates = $stmtTemplates->fetchAll();
                     <a href="index.php" target="_blank" class="btn-cta" style="background: white; border: 1px solid var(--border); color: #334155 !important; font-size: 0.85rem; padding: 0.5rem 1rem;">
                         <i class="fas fa-external-link-alt"></i> Ver Sitio Web
                     </a>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 1B. SECCIÓN: EMPRESAS & B2B (SOL-0068)       -->
+            <!-- ========================================== -->
+            <div id="section_empresas" class="admin-section">
+                <?php if (!empty($msgB2BSuccess)): ?>
+                    <div style="background:#DCFCE7; border:1px solid #86EFAC; color:#15803D; padding:1rem; border-radius:8px; font-weight:700; margin-bottom:1.5rem; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-check-circle fa-lg"></i> <?= htmlspecialchars($msgB2BSuccess) ?>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Métricas B2B -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div style="font-size: 0.8rem; font-weight: 600; color: #64748B; text-transform: uppercase;">Empresas Registradas</div>
+                        <div class="kpi-val" style="color:var(--primary);"><?= count($allCompanies) ?></div>
+                        <span style="font-size: 0.75rem; color: #059669;"><i class="fas fa-building"></i> Clientes Corporativos</span>
+                    </div>
+                    <div class="kpi-card">
+                        <div style="font-size: 0.8rem; font-weight: 600; color: #64748B; text-transform: uppercase;">Firmas Prepagadas Activas</div>
+                        <div class="kpi-val" style="color:#059669;">
+                            <?= array_sum(array_column($allCompanies, 'saldo_firmas_prepago')) ?>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #64748B;">Bolsas de saldo en custodia</span>
+                    </div>
+                    <div class="kpi-card">
+                        <div style="font-size: 0.8rem; font-weight: 600; color: #64748B; text-transform: uppercase;">Firmas Totales Emitidas</div>
+                        <div class="kpi-val" style="color:#2563EB;">
+                            <?= array_sum(array_column($allCompanies, 'firmas_utilizadas')) ?>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #64748B;">Consumo masivo acumulado</span>
+                    </div>
+                    <div class="kpi-card">
+                        <div style="font-size: 0.8rem; font-weight: 600; color: #64748B; text-transform: uppercase;">Postpago por Facturar</div>
+                        <div class="kpi-val" style="color:#D4AF37;">
+                            $<?= number_format(array_sum(array_column($allCompanies, 'gasto_acumulado_periodo')), 0, '', '.') ?>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #B45309;">Devengado para DTE 33 fin de mes</span>
+                    </div>
+                </div>
+
+                <!-- Tabla de Empresas Clientes -->
+                <div class="table-wrap" style="margin-bottom:2rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                        <div>
+                            <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary); margin: 0;">
+                                <i class="fas fa-building"></i> Cartera de Empresas B2B
+                            </h3>
+                            <p style="font-size:0.83rem; color:#64748B; margin:4px 0 0;">Control de suscripciones, bolsas prepago, consumo y asignación de tarifas especiales.</p>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                            <thead>
+                                <tr style="background: #F8FAFC; color: #64748B; text-align: left;">
+                                    <th style="padding: 0.75rem;">ID</th>
+                                    <th style="padding: 0.75rem;">Razón Social & RUT</th>
+                                    <th style="padding: 0.75rem;">Representante Legal</th>
+                                    <th style="padding: 0.75rem;">Modalidad</th>
+                                    <th style="padding: 0.75rem;">Saldo Bolsa Prepago</th>
+                                    <th style="padding: 0.75rem;">Consumo / Umbral</th>
+                                    <th style="padding: 0.75rem;">Tarifa Firma</th>
+                                    <th style="padding: 0.75rem;">Estado</th>
+                                    <th style="padding: 0.75rem; text-align: right;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($allCompanies)): ?>
+                                    <tr><td colspan="9" style="padding:2rem; text-align:center; color:#94A3B8;">Aún no hay empresas registradas en la base de datos.</td></tr>
+                                <?php else: ?>
+                                    <?php foreach ($allCompanies as $comp): ?>
+                                        <tr style="border-bottom: 1px solid #E2E8F0;">
+                                            <td style="padding: 0.75rem; font-weight: 700;">#<?= $comp['id'] ?></td>
+                                            <td style="padding: 0.75rem;">
+                                                <strong style="color:var(--primary);"><?= htmlspecialchars($comp['razon_social']) ?></strong><br>
+                                                <code style="font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($comp['rut']) ?></code>
+                                            </td>
+                                            <td style="padding: 0.75rem; font-size:0.83rem;">
+                                                <?= htmlspecialchars($comp['rep_legal_nombre'] ?: 'No asignado') ?><br>
+                                                <span style="color:#64748B;"><?= htmlspecialchars($comp['rep_legal_email'] ?: '-') ?></span>
+                                            </td>
+                                            <td style="padding: 0.75rem;">
+                                                <span style="background:<?= $comp['modalidad_cobro'] === 'PREPAGO' ? '#EFF6FF' : '#FEF3C7' ?>; color:<?= $comp['modalidad_cobro'] === 'PREPAGO' ? '#1D4ED8' : '#B45309' ?>; font-weight:800; font-size:0.75rem; padding:3px 8px; border-radius:4px;">
+                                                    <?= $comp['modalidad_cobro'] ?: 'PREPAGO' ?>
+                                                </span>
+                                            </td>
+                                            <td style="padding: 0.75rem;">
+                                                <strong style="font-size:1.05rem; color:<?= (int)$comp['saldo_firmas_prepago'] < 10 ? '#EF4444' : '#059669' ?>;">
+                                                    <?= (int)$comp['saldo_firmas_prepago'] ?>
+                                                </strong> <span style="font-size:0.75rem; color:#64748B;">firmas</span>
+                                            </td>
+                                            <td style="padding: 0.75rem; font-size:0.83rem;">
+                                                <strong><?= (int)$comp['firmas_utilizadas'] ?></strong> emitidas<br>
+                                                <span style="color:#64748B;">Umbral: <?= (int)$comp['umbral_max_postpago'] ?></span>
+                                            </td>
+                                            <td style="padding: 0.75rem; font-weight:700; color:var(--primary);">
+                                                $<?= number_format((int)($comp['tarifa_tramo_clp'] ?: 2490), 0, '', '.') ?> CLP
+                                            </td>
+                                            <td style="padding: 0.75rem;">
+                                                <span style="background:<?= $comp['plan_estado'] === 'ACTIVO' ? '#DCFCE7' : '#FEE2E2' ?>; color:<?= $comp['plan_estado'] === 'ACTIVO' ? '#15803D' : '#B91C1C' ?>; font-weight:800; font-size:0.75rem; padding:3px 8px; border-radius:4px;">
+                                                    <?= $comp['plan_estado'] ?: 'ACTIVO' ?>
+                                                </span>
+                                            </td>
+                                            <td style="padding: 0.75rem; text-align: right;">
+                                                <button type="button" class="btn-cta btn-gold" style="padding:4px 8px; font-size:0.75rem; margin-right:4px;" onclick="openAdminAddSaldo(<?= $comp['id'] ?>, '<?= htmlspecialchars(addslashes($comp['razon_social'])) ?>')">
+                                                    <i class="fas fa-plus"></i> Abonar Saldo
+                                                </button>
+                                                <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important; border:1px solid #CBD5E1; padding:4px 8px; font-size:0.75rem;" onclick='openAdminEditComp(<?= json_encode($comp) ?>)'>
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Historial Contable y Recargas B2B -->
+                <div class="table-wrap">
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary); margin: 0 0 1rem;">
+                        <i class="fas fa-file-invoice-dollar"></i> Bitácora Contable y Recargas de Bolsas
+                    </h3>
+                    <div style="overflow-x: auto; max-height:350px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                            <thead>
+                                <tr style="background: #F8FAFC; color: #64748B; text-align: left; position:sticky; top:0;">
+                                    <th style="padding: 0.6rem;">ID</th>
+                                    <th style="padding: 0.6rem;">Empresa</th>
+                                    <th style="padding: 0.6rem;">Tipo Movimiento</th>
+                                    <th style="padding: 0.6rem;">Firmas</th>
+                                    <th style="padding: 0.6rem;">Monto CLP</th>
+                                    <th style="padding: 0.6rem;">Saldo Ant. -> Nuevo</th>
+                                    <th style="padding: 0.6rem;">Descripción</th>
+                                    <th style="padding: 0.6rem;">Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($allBillingLogs)): ?>
+                                    <tr><td colspan="8" style="padding:1.5rem; text-align:center; color:#94A3B8;">No hay registros contables en bitácora.</td></tr>
+                                <?php else: ?>
+                                    <?php foreach ($allBillingLogs as $log): ?>
+                                        <tr style="border-bottom: 1px solid #E2E8F0;">
+                                            <td style="padding: 0.6rem;">#<?= $log['id'] ?></td>
+                                            <td style="padding: 0.6rem; font-weight:600;"><?= htmlspecialchars($log['razon_social'] ?: 'Empresa #' . $log['company_id']) ?></td>
+                                            <td style="padding: 0.6rem;">
+                                                <span style="font-size:0.72rem; font-weight:800; padding:2px 6px; border-radius:3px; background:<?= strpos($log['tipo_movimiento'], 'RECARGA') !== false ? '#DCFCE7' : '#F1F5F9' ?>; color:<?= strpos($log['tipo_movimiento'], 'RECARGA') !== false ? '#15803D' : '#334155' ?>;">
+                                                    <?= $log['tipo_movimiento'] ?>
+                                                </span>
+                                            </td>
+                                            <td style="padding: 0.6rem; font-weight:700;"><?= (int)$log['cantidad_firmas'] ?></td>
+                                            <td style="padding: 0.6rem;"><?= $log['monto_clp'] ? '$' . number_format($log['monto_clp'], 0, '', '.') : '-' ?></td>
+                                            <td style="padding: 0.6rem; font-family:monospace;"><?= $log['saldo_anterior'] ?> -> <?= $log['saldo_nuevo'] ?></td>
+                                            <td style="padding: 0.6rem; color:#64748B; font-size:0.8rem;"><?= htmlspecialchars($log['descripcion'] ?: '-') ?></td>
+                                            <td style="padding: 0.6rem; color:#94A3B8; font-size:0.78rem;"><?= $log['created_at'] ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -908,12 +1141,123 @@ $allTemplates = $stmtTemplates->fetchAll();
         </main>
     </div>
 
+    <!-- Modal Admin: Abonar Saldo Manual de Firmas -->
+    <div id="adminAddSaldoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#FFF; max-width:450px; width:90%; border-radius:12px; padding:2rem; box-shadow:var(--shadow-lg);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                <h3 style="font-weight:800; color:var(--primary); margin:0;">Abonar Firmas Prepagadas</h3>
+                <button type="button" style="background:none; border:none; font-size:1.5rem; cursor:pointer;" onclick="closeAdminAddSaldo()">&times;</button>
+            </div>
+            <form method="POST">
+                <input type="hidden" name="admin_b2b_action" value="add_saldo">
+                <input type="hidden" name="target_company_id" id="addSaldoCompId">
+                <p style="font-size:0.88rem; color:#64748B; margin-bottom:1rem;">Empresa: <strong id="addSaldoCompName" style="color:var(--primary);"></strong></p>
+                
+                <div style="margin-bottom:1.5rem;">
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Cantidad de Firmas a Acreditar</label>
+                    <input type="number" name="firmas_agregar" class="form-control" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:6px; font-size:1.1rem; font-weight:700;" value="50" min="1" required>
+                    <small style="color:#64748B;">Se incrementará el saldo disponible de la bolsa inmediatamente.</small>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
+                    <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="closeAdminAddSaldo()">Cancelar</button>
+                    <button type="submit" class="btn-cta btn-gold">Confirmar y Abonar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Admin: Editar Configuración B2B de Empresa -->
+    <div id="adminEditCompModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#FFF; max-width:550px; width:90%; border-radius:12px; padding:2rem; box-shadow:var(--shadow-lg);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                <h3 style="font-weight:800; color:var(--primary); margin:0;">Editar Planes & Modalidad B2B</h3>
+                <button type="button" style="background:none; border:none; font-size:1.5rem; cursor:pointer;" onclick="closeAdminEditComp()">&times;</button>
+            </div>
+            <form method="POST">
+                <input type="hidden" name="admin_b2b_action" value="update_plan">
+                <input type="hidden" name="target_company_id" id="editCompId">
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                    <div>
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Modalidad de Cobro</label>
+                        <select name="modalidad_cobro" id="editCompModalidad" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #CBD5E1; border-radius:6px;">
+                            <option value="PREPAGO">PREPAGO (Bolsa de Firmas)</option>
+                            <option value="POSTPAGO">POSTPAGO (Facturación Mes)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Estado del Plan</label>
+                        <select name="plan_estado" id="editCompEstado" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #CBD5E1; border-radius:6px;">
+                            <option value="ACTIVO">ACTIVO</option>
+                            <option value="SUSPENDIDO">SUSPENDIDO</option>
+                            <option value="PRUEBA">PRUEBA</option>
+                            <option value="VENCIDO">VENCIDO</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                    <div>
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Nombre del Plan</label>
+                        <input type="text" name="plan_nombre" id="editCompPlanNombre" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #CBD5E1; border-radius:6px;" value="PLAN_INICIAL">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Tarifa por Firma (CLP)</label>
+                        <input type="number" name="tarifa_tramo_clp" id="editCompTarifa" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #CBD5E1; border-radius:6px;" value="2490">
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
+                    <div>
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Saldo Prepago Actual</label>
+                        <input type="number" name="saldo_firmas_prepago" id="editCompSaldo" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #CBD5E1; border-radius:6px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Umbral Máximo Postpago</label>
+                        <input type="number" name="umbral_max_postpago" id="editCompUmbral" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #CBD5E1; border-radius:6px;" value="200">
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
+                    <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="closeAdminEditComp()">Cancelar</button>
+                    <button type="submit" class="btn-cta btn-gold">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Script de Navegación Reactiva de Pestañas -->
     <script>
+        function openAdminAddSaldo(id, name) {
+            document.getElementById('addSaldoCompId').value = id;
+            document.getElementById('addSaldoCompName').textContent = name;
+            document.getElementById('adminAddSaldoModal').style.display = 'flex';
+        }
+        function closeAdminAddSaldo() {
+            document.getElementById('adminAddSaldoModal').style.display = 'none';
+        }
+        function openAdminEditComp(c) {
+            document.getElementById('editCompId').value = c.id;
+            document.getElementById('editCompModalidad').value = c.modalidad_cobro || 'PREPAGO';
+            document.getElementById('editCompEstado').value = c.plan_estado || 'ACTIVO';
+            document.getElementById('editCompPlanNombre').value = c.plan_nombre || 'PLAN_INICIAL';
+            document.getElementById('editCompTarifa').value = c.tarifa_tramo_clp || 2490;
+            document.getElementById('editCompSaldo').value = c.saldo_firmas_prepago || 0;
+            document.getElementById('editCompUmbral').value = c.umbral_max_postpago || 200;
+            document.getElementById('adminEditCompModal').style.display = 'flex';
+        }
+        function closeAdminEditComp() {
+            document.getElementById('adminEditCompModal').style.display = 'none';
+        }
         const tabTitles = {
             'dashboard': {
                 title: 'Consola de Gestión y Operaciones',
                 desc: 'Monitoreo en vivo de transacciones, custodia y telecomunicaciones.'
+            },
+            'empresas': {
+                title: 'Administración B2B: Empresas, Suscripciones y Finanzas',
+                desc: 'Supervisión de clientes corporativos, saldos de bolsas prepagadas, devengo postpago y recargas.'
             },
             'precios': {
                 title: 'Gestor de Tarifas y Precios de Firma',
