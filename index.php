@@ -279,9 +279,14 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
                 <p style="font-size: 0.88rem; line-height: 1.6; margin-bottom: 1rem;">
                     Plataforma LegalTech desarrollada por <strong>Keystone Advisors</strong>. Democratizamos el acceso a instrumentos legales y firma electrónica avanzada en todo Chile, reduciendo tiempos de espera y costos innecesarios.
                 </p>
-                <p style="font-size: 0.82rem; color: #64748B;">
+                <p style="font-size: 0.82rem; color: #64748B; margin-bottom: 0.75rem;">
                     © <?= date('Y') ?> Keystone Advisors SpA. Todos los derechos reservados.
                 </p>
+                <div style="margin-top: 0.85rem;">
+                    <a href="https://www.keystoneadvisors.cl/trust/?domain=sinnotario.cl" target="_blank" rel="noopener" title="Ver Certificación y Telemetría de Ciberseguridad TrustZero" style="display: inline-block; text-decoration: none;">
+                        <img src="https://www.keystoneadvisors.cl/api/trust/badge.php?domain=sinnotario.cl" alt="TrustZero Verified" style="height: 28px; border-radius: 4px; vertical-align: middle; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                    </a>
+                </div>
             </div>
 
             <div class="footer-col">

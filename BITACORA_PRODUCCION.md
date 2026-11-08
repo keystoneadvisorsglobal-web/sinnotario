@@ -1392,3 +1392,20 @@
   - Validación sintáctica remota (`php -l`) en `B2BService.php`, `admin.php` y `empresas.php` con 0 errores.
   - Smoke tests HTTP/2 200 OK en `https://sinnotario.cl/empresas.php` y `https://sinnotario.cl/admin.php`.
 - **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+---
+
+### Registro de Despliegue: SOL-0087
+- **Fecha y Hora:** 2026-11-08 03:20:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0087`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Despliegue e integración integral del **Sello Dinámico de Seguridad TrustZero Verified** emitido por Keystone Advisors en SinNotario.cl:
+  1) **Footer Institucional (`index.php`):** Se incorporó el badge dinámico SVG enlazado directamente a la página de telemetría y auditoría de ciberseguridad en vivo (`https://www.keystoneadvisors.cl/trust/?domain=sinnotario.cl`), aportando confianza a usuarios particulares y empresas.
+  2) **Portal Oficial de Verificación (`verificar.php`):** Se añadió una tarjeta dedicada de certificación en la grilla de pilares institucionales (Ley N° 19.799, Anti-Adulteración, Cloudflare R2 Vault y TrustZero Verified), proporcionando a bancos, juzgados y corredoras respaldo técnico visible de seguridad informática.
+  3) **Suite Empresas B2B (`empresas.php`):** Se integró el sello dinámico junto a las credenciales y tarifa de la empresa en la barra superior de autoservicio.
+- **Pruebas Validadas:**
+  - Validación sintáctica remota (`php -l`) en `index.php`, `verificar.php` y `empresas.php` con 0 errores.
+  - Smoke tests HTTP/2 200 OK con verificación visual de renderizado en `https://sinnotario.cl/`, `https://sinnotario.cl/verificar.php` y `https://sinnotario.cl/empresas.php`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.

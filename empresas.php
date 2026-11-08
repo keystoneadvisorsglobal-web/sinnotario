@@ -135,8 +135,11 @@ if (!$currentUser) {
                         <span style="background:#DCFCE7; color:#15803D; font-size:0.75rem; font-weight:800; padding:2px 8px; border-radius:12px;" id="dispPlanEstado">PLAN ACTIVO</span>
                         <span style="background:#EFF6FF; color:#1D4ED8; font-size:0.75rem; font-weight:800; padding:2px 8px; border-radius:12px;" id="dispModalidadCobro">PREPAGO</span>
                     </div>
-                    <div style="font-size: 0.85rem; color: #64748B;">
-                        RUT: <strong id="dispRutEmpresa">78.089.686-8</strong> | Tarifa por Firma: <strong id="dispTarifaTramo">$2.490 CLP</strong>
+                    <div style="font-size: 0.85rem; color: #64748B; display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:2px;">
+                        <span>RUT: <strong id="dispRutEmpresa">78.089.686-8</strong> | Tarifa por Firma: <strong id="dispTarifaTramo">$7.990 CLP</strong></span>
+                        <a href="https://www.keystoneadvisors.cl/trust/?domain=sinnotario.cl" target="_blank" rel="noopener" title="Ver Telemetría en Vivo de Ciberseguridad TrustZero" style="display:inline-flex; align-items:center;">
+                            <img src="https://www.keystoneadvisors.cl/api/trust/badge.php?domain=sinnotario.cl" alt="TrustZero Verified" style="height:20px; border-radius:3px; vertical-align:middle;">
+                        </a>
                     </div>
                 </div>
             </div>

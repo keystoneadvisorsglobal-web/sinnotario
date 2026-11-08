@@ -462,6 +462,25 @@ $hashParam = isset($_GET['hash']) ? trim($_GET['hash']) : '';
                     Custodia distribuida y cifrada en reposo con AES-256. Garantía de disponibilidad 24/7 y trazabilidad forense permanente para bancos y juzgados.
                 </p>
             </div>
+
+            <div style="background: white; border-radius: 12px; border: 1px solid #E2E8F0; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                        <div style="background: #ECFDF5; color: #10B981; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <h4 style="font-size: 1rem; font-weight: 700; color: #0F2A4A; margin: 0;">TrustZero Verified</h4>
+                    </div>
+                    <p style="font-size: 0.85rem; color: #64748B; line-height: 1.5; margin: 0 0 1rem;">
+                        Telemetría en tiempo real de ciberseguridad perimetral, SSL/TLS, DMARC y endurecimiento perimetral continuo.
+                    </p>
+                </div>
+                <div style="padding-top: 0.5rem; border-top: 1px dashed #E2E8F0;">
+                    <a href="https://www.keystoneadvisors.cl/trust/?domain=sinnotario.cl" target="_blank" rel="noopener" title="Ver Telemetría en Vivo de Ciberseguridad TrustZero" style="display: inline-block;">
+                        <img src="https://www.keystoneadvisors.cl/api/trust/badge.php?domain=sinnotario.cl" alt="TrustZero Verified" style="height: 28px; border-radius: 4px; vertical-align: middle; box-shadow: 0 2px 6px rgba(0,0,0,0.12);">
+                    </a>
+                </div>
+            </div>
         </div>
     </main>
 
