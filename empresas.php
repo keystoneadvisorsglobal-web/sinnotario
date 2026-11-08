@@ -254,50 +254,169 @@ if (!$currentUser) {
 
         <!-- PESTAÑA 1: SMART BULK & EMISIÓN -->
         <div id="pane_emision" class="b2b-tab-pane active">
-            <!-- Barra Superior de Selección de Plantilla para Emisión Masiva -->
-            <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                <div style="flex:1; min-width:280px;">
-                    <label style="display:block; font-size:0.85rem; font-weight:800; color:var(--primary); margin-bottom:4px;">
-                        <i class="fas fa-file-signature" style="color:var(--gold);"></i> 1. Selecciona la Plantilla para Emisión Masiva:
-                    </label>
-                    <select id="selectBatchTemplate" class="form-control" style="width:100%; padding:9px 12px; font-size:0.92rem; font-weight:700; color:#0A1C33; border:2px solid #D4AF37; border-radius:8px; background:#FFFBF0;" onchange="handleBatchTemplateChange()">
-                        <optgroup label="📋 Plantillas Oficiales SinNotario (Wizard Universal)">
-                            <option value="contrato-individual-trabajo" data-type="official" selected>Contrato Individual de Trabajo (Ley 40 Horas N° 21.561)</option>
-                            <option value="finiquito-laboral-mutuo-acuerdo" data-type="official">Finiquito Laboral por Mutuo Acuerdo (Código del Trabajo)</option>
-                            <option value="prestacion-servicios-honorarios" data-type="official">Contrato de Prestación de Servicios Profesionales / Honorarios</option>
-                            <option value="acuerdo-confidencialidad-nda" data-type="official">Acuerdo de Confidencialidad y No Divulgación (NDA)</option>
-                            <option value="contrato-arriendo-ley-21461" data-type="official">Contrato de Arriendo Residencial (Ley Devuélveme Mi Casa)</option>
-                        </optgroup>
-                        <optgroup label="🏢 Mis Plantillas Propias Personalizadas" id="optgroupCustomTemplates">
-                            <option value="" disabled>Cargando plantillas propias...</option>
-                        </optgroup>
-                    </select>
+
+            <!-- Selector de Modo de Emisión: Planilla vs PDF Único -->
+            <div style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:12px; padding:0.5rem; margin-bottom:1.5rem; display:flex; gap:0.5rem; max-width:650px;">
+                <button type="button" id="btnModeSpreadsheet" class="tab-btn-b2b active" style="flex:1; justify-content:center; padding:10px 14px; font-size:0.92rem;" onclick="switchEmisionMode('spreadsheet')">
+                    <i class="fas fa-file-excel" style="color:#10B981;"></i> Opción A: Contratos con Variables (Planilla Excel)
+                </button>
+                <button type="button" id="btnModeBroadcast" class="tab-btn-b2b" style="flex:1; justify-content:center; padding:10px 14px; font-size:0.92rem;" onclick="switchEmisionMode('broadcast')">
+                    <i class="fas fa-bullhorn" style="color:#2563EB;"></i> Opción B: Difusión Masiva de PDF Único
+                </button>
+            </div>
+
+            <!-- CONTENEDOR MODO A: PLANILLA DINÁMICA -->
+            <div id="modeSpreadsheetWrap">
+                <!-- Barra Superior de Selección de Plantilla para Emisión Masiva -->
+                <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="flex:1; min-width:280px;">
+                        <label style="display:block; font-size:0.85rem; font-weight:800; color:var(--primary); margin-bottom:4px;">
+                            <i class="fas fa-file-signature" style="color:var(--gold);"></i> 1. Selecciona la Plantilla para Emisión Masiva:
+                        </label>
+                        <select id="selectBatchTemplate" class="form-control" style="width:100%; padding:9px 12px; font-size:0.92rem; font-weight:700; color:#0A1C33; border:2px solid #D4AF37; border-radius:8px; background:#FFFBF0;" onchange="handleBatchTemplateChange()">
+                            <optgroup label="📋 Plantillas Oficiales SinNotario (Wizard Universal)">
+                                <option value="contrato-individual-trabajo" data-type="official" selected>Contrato Individual de Trabajo (Ley 40 Horas N° 21.561)</option>
+                                <option value="finiquito-laboral-mutuo-acuerdo" data-type="official">Finiquito Laboral por Mutuo Acuerdo (Código del Trabajo)</option>
+                                <option value="prestacion-servicios-honorarios" data-type="official">Contrato de Prestación de Servicios Profesionales / Honorarios</option>
+                                <option value="acuerdo-confidencialidad-nda" data-type="official">Acuerdo de Confidencialidad y No Divulgación (NDA)</option>
+                                <option value="contrato-arriendo-ley-21461" data-type="official">Contrato de Arriendo Residencial (Ley Devuélveme Mi Casa)</option>
+                            </optgroup>
+                            <optgroup label="🏢 Mis Plantillas Propias Personalizadas" id="optgroupCustomTemplates">
+                                <option value="" disabled>Cargando plantillas propias...</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div style="display:flex; align-items:flex-end; gap:0.75rem;">
+                        <button type="button" class="btn-cta" style="background:#F1F5F9; color:#0A1C33 !important; border:1px solid #CBD5E1; padding:9px 14px; font-size:0.85rem;" onclick="downloadSampleCsv()">
+                            <i class="fas fa-download"></i> Descargar Planilla Excel (.csv) para esta Plantilla
+                        </button>
+                        <a href="javascript:void(0)" onclick="openTemplateWizardPreview()" class="btn-cta" style="background:#FFF; color:#2563EB !important; border:1px solid #BFDBFE; padding:9px 12px; font-size:0.85rem;" title="Ver estructura y redacción de la plantilla">
+                            <i class="fas fa-eye"></i> Ver Plantilla
+                        </a>
+                    </div>
                 </div>
-                <div style="display:flex; align-items:flex-end; gap:0.75rem;">
-                    <button type="button" class="btn-cta" style="background:#F1F5F9; color:#0A1C33 !important; border:1px solid #CBD5E1; padding:9px 14px; font-size:0.85rem;" onclick="downloadSampleCsv()">
-                        <i class="fas fa-download"></i> Descargar Planilla Excel (.csv) para esta Plantilla
-                    </button>
-                    <a href="javascript:void(0)" onclick="openTemplateWizardPreview()" class="btn-cta" style="background:#FFF; color:#2563EB !important; border:1px solid #BFDBFE; padding:9px 12px; font-size:0.85rem;" title="Ver estructura y redacción de la plantilla">
-                        <i class="fas fa-eye"></i> Ver Plantilla
-                    </a>
+
+                <!-- Zona de Carga Masiva Drag-and-Drop -->
+                <div class="upload-dropzone" id="dropzone" onclick="document.getElementById('excelFileInput').click()">
+                    <input type="file" id="excelFileInput" accept=".csv, .txt, .xlsx" style="display: none;" onchange="handleExcelUpload(event)">
+                    <i class="fas fa-file-excel fa-3x" style="color: #10B981; margin-bottom: 1rem;"></i>
+                    <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--primary);">Arrastra tu planilla CSV/Excel o haz clic para cargar</h3>
+                    <p style="color: #64748B; font-size: 0.88rem; margin-top: 0.35rem;">
+                        Formatos admitidos: <code>.csv</code> (separado por coma o punto y coma). Columnas recomendadas: <code>nombre</code>, <code>rut</code>, <code>email</code>, <code>telefono</code>, <code>cargo</code>, <code>sueldo</code>.
+                    </p>
+                    <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem;">
+                        <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important; border:1px solid #CBD5E1;" onclick="event.stopPropagation(); downloadSampleCsv();">
+                            <i class="fas fa-download"></i> Descargar Planilla Modelo (.csv)
+                        </button>
+                        <button type="button" class="btn-cta btn-gold" onclick="event.stopPropagation(); loadSampleData();">
+                            <i class="fas fa-magic"></i> Cargar Nómina de Muestra
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Zona de Carga Masiva Drag-and-Drop -->
-            <div class="upload-dropzone" id="dropzone" onclick="document.getElementById('excelFileInput').click()">
-                <input type="file" id="excelFileInput" accept=".csv, .txt, .xlsx" style="display: none;" onchange="handleExcelUpload(event)">
-                <i class="fas fa-file-excel fa-3x" style="color: #10B981; margin-bottom: 1rem;"></i>
-                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--primary);">Arrastra tu planilla CSV/Excel o haz clic para cargar</h3>
-                <p style="color: #64748B; font-size: 0.88rem; margin-top: 0.35rem;">
-                    Formatos admitidos: <code>.csv</code> (separado por coma o punto y coma). Columnas recomendadas: <code>nombre</code>, <code>rut</code>, <code>email</code>, <code>telefono</code>, <code>cargo</code>, <code>sueldo</code>.
-                </p>
-                <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem;">
-                    <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important; border:1px solid #CBD5E1;" onclick="event.stopPropagation(); downloadSampleCsv();">
-                        <i class="fas fa-download"></i> Descargar Planilla Modelo (.csv)
-                    </button>
-                    <button type="button" class="btn-cta btn-gold" onclick="event.stopPropagation(); loadSampleData();">
-                        <i class="fas fa-magic"></i> Cargar Nómina de Muestra
-                    </button>
+            <!-- CONTENEDOR MODO B: DIFUSIÓN Y FIRMA MASIVA DE PDF ÚNICO -->
+            <div id="modeBroadcastWrap" style="display: none;">
+                <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:12px; padding:1.5rem; margin-bottom:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
+                        <div>
+                            <h3 style="font-size:1.2rem; font-weight:800; color:var(--primary); margin:0;">
+                                <i class="fas fa-bullhorn" style="color:#2563EB;"></i> Difusión y Acuse de Recibo Masivo de PDF Único
+                            </h3>
+                            <p style="color:#64748B; font-size:0.88rem; margin:4px 0 0;">
+                                Sube un documento común (Reglamento Interno, Protocolo Ley Karin, Entrega de EPP) y desdrápalo a toda tu nómina con certificación y archivo en el Expediente Digital de cada colaborador.
+                            </p>
+                        </div>
+                        <span style="background:#EFF6FF; color:#1D4ED8; font-weight:700; font-size:0.8rem; padding:4px 12px; border-radius:9999px; border:1px solid #BFDBFE;">
+                            <i class="fas fa-balance-scale"></i> Plena Validez Ley N° 19.799
+                        </span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem; margin-bottom:1.5rem;">
+                        <div>
+                            <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">
+                                Título del Documento Corporativo:
+                            </label>
+                            <input type="text" id="broadcastDocTitle" class="form-control" placeholder="Ej: Reglamento Interno de Orden, Higiene y Seguridad 2026" style="width:100%; padding:9px 12px; font-size:0.9rem;" value="Reglamento Interno de Orden, Higiene y Seguridad">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">
+                                Tipo / Categoría de Documento:
+                            </label>
+                            <select id="broadcastDocCategory" class="form-control" style="width:100%; padding:9px 12px; font-size:0.9rem;">
+                                <option value="REGLAMENTO_INTERNO" selected>Reglamento Interno (RIOHS - Código del Trabajo)</option>
+                                <option value="LEY_KARIN">Protocolo de Acoso y Violencia (Ley Karin N° 21.643)</option>
+                                <option value="EPP">Entrega de Equipos de Protección Personal (EPP)</option>
+                                <option value="POLITICA_INTERNA">Política de Seguridad de la Información / Privacidad</option>
+                                <option value="COMUNICADO_OFICIAL">Circular / Comunicado General de Empresa</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;" class="broadcast-dual-grid">
+                        <!-- Columna 1: Subida de PDF Único -->
+                        <div style="border:2px dashed #93C5FD; background:#F8FAFC; border-radius:10px; padding:1.5rem; text-align:center; cursor:pointer;" onclick="document.getElementById('broadcastPdfInput').click()">
+                            <input type="file" id="broadcastPdfInput" accept=".pdf" style="display:none;" onchange="handleBroadcastPdfUpload(event)">
+                            <i class="fas fa-file-pdf fa-3x" style="color:#DC2626; margin-bottom:0.75rem;"></i>
+                            <h4 style="font-size:1.05rem; font-weight:700; color:var(--primary); margin:0 0 4px;" id="broadcastPdfNameText">
+                                Haz clic o arrastra el archivo PDF Único
+                            </h4>
+                            <p style="color:#64748B; font-size:0.82rem; margin:0;" id="broadcastPdfInfoText">
+                                Archivo en formato PDF estándar (máx. 25 MB).
+                            </p>
+                        </div>
+
+                        <!-- Columna 2: Subida de Nómina de Trabajadores -->
+                        <div style="border:2px dashed #86EFAC; background:#F8FAFC; border-radius:10px; padding:1.5rem; text-align:center; cursor:pointer;" onclick="document.getElementById('broadcastCsvInput').click()">
+                            <input type="file" id="broadcastCsvInput" accept=".csv, .txt, .xlsx" style="display:none;" onchange="handleBroadcastCsvUpload(event)">
+                            <i class="fas fa-users fa-3x" style="color:#10B981; margin-bottom:0.75rem;"></i>
+                            <h4 style="font-size:1.05rem; font-weight:700; color:var(--primary); margin:0 0 4px;" id="broadcastCsvNameText">
+                                Carga la Nómina de Trabajadores (.csv)
+                            </h4>
+                            <p style="color:#64748B; font-size:0.82rem; margin:0;" id="broadcastCsvInfoText">
+                                Columnas: <code>nombre, rut, email, telefono, cargo</code>
+                            </p>
+                            <div style="margin-top:0.75rem;">
+                                <button type="button" class="btn-cta" style="background:#FFF; color:#15803D !important; border:1px solid #86EFAC; padding:5px 10px; font-size:0.78rem;" onclick="event.stopPropagation(); downloadBroadcastSampleCsv();">
+                                    <i class="fas fa-download"></i> Descargar Planilla Nómina (.csv)
+                                </button>
+                                <button type="button" class="btn-cta" style="background:#FFF; color:#2563EB !important; border:1px solid #BFDBFE; padding:5px 10px; font-size:0.78rem; margin-left:4px;" onclick="event.stopPropagation(); loadBroadcastSampleData();">
+                                    <i class="fas fa-magic"></i> Cargar Muestra (4)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resumen Previo de Convocatoria -->
+                    <div id="broadcastPreviewWrap" style="display:none; margin-top:1.5rem; padding-top:1.25rem; border-top:1px solid #E2E8F0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
+                            <div>
+                                <span style="font-weight:800; color:var(--primary); font-size:1rem;" id="broadcastTotalWorkersHeader">0 Colaboradores Listos</span>
+                                <span style="font-size:0.82rem; color:#64748B; margin-left:8px;" id="broadcastPdfHashPreview">Hash: -</span>
+                            </div>
+                            <div>
+                                <button type="button" class="btn-cta btn-gold" id="btnEmitBroadcast" onclick="submitBroadcastBatch()" style="padding:10px 18px; font-size:0.95rem;">
+                                    <i class="fas fa-paper-plane"></i> Emitir, Difundir y Notificar por WhatsApp
+                                </button>
+                            </div>
+                        </div>
+                        <div style="max-height:220px; overflow-y:auto; border:1px solid #E2E8F0; border-radius:8px;">
+                            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                                <thead>
+                                    <tr style="background:#F1F5F9; color:#475569; position:sticky; top:0;">
+                                        <th style="padding:6px 10px; text-align:left;">#</th>
+                                        <th style="padding:6px 10px; text-align:left;">Nombre</th>
+                                        <th style="padding:6px 10px; text-align:left;">RUT</th>
+                                        <th style="padding:6px 10px; text-align:left;">Email</th>
+                                        <th style="padding:6px 10px; text-align:left;">WhatsApp</th>
+                                        <th style="padding:6px 10px; text-align:left;">Cargo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="broadcastWorkersTbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1029,6 +1148,233 @@ if (!$currentUser) {
                 return;
             }
             window.location.href = `api/index.php?action=b2b_export_dt&batch_id=${currentBatch.batch_id}`;
+        }
+
+        // Alternar modo de emisión: Planilla dinámica vs Difusión Masiva PDF
+        function switchEmisionMode(mode) {
+            const btnA = document.getElementById('btnModeSpreadsheet');
+            const btnB = document.getElementById('btnModeBroadcast');
+            const wrapA = document.getElementById('modeSpreadsheetWrap');
+            const wrapB = document.getElementById('modeBroadcastWrap');
+
+            if (mode === 'broadcast') {
+                btnA.classList.remove('active');
+                btnB.classList.add('active');
+                wrapA.style.display = 'none';
+                wrapB.style.display = 'block';
+            } else {
+                btnB.classList.remove('active');
+                btnA.classList.add('active');
+                wrapB.style.display = 'none';
+                wrapA.style.display = 'block';
+            }
+        }
+
+        // ==========================================
+        // FUNCIONES DE DIFUSIÓN MASIVA DE PDF ÚNICO
+        // ==========================================
+        let broadcastPdfFile = null;
+        let broadcastPdfBase64 = null;
+        let broadcastWorkers = [];
+
+        function handleBroadcastPdfUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                alert("Por favor selecciona un archivo PDF válido.");
+                return;
+            }
+
+            broadcastPdfFile = file;
+            document.getElementById('broadcastPdfNameText').textContent = file.name;
+            document.getElementById('broadcastPdfInfoText').textContent = `Tamaño: ${(file.size / 1024 / 1024).toFixed(2)} MB | Listo para emitir`;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const base64 = evt.target.result.split(',')[1];
+                broadcastPdfBase64 = base64;
+                checkBroadcastReady();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleBroadcastCsvUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                dynamicTyping: false,
+                complete: function(results) {
+                    if (!results.data || results.data.length === 0) {
+                        alert("No se detectaron registros en la nómina.");
+                        return;
+                    }
+                    parseBroadcastWorkers(results.data, file.name);
+                },
+                error: function(err) {
+                    alert("Error leyendo nómina CSV: " + err.message);
+                }
+            });
+        }
+
+        function parseBroadcastWorkers(data, fileName = '') {
+            broadcastWorkers = [];
+            data.forEach((row, i) => {
+                const nombre = row.nombre || row.NOMBRE || row.colaborador || row.trabajador || '';
+                const rut = row.rut || row.RUT || row.run || '';
+                const email = row.email || row.EMAIL || row.correo || '';
+                const telefono = row.telefono || row.TELEFONO || row.whatsapp || row.celular || '';
+                const cargo = row.cargo || row.CARGO || row.puesto || 'Colaborador';
+
+                if (nombre.trim() && rut.trim()) {
+                    broadcastWorkers.push({
+                        nombre: nombre.trim(),
+                        rut: rut.trim(),
+                        email: email.trim(),
+                        telefono: telefono.trim(),
+                        cargo: cargo.trim()
+                    });
+                }
+            });
+
+            if (broadcastWorkers.length === 0) {
+                alert("No se encontraron registros válidos con 'nombre' y 'rut'.");
+                return;
+            }
+
+            document.getElementById('broadcastCsvNameText').textContent = fileName ? `Nómina: ${fileName}` : `${broadcastWorkers.length} Colaboradores cargados`;
+            document.getElementById('broadcastCsvInfoText').textContent = `${broadcastWorkers.length} colaboradores listos para recibir y firmar`;
+
+            renderBroadcastWorkersPreview();
+            checkBroadcastReady();
+        }
+
+        function downloadBroadcastSampleCsv() {
+            const csv = "nombre,rut,email,telefono,cargo\r\n" +
+                        "Patricio Alarcón Soto,14.234.567-6,patricio.alarcon@empresa.cl,+56991122334,Operador Técnico\r\n" +
+                        "Daniela Morales Vega,16.789.012-1,daniela.morales@empresa.cl,+56987654321,Jefa de Turno\r\n" +
+                        "Cristián Fuentes Parra,18.456.789-K,cristian.fuentes@empresa.cl,+56977889900,Supervisor Faena\r\n" +
+                        "Marcela Silva Henríquez,19.123.456-1,marcela.silva@empresa.cl,+56966554433,Prevencionista de Riesgos\r\n";
+            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "nomina_trabajadores_difusion.csv";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function loadBroadcastSampleData() {
+            const sampleData = [
+                { nombre: 'Patricio Alarcón Soto', rut: '14.234.567-6', email: 'patricio.alarcon@empresa.cl', telefono: '+56991122334', cargo: 'Operador Técnico' },
+                { nombre: 'Daniela Morales Vega', rut: '16.789.012-1', email: 'daniela.morales@empresa.cl', telefono: '+56987654321', cargo: 'Jefa de Turno' },
+                { nombre: 'Cristián Fuentes Parra', rut: '18.456.789-K', email: 'cristian.fuentes@empresa.cl', telefono: '+56977889900', cargo: 'Supervisor Faena' },
+                { nombre: 'Marcela Silva Henríquez', rut: '19.123.456-1', email: 'marcela.silva@empresa.cl', telefono: '+56966554433', cargo: 'Prevencionista de Riesgos' }
+            ];
+            parseBroadcastWorkers(sampleData, "Muestra Corporativa (4 trabajadores)");
+        }
+
+        function renderBroadcastWorkersPreview() {
+            const tbody = document.getElementById('broadcastWorkersTbody');
+            tbody.innerHTML = broadcastWorkers.map((w, idx) => `
+                <tr style="border-bottom:1px solid #E2E8F0;">
+                    <td style="padding:6px 10px;">${idx + 1}</td>
+                    <td style="padding:6px 10px; font-weight:700;">${w.nombre}</td>
+                    <td style="padding:6px 10px; font-family:monospace;">${w.rut}</td>
+                    <td style="padding:6px 10px; color:#64748B;">${w.email || '-'}</td>
+                    <td style="padding:6px 10px; color:#64748B;">${w.telefono || '-'}</td>
+                    <td style="padding:6px 10px;">${w.cargo || '-'}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('broadcastTotalWorkersHeader').textContent = `${broadcastWorkers.length} Colaboradores en Nómina`;
+        }
+
+        function checkBroadcastReady() {
+            const previewWrap = document.getElementById('broadcastPreviewWrap');
+            if (broadcastPdfBase64 && broadcastWorkers.length > 0) {
+                previewWrap.style.display = 'block';
+                previewWrap.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        async function submitBroadcastBatch() {
+            if (!broadcastPdfBase64) {
+                alert("Debes cargar el archivo PDF antes de emitir.");
+                return;
+            }
+            if (broadcastWorkers.length === 0) {
+                alert("Debes cargar la nómina de colaboradores.");
+                return;
+            }
+
+            const docTitle = document.getElementById('broadcastDocTitle').value.trim() || 'Documento Corporativo';
+            const categoria = document.getElementById('broadcastDocCategory').value;
+
+            // Validar saldo prepago disponible
+            const saldoDisp = parseInt(currentCompany.saldo_firmas_prepago || 0);
+            const modalidad = (currentCompany.modalidad_cobro || 'PREPAGO').toUpperCase();
+
+            if (modalidad === 'PREPAGO' && saldoDisp < broadcastWorkers.length) {
+                alert(`Saldo insuficiente: Tienes ${saldoDisp} firmas disponibles y necesitas ${broadcastWorkers.length} para esta nómina.\n\nPor favor, recarga una bolsa de firmas para continuar.`);
+                openRechargeModal();
+                return;
+            }
+
+            if (!confirm(`¿Confirmas la emisión y difusión masiva de "${docTitle}" a ${broadcastWorkers.length} colaboradores?\n\nSe certificarán los documentos, se archivarán en el Expediente Digital de cada uno y se despacharán las convocatorias a firma.`)) {
+                return;
+            }
+
+            const btn = document.getElementById('btnEmitBroadcast');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Emitiendo, certificando y despachando...`;
+
+            try {
+                const payload = {
+                    company_id: currentCompany.id,
+                    user_id: currentCompany.user_id,
+                    titulo: docTitle,
+                    categoria: categoria,
+                    pdf_base64: broadcastPdfBase64,
+                    file_name: broadcastPdfFile ? broadcastPdfFile.name : 'documento.pdf',
+                    workers: broadcastWorkers,
+                    rep_legal: {
+                        nombre: currentCompany.rep_legal_nombre,
+                        rut: currentCompany.rep_legal_rut,
+                        email: currentCompany.rep_legal_email
+                    }
+                };
+
+                const res = await fetch('api/index.php?action=b2b_broadcast_pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+
+                if (!json.success) {
+                    alert("Error en la emisión masiva: " + (json.error || 'Error desconocido'));
+                    return;
+                }
+
+                alert(`✅ ¡Difusión Masiva Emitida con Éxito!\n\n${json.data.message}\n\nLote ID: #${json.data.batch_id}\nSe han enviado las notificaciones de firma y los expedientes digitales han sido actualizados.`);
+                
+                // Recargar perfil de empresa (saldo e historial)
+                await loadCompanyProfile();
+
+                // Cambiar a la pestaña de expedientes para visualizar las carpetas
+                switchB2BTab('expediente', document.querySelector("button[onclick*='expediente']"));
+
+            } catch (e) {
+                alert("Error de conexión con el servidor: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
         }
 
         // ==========================================

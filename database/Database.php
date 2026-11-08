@@ -105,6 +105,20 @@ class Database {
                 }
             }
 
+            // Migrar columnas B2B en tabla b2b_batches si ya existía previamente
+            $batchColsStmt = $this->pdo->query("PRAGMA table_info(b2b_batches);");
+            $batchCols = $batchColsStmt ? $batchColsStmt->fetchAll(PDO::FETCH_COLUMN, 1) : [];
+            $missingBatchCols = [
+                'batch_type' => "ALTER TABLE b2b_batches ADD COLUMN batch_type VARCHAR(30) DEFAULT 'TEMPLATE';", // TEMPLATE o BROADCAST_PDF
+                'pdf_r2_key' => "ALTER TABLE b2b_batches ADD COLUMN pdf_r2_key VARCHAR(255);",
+                'pdf_sha256' => "ALTER TABLE b2b_batches ADD COLUMN pdf_sha256 VARCHAR(64);"
+            ];
+            foreach ($missingBatchCols as $bCol => $bSql) {
+                if (!in_array($bCol, $batchCols)) {
+                    $this->pdo->exec($bSql);
+                }
+            }
+
             // Historial de Recargas de Bolsas y Facturaciones B2B
             $this->pdo->exec("CREATE TABLE IF NOT EXISTS b2b_billing_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -721,6 +721,34 @@ try {
             jsonResponse(true, $resSign);
             break;
 
+        // 20B. Emisión y Difusión Masiva de PDF Único (Reglamento Interno, Ley Karin, EPP)
+        case 'b2b_broadcast_pdf':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $companyId = (int)($input['company_id'] ?? 0);
+            $userId = (int)($input['user_id'] ?? 0);
+            $titulo = trim($input['titulo'] ?? 'Difusión y Firma Masiva de Documento');
+            $categoria = trim($input['categoria'] ?? 'REGLAMENTO_INTERNO');
+            $pdfBase64 = $input['pdf_base64'] ?? '';
+            $fileName = trim($input['file_name'] ?? 'documento.pdf');
+            $workers = $input['workers'] ?? [];
+            $repLegal = $input['rep_legal'] ?? [];
+
+            if ($companyId <= 0 || empty($pdfBase64) || empty($workers)) {
+                jsonResponse(false, null, 'Datos incompletos. Se requiere PDF y lista de trabajadores.', 400);
+            }
+
+            try {
+                $resBroadcast = B2BService::broadcastPdfBatch($companyId, $userId, $titulo, $categoria, $pdfBase64, $fileName, $workers, $repLegal);
+                jsonResponse(true, $resBroadcast);
+            } catch (Exception $eBroad) {
+                jsonResponse(false, null, $eBroad->getMessage(), 400);
+            }
+            break;
+
         // 21. Exportar Lote a Formato Libro Digital DT (Ley N° 21.327)
         case 'b2b_export_dt':
             $batchId = (int)($_GET['batch_id'] ?? 0);

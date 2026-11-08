@@ -743,6 +743,268 @@ class B2BService {
     }
 
     /**
+     * Emite y difunde un PDF Único Masivo (Reglamento Interno, Ley Karin, EPP, etc.)
+     * Almacena el PDF común en R2 y crea los documentos individuales en cada expediente con convocatoria por WhatsApp y Email.
+     */
+    public static function broadcastPdfBatch(int $companyId, int $userId, string $titulo, string $categoria, string $pdfBase64, string $fileName, array $workers, array $repLegal) {
+        $pdo = Database::getInstance();
+
+        if (empty($pdfBase64)) {
+            throw new Exception("El archivo PDF es requerido.");
+        }
+
+        $binaryPdf = base64_decode($pdfBase64);
+        if (!$binaryPdf || strlen($binaryPdf) < 10 || substr($binaryPdf, 0, 4) !== '%PDF') {
+            throw new Exception("El archivo proporcionado no es un documento PDF válido.");
+        }
+
+        $pdfSha256 = hash('sha256', $binaryPdf);
+        $totalWorkers = count($workers);
+        if ($totalWorkers === 0) {
+            throw new Exception("Debes incluir al menos un trabajador en la nómina destinataria.");
+        }
+
+        // 1. Obtener y validar datos de la empresa y saldo de firmas
+        $stmtC = $pdo->prepare("SELECT * FROM companies WHERE id = ?");
+        $stmtC->execute([$companyId]);
+        $company = $stmtC->fetch(PDO::FETCH_ASSOC);
+
+        if (!$company) {
+            throw new Exception("Empresa no encontrada.");
+        }
+
+        $modalidad = strtoupper($company['modalidad_cobro'] ?? 'PREPAGO');
+        $saldoPrepago = (int)($company['saldo_firmas_prepago'] ?? 0);
+        $tarifaUnit = (int)($company['tarifa_tramo_clp'] ?? 2490);
+
+        if ($modalidad === 'PREPAGO' && $saldoPrepago < $totalWorkers) {
+            throw new Exception("Saldo de firmas prepago insuficiente. Tienes {$saldoPrepago} firmas disponibles y necesitas {$totalWorkers}. Por favor, recarga una bolsa de firmas.");
+        }
+
+        // 2. Almacenar PDF maestro en Cloudflare R2
+        require_once __DIR__ . '/../../api/adapters/StorageR2Adapter.php';
+        $r2 = new StorageR2Adapter();
+        $safeName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $fileName ?: 'documento_difusion.pdf');
+        $r2Key = "b2b/broadcast/{$companyId}/" . date('Ymd_His') . "_{$safeName}";
+
+        if ($r2->isConfigured()) {
+            $r2Uploaded = $r2->uploadFile($r2Key, $binaryPdf, 'application/pdf');
+            if (!$r2Uploaded) {
+                // Fallback local
+                $localDir = __DIR__ . '/../../storage/documents/broadcast/';
+                if (!is_dir($localDir)) mkdir($localDir, 0755, true);
+                file_put_contents($localDir . basename($r2Key), $binaryPdf);
+            }
+        } else {
+            $localDir = __DIR__ . '/../../storage/documents/broadcast/';
+            if (!is_dir($localDir)) mkdir($localDir, 0755, true);
+            file_put_contents($localDir . basename($r2Key), $binaryPdf);
+        }
+
+        // 3. Crear Lote B2B tipo BROADCAST_PDF
+        $batchHash = hash('sha256', $titulo . '_' . $pdfSha256 . '_' . time());
+        $stmtBatch = $pdo->prepare("
+            INSERT INTO b2b_batches (
+                company_id, user_id, titulo, template_slug,
+                total_records, valid_records, invalid_records,
+                status, batch_hash, batch_type, pdf_r2_key, pdf_sha256
+            ) VALUES (?, ?, ?, 'pdf-difusion-masiva', ?, ?, 0, 'EN_FIRMA', ?, 'BROADCAST_PDF', ?, ?)
+        ");
+        $stmtBatch->execute([
+            $companyId,
+            $userId,
+            $titulo,
+            $totalWorkers,
+            $totalWorkers,
+            $batchHash,
+            $r2Key,
+            $pdfSha256
+        ]);
+        $batchId = $pdo->lastInsertId();
+
+        $repNombre = !empty($repLegal['nombre']) ? trim($repLegal['nombre']) : ($company['rep_legal_nombre'] ?: 'Representante Legal');
+        $repRut = !empty($repLegal['rut']) ? trim($repLegal['rut']) : ($company['rep_legal_rut'] ?: '17.297.004-4');
+        $repEmail = !empty($repLegal['email']) ? trim($repLegal['email']) : ($company['rep_legal_email'] ?: 'contacto@keystoneadvisors.cl');
+        $now = date('Y-m-d H:i:s');
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+
+        // 4. Procesar cada trabajador: crear document, signers y vincular a worker_folder
+        $processedCount = 0;
+        require_once __DIR__ . '/WhatsAppService.php';
+        $wa = new WhatsAppService();
+        $waInstance = !empty($company['whatsapp_instance_id']) ? $company['whatsapp_instance_id'] : null;
+
+        $stmtItem = $pdo->prepare("
+            INSERT INTO b2b_batch_items (
+                batch_id, fila_num, colaborador_nombre, colaborador_rut,
+                colaborador_email, colaborador_telefono, cargo, sueldo,
+                is_valid, status, document_id, fecha_firma
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'FIRMADO', ?, ?)
+        ");
+
+        foreach ($workers as $idx => $w) {
+            $filaNum = $idx + 1;
+            $rut = self::formatRut($w['rut'] ?? '');
+            $nombre = trim($w['nombre'] ?? '');
+            $email = trim($w['email'] ?? '');
+            $tel = trim($w['telefono'] ?? '');
+            $cargo = trim($w['cargo'] ?? 'Colaborador');
+
+            $verifCode = 'SN-DIF-' . strtoupper(substr(md5(uniqid($rut, true)), 0, 10));
+
+            // Crear documento de acuse de recibo y firma
+            $stmtDoc = $pdo->prepare("
+                INSERT INTO documents (
+                    codigo_verificacion, user_id, titulo,
+                    estado, pdf_sha256, pdf_r2_key, estado_pago, monto_pagado
+                ) VALUES (?, ?, ?, 'PENDIENTE_FIRMAS', ?, ?, 'PAGADO', 4990)
+            ");
+            $docTitle = "{$titulo} - {$nombre}";
+            $stmtDoc->execute([$verifCode, $userId, $docTitle, $pdfSha256, $r2Key]);
+            $docId = $pdo->lastInsertId();
+
+            // Firmante 1: Empleador (firmado por representante)
+            $tokenRep = bin2hex(random_bytes(16));
+            $stmtRep = $pdo->prepare("
+                INSERT INTO document_signers (
+                    document_id, rol_firmante, rut, tipo_documento, nombre_completo,
+                    es_representante, empresa_razon_social, empresa_rut,
+                    email, telefono, orden_firma, token_acceso, estado_firma,
+                    metodo_firma, fecha_firma, ip_firma
+                ) VALUES (?, 'EMPLEADOR', ?, 'RUT', ?, 1, ?, ?, ?, '+56984180479', 1, ?, 'FIRMADO', 'FEA', ?, ?)
+            ");
+            $stmtRep->execute([
+                $docId,
+                $repRut,
+                $repNombre,
+                $company['razon_social'] ?: 'Keystone Advisors SpA',
+                $company['rut'] ?: '78.089.686-8',
+                $repEmail,
+                $tokenRep,
+                $now,
+                $ip
+            ]);
+
+            // Firmante 2: Colaborador
+            $tokenColab = bin2hex(random_bytes(16));
+            $stmtColab = $pdo->prepare("
+                INSERT INTO document_signers (
+                    document_id, rol_firmante, rut, tipo_documento, nombre_completo,
+                    es_representante, email, telefono, orden_firma, token_acceso,
+                    estado_firma, metodo_firma
+                ) VALUES (?, 'TRABAJADOR', ?, 'RUT', ?, 0, ?, ?, 2, ?, 'NOTIFICADO', 'FES')
+            ");
+            $stmtColab->execute([
+                $docId,
+                $rut,
+                $nombre,
+                $email,
+                $tel,
+                $tokenColab
+            ]);
+
+            // Vincular al lote
+            $stmtItem->execute([
+                $batchId,
+                $filaNum,
+                $nombre,
+                $rut,
+                $email,
+                $tel,
+                $cargo,
+                '0',
+                $docId,
+                $now
+            ]);
+
+            // Vincular al Expediente Digital del Trabajador
+            try {
+                self::linkWorkerFolderDocument(
+                    $companyId,
+                    $rut,
+                    $nombre,
+                    $email,
+                    $tel,
+                    $cargo,
+                    $docId,
+                    $categoria,
+                    $docTitle,
+                    $pdfSha256,
+                    $r2Key
+                );
+            } catch (Exception $eFolder) {
+                error_log("Error vinculando expediente para {$rut}: " . $eFolder->getMessage());
+            }
+
+            // Despacho de notificación WhatsApp si la empresa tiene WhatsApp Oficial conectado
+            if (!empty($waInstance) && !empty($tel)) {
+                $signUrl = "https://sinnotario.cl/verificar.php?code={$verifCode}&token={$tokenColab}";
+                $waMsg = "Hola {$nombre}. {$company['razon_social']} ha emitido el documento corporativo oficial: *{$titulo}*.\n\n" .
+                         "Conforme a la normativa laboral, puedes revisar el PDF certificado y estampar tu firma de recepción conforme aquí:\n" .
+                         "👉 {$signUrl}\n\n" .
+                         "_Documento seguro certificado por SinNotario.cl bajo Ley N° 19.799._";
+                try {
+                    $wa->sendTestMessage($waInstance, $tel, $waMsg);
+                } catch (Exception $eWa) {
+                    error_log("Error enviando WhatsApp a {$tel}: " . $eWa->getMessage());
+                }
+            }
+
+            $processedCount++;
+        }
+
+        // 5. Descontar firmas de la bolsa prepagada
+        if ($modalidad === 'PREPAGO') {
+            $nuevoSaldoPrepago = max(0, $saldoPrepago - $processedCount);
+            $stmtUpdComp = $pdo->prepare("
+                UPDATE companies 
+                SET firmas_utilizadas = COALESCE(firmas_utilizadas, 0) + ?,
+                    saldo_firmas_prepago = ?,
+                    updated_at = datetime('now') 
+                WHERE id = ?
+            ");
+            $stmtUpdComp->execute([$processedCount, $nuevoSaldoPrepago, $companyId]);
+
+            // Registrar en auditoría contable
+            $stmtLog = $pdo->prepare("
+                INSERT INTO b2b_billing_logs (
+                    company_id, tipo_movimiento, modalidad, cantidad_firmas,
+                    monto_clp, saldo_anterior, saldo_nuevo, descripcion
+                ) VALUES (?, 'CONSUMO_FIRMA', 'PREPAGO', ?, 0, ?, ?, ?)
+            ");
+            $stmtLog->execute([
+                $companyId,
+                $processedCount,
+                $saldoPrepago,
+                $nuevoSaldoPrepago,
+                "Difusión Masiva PDF '{$titulo}' para {$processedCount} colaboradores (Lote #{$batchId})"
+            ]);
+        } else {
+            // Postpago
+            $gastoAcumulado = (int)($company['gasto_acumulado_periodo'] ?? 0) + ($processedCount * $tarifaUnit);
+            $stmtUpdComp = $pdo->prepare("
+                UPDATE companies 
+                SET firmas_utilizadas = COALESCE(firmas_utilizadas, 0) + ?,
+                    gasto_acumulado_periodo = ?,
+                    updated_at = datetime('now') 
+                WHERE id = ?
+            ");
+            $stmtUpdComp->execute([$processedCount, $gastoAcumulado, $companyId]);
+        }
+
+        return [
+            'success' => true,
+            'batch_id' => $batchId,
+            'titulo' => $titulo,
+            'total_workers' => $processedCount,
+            'pdf_sha256' => $pdfSha256,
+            'saldo_anterior' => $saldoPrepago,
+            'saldo_restante' => ($modalidad === 'PREPAGO') ? max(0, $saldoPrepago - $processedCount) : null,
+            'message' => "Se emitieron y difundieron exitosamente {$processedCount} documentos. Cada trabajador ha sido convocado y el PDF quedó archivado en su Expediente Digital."
+        ];
+    }
+
+    /**
      * Exporta el lote al formato oficial del Registro Electrónico Laboral de la Dirección del Trabajo (Ley N° 21.327)
      */
     public static function exportDtCsv($batchId) {

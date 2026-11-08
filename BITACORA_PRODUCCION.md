@@ -1348,10 +1348,23 @@
 
 ---
 
-### Registro: 2026-11-07 07:15 UTC (04:15 CLT)
+### Registro: 2026-11-08 05:00 UTC (02:00 CLT)
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario (`sinnotario.cl`)
 - **Ambiente Destino:** Producción (`156.67.72.209:65002`)
-- **Identificador de la Solución:** `SOL-0050`
+- **Identificador de la Solución:** `SOL-0077`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Implementación integral del módulo **"Difusión y Firma Masiva de PDF Único"** en la Suite Empresas B2B (`empresas.php`):
+  1) **Selector de Modalidad en Pestaña 1:** Se incorporó un switch intuitivo entre *Opción A: Contratos Dinámicos con Variables (Planilla Excel)* y *Opción B: Difusión Masiva de PDF Único (Reglamento Interno, Ley Karin, EPP)*.
+  2) **Zona de Carga y Previsualización Dual:** Carga drag-and-drop del PDF institucional común y de la nómina de colaboradores con validación reactiva de nombres y RUTs.
+  3) **Servicio B2B Robusto (`B2BService::broadcastPdfBatch`):** Almacenamiento inmutable del PDF maestro en Cloudflare R2 vía `StorageR2Adapter`, cálculo de hash SHA-256 e inserción de registros en lote tipo `BROADCAST_PDF`.
+  4) **Control Financiero y Deducción de Firmas:** Descuento auditado en el saldo de bolsas prepago (`saldo_firmas_prepago`) con trazabilidad completa en `b2b_billing_logs`.
+  5) **Convocatoria Multicanal y Expediente Digital:** Despacho de notificaciones con enlace seguro de firma vía WhatsApp Oficial Dedicado (Evolution API v2) y auto-archivo inmediato del documento en el Expediente Digital del Trabajador (`worker_folders`).
+- **Pruebas Validadas:**
+  - Validación sintáctica remota (`php -l`) en `Database.php`, `B2BService.php`, `api/index.php` y `empresas.php` con 0 errores.
+  - Migración exitosa de columnas en tabla `b2b_batches` (`batch_type`, `pdf_r2_key`, `pdf_sha256`).
+  - Smoke tests HTTP/2 200 OK en `https://sinnotario.cl/empresas.php` y verificación de API en producción.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 - **Párrafo Resumen y Resultado de la Ejecución:**
   Se rediseñó, amplió y desahogó el módulo de verificación pública de documentos en la portada principal (`index.php#verificar`):
   1) **Ampliación Horizontal de Contenedor:** Se incrementó el ancho máximo del cuadro de verificación de 600px a 920px (dentro de un contenedor de sección de 1060px), otorgando suficiente amplitud visual en desktop sin apretar los elementos.
