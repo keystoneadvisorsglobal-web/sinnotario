@@ -1,5 +1,30 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-08 01:28 UTC-3] - SOL-0070
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0070`
+- **Alcance de los Cambios:**
+  - **Vinculación Nativa por Código QR de WhatsApp Oficial Corporativo (Evolution API v2 Baileys):**
+    1. **Servicio Backend `WhatsAppService.php`:**
+       - Conexión directa contra el gateway Evolution API de Keystone Advisors (`5.183.9.148:8080`) autenticado con Master Key.
+       - Métodos para consulta de estado (`connectionState`), creación/conexión de instancia (`/instance/create` y `/instance/connect`), extracción del código QR en base64, desvinculación (`/instance/logout` y `/instance/delete`) y despacho de mensajes de prueba.
+    2. **Endpoints API en `api/index.php`:**
+       - `b2b_get_whatsapp_qr`: Conecta o aprovisiona la instancia dedicada de la empresa y devuelve el QR dinámico en base64.
+       - `b2b_get_whatsapp_status`: Permite sondeo en vivo del estado de la instancia (`connecting`, `open`, `close`).
+       - `b2b_disconnect_whatsapp`: Desvincula y elimina la sesión de WhatsApp de la empresa.
+    3. **Interfaz Interactiva de Escaneo en `empresas.php` (Pestaña 4):**
+       - Sustitución de inputs estáticos por visualizador dinámico de Código QR con tarjeta comparativa y pasos guiados ("Dispositivos vinculados").
+       - Polling automático cada 3 segundos tras desplegar el QR para detectar en vivo el emparejamiento con el celular y cambiar al estado verde *"Conectado en Vivo (Baileys)"*.
+       - Botón de regeneración forzada de QR y botón de desvinculación de sesión corporativa.
+- **Pruebas Validadas:**
+  - Validación sintáctica PHP Lint (`php -l`): 0 errores en `WhatsAppService.php`, `api/index.php` y `empresas.php`.
+  - Prueba de llamada API remota: `b2b_get_whatsapp_qr` generó y retornó exitosamente la imagen QR en base64 de la instancia `sinnotario-b2b-e3f8ac60`.
+  - Prueba de status endpoint `b2b_get_whatsapp_status`: respondió JSON `{"state": "connecting", "connected": false}` correctamente.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-08 01:21 UTC-3] - SOL-0069
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

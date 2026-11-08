@@ -18,6 +18,7 @@ require_once __DIR__ . '/../src/Services/DocumentPdfService.php';
 require_once __DIR__ . '/../src/Services/GeminiLegalService.php';
 require_once __DIR__ . '/../src/Services/AuthService.php';
 require_once __DIR__ . '/../src/Services/B2BService.php';
+require_once __DIR__ . '/../src/Services/WhatsAppService.php';
 
 $pdo = Database::getInstance();
 $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -838,6 +839,82 @@ try {
 
             $resWa = B2BService::updateCompanyWhatsApp($companyId, $phone, $instanceId);
             jsonResponse(true, $resWa);
+            break;
+
+        // 29. Conectar Instancia WhatsApp de Empresa y Obtener QR
+        case 'b2b_get_whatsapp_qr':
+            $companyId = (int)($_GET['company_id'] ?? 0);
+            if ($companyId <= 0) {
+                jsonResponse(false, null, 'ID de empresa requerido', 400);
+            }
+
+            // Consultar datos de la empresa para resolver o asignar su instancia dedicada
+            $stmtC = $pdo->prepare("SELECT id, rut, razon_social, whatsapp_phone, whatsapp_instance_id FROM companies WHERE id = ?");
+            $stmtC->execute([$companyId]);
+            $comp = $stmtC->fetch(PDO::FETCH_ASSOC);
+
+            if (!$comp) {
+                jsonResponse(false, null, 'Empresa no encontrada', 404);
+            }
+
+            $wa = new WhatsAppService();
+            $instanceName = !empty($comp['whatsapp_instance_id']) ? $comp['whatsapp_instance_id'] : WhatsAppService::generateInstanceName($comp['id'], $comp['rut']);
+
+            // Si no estaba persistido el instanceId en la BD, guardarlo
+            if (empty($comp['whatsapp_instance_id'])) {
+                $stmtUp = $pdo->prepare("UPDATE companies SET whatsapp_instance_id = ? WHERE id = ?");
+                $stmtUp->execute([$instanceName, $companyId]);
+            }
+
+            $qrRes = $wa->getOrConnectInstance($instanceName);
+            $qrRes['company_id'] = $companyId;
+            $qrRes['instance_name'] = $instanceName;
+            jsonResponse(true, $qrRes);
+            break;
+
+        // 30. Consultar Estado en Vivo de la Instancia WhatsApp de la Empresa
+        case 'b2b_get_whatsapp_status':
+            $companyId = (int)($_GET['company_id'] ?? 0);
+            if ($companyId <= 0) {
+                jsonResponse(false, null, 'ID de empresa requerido', 400);
+            }
+
+            $stmtC = $pdo->prepare("SELECT id, rut, whatsapp_instance_id FROM companies WHERE id = ?");
+            $stmtC->execute([$companyId]);
+            $comp = $stmtC->fetch(PDO::FETCH_ASSOC);
+
+            if (!$comp) {
+                jsonResponse(false, null, 'Empresa no encontrada', 404);
+            }
+
+            $instanceName = !empty($comp['whatsapp_instance_id']) ? $comp['whatsapp_instance_id'] : WhatsAppService::generateInstanceName($comp['id'], $comp['rut']);
+            $wa = new WhatsAppService();
+            $statusRes = $wa->getConnectionStatus($instanceName);
+            jsonResponse(true, $statusRes);
+            break;
+
+        // 31. Desconectar Instancia WhatsApp de la Empresa
+        case 'b2b_disconnect_whatsapp':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $companyId = (int)($input['company_id'] ?? 0);
+            if ($companyId <= 0) {
+                jsonResponse(false, null, 'ID de empresa requerido', 400);
+            }
+
+            $stmtC = $pdo->prepare("SELECT id, rut, whatsapp_instance_id FROM companies WHERE id = ?");
+            $stmtC->execute([$companyId]);
+            $comp = $stmtC->fetch(PDO::FETCH_ASSOC);
+
+            if ($comp && !empty($comp['whatsapp_instance_id'])) {
+                $wa = new WhatsAppService();
+                $wa->disconnectInstance($comp['whatsapp_instance_id']);
+            }
+
+            jsonResponse(true, ['message' => 'Instancia desconectada correctamente.']);
             break;
 
         // 17. Estado de salud / Check

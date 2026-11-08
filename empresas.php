@@ -401,38 +401,90 @@ if (!$currentUser) {
 
         <!-- PESTAÑA 4: WHATSAPP OFICIAL DEDICADO -->
         <div id="pane_whatsapp" class="b2b-tab-pane">
-            <div style="background:#FFFFFF; border:1px solid var(--border); border-radius:12px; padding:2rem; box-shadow:var(--shadow-sm); max-width:800px; margin:0 auto;">
-                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
-                    <div style="width:54px; height:54px; border-radius:12px; background:#DCFCE7; color:#15803D; display:flex; align-items:center; justify-content:center; font-size:1.8rem;">
-                        <i class="fab fa-whatsapp"></i>
+            <div style="background:#FFFFFF; border:1px solid var(--border); border-radius:12px; padding:2rem; box-shadow:var(--shadow-sm); max-width:850px; margin:0 auto;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                    <div style="display:flex; align-items:center; gap:1rem;">
+                        <div style="width:54px; height:54px; border-radius:12px; background:#DCFCE7; color:#15803D; display:flex; align-items:center; justify-content:center; font-size:1.8rem;">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <div>
+                            <h3 style="font-size:1.3rem; font-weight:800; color:var(--primary); margin:0;">WhatsApp Oficial de tu Propia Empresa</h3>
+                            <p style="color:#64748B; font-size:0.88rem; margin:4px 0 0;">
+                                Conecta el número corporativo de tu empresa escaneando el código QR. Modelo $0 costo de plantillas Meta.
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 style="font-size:1.3rem; font-weight:800; color:var(--primary); margin:0;">WhatsApp Oficial de tu Propia Empresa</h3>
-                        <p style="color:#64748B; font-size:0.88rem; margin:4px 0 0;">
-                            Tus trabajadores reciben los enlaces de firma desde el número oficial de tu empresa vía Evolution API v2, generando 98% de tasa de apertura.
-                        </p>
+                    <div id="waStatusBadgeHeader">
+                        <span style="background:#FEF3C7; color:#B45309; font-weight:800; font-size:0.82rem; padding:6px 14px; border-radius:20px; display:inline-flex; align-items:center; gap:6px;">
+                            <i class="fas fa-circle-notch fa-spin"></i> Verificando conexión...
+                        </span>
                     </div>
                 </div>
 
+                <!-- Tarjeta Interactiva de Escaneo de QR (Estilo KeyHub) -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.75rem; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:1.5rem;" id="waQrBoxGrid">
+                    <!-- Columna Izquierda: Visualizador QR -->
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#FFF; border:2px dashed #CBD5E1; border-radius:12px; padding:1.5rem; min-height:280px; text-align:center;">
+                        <div id="waQrLoading" style="color:#64748B; font-size:0.88rem;">
+                            <i class="fas fa-spinner fa-spin fa-2x" style="color:var(--primary); margin-bottom:0.75rem;"></i><br>
+                            Consultando Gateway WhatsApp...
+                        </div>
+                        <img id="imgWaQrCode" src="" alt="Código QR WhatsApp" style="display:none; max-width:220px; width:100%; border-radius:8px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom:0.75rem;" />
+                        <div id="waConnectedNotice" style="display:none; text-align:center; padding:1rem;">
+                            <div style="width:64px; height:64px; border-radius:50%; background:#DCFCE7; color:#15803D; font-size:2rem; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <h4 style="font-weight:800; color:#15803D; margin:0 0 4px;">¡WhatsApp Vinculado y Operativo!</h4>
+                            <p style="font-size:0.82rem; color:#64748B; margin:0;" id="waConnectedSubtext">Tu instancia está transmitiendo en vivo.</p>
+                        </div>
+                        <div style="margin-top:0.5rem; display:flex; gap:0.5rem;" id="waQrActionButtons">
+                            <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important; padding:4px 10px; font-size:0.75rem;" onclick="loadCompanyWhatsAppQr()">
+                                <i class="fas fa-sync-alt"></i> Regenerar QR
+                            </button>
+                            <button type="button" id="btnDisconnectWa" class="btn-cta" style="background:#FEE2E2; color:#B91C1C !important; padding:4px 10px; font-size:0.75rem; display:none;" onclick="disconnectCompanyWhatsApp()">
+                                <i class="fas fa-power-off"></i> Desvincular
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Columna Derecha: Pasos de Vinculación -->
+                    <div style="display:flex; flex-direction:column; justify-content:center;">
+                        <h4 style="font-size:0.95rem; font-weight:800; color:var(--primary); margin:0 0 0.75rem;">
+                            <i class="fas fa-qrcode" style="color:var(--gold);"></i> ¿Cómo vincular tu WhatsApp corporativo?
+                        </h4>
+                        <ol style="font-size:0.82rem; color:#475569; padding-left:1.2rem; line-height:1.6; margin:0 0 1rem;">
+                            <li>Abre <strong>WhatsApp</strong> o <strong>WhatsApp Business</strong> en el teléfono celular de la empresa.</li>
+                            <li>Ve a <strong>Menú (o Configuración)</strong> > <strong>Dispositivos vinculados</strong>.</li>
+                            <li>Toca <strong>Vincular un dispositivo</strong> y apunta tu cámara al código QR de la izquierda.</li>
+                            <li>¡Listo! Los contratos y notificaciones saldrán con el <strong>nombre y logotipo</strong> de tu propia empresa.</li>
+                        </ol>
+                        <div style="background:#EFF6FF; border-left:4px solid #3B82F6; padding:0.65rem 0.85rem; border-radius:4px; font-size:0.78rem; color:#1E40AF;">
+                            <strong>Ahorro Total:</strong> Sin costos por mensaje ni validaciones engorrosas de Meta. Utiliza la infraestructura de alta disponibilidad Evolution API de Keystone Advisors.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario de Metadatos y Teléfono -->
                 <form onsubmit="saveCompanyWhatsApp(event)">
-                    <div style="margin-bottom:1.25rem;">
-                        <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Número de WhatsApp Oficial (con código de país)</label>
-                        <input type="text" id="cfgWaPhone" class="form-control" style="width:100%; padding:10px 14px; border:1px solid #CBD5E1; border-radius:8px;" placeholder="+56912345678" value="+56984180479">
-                        <small style="color:#64748B;">Número corporativo que verán tus trabajadores al recibir la notificación de firma.</small>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:1.25rem;">
+                        <div>
+                            <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Número de WhatsApp Corporativo</label>
+                            <input type="text" id="cfgWaPhone" class="form-control" style="width:100%; padding:10px 14px; border:1px solid #CBD5E1; border-radius:8px;" placeholder="+56912345678" value="+56984180479">
+                            <small style="color:#64748B;">Identificador visible para los trabajadores que reciben los contratos.</small>
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Identificador de Instancia Dedicada (Evolution API)</label>
+                            <input type="text" id="cfgWaInstance" class="form-control" style="width:100%; padding:10px 14px; border:1px solid #CBD5E1; border-radius:8px; font-family:monospace; background:#F8FAFC;" placeholder="sn-empresa-instance" readonly>
+                            <small style="color:#64748B;">Instancia aislada asignada a la empresa.</small>
+                        </div>
                     </div>
 
-                    <div style="margin-bottom:1.5rem;">
-                        <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Identificador de Instancia Dedicada</label>
-                        <input type="text" id="cfgWaInstance" class="form-control" style="width:100%; padding:10px 14px; border:1px solid #CBD5E1; border-radius:8px; font-family:monospace;" placeholder="sinnotario-empresa-instance" readonly>
-                        <small style="color:#64748B;">Canal seguro aprovisionado en alta disponibilidad bajo cifrado TLS.</small>
-                    </div>
-
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:0.85rem; color:#15803D; font-weight:700;">
-                            <i class="fas fa-check-circle"></i> Instancia Evolution API Activa y Homologada
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #E2E8F0; padding-top:1.25rem;">
+                        <span id="waStatusBottomLabel" style="font-size:0.85rem; color:#64748B; font-weight:600;">
+                            <i class="fas fa-info-circle"></i> Puedes cambiar el número telefónico visible en cualquier momento.
                         </span>
                         <button type="submit" class="btn-cta btn-gold">
-                            <i class="fas fa-save"></i> Guardar Configuración WhatsApp
+                            <i class="fas fa-save"></i> Guardar Número WhatsApp
                         </button>
                     </div>
                 </form>
@@ -633,6 +685,14 @@ if (!$currentUser) {
             document.getElementById('cfgRepNombre').value = currentCompany.rep_legal_nombre || '';
             document.getElementById('cfgRepRut').value = currentCompany.rep_legal_rut || '';
             document.getElementById('cfgRepEmail').value = currentCompany.rep_legal_email || '';
+
+            // WhatsApp tab fields
+            if (currentCompany.whatsapp_phone) {
+                document.getElementById('cfgWaPhone').value = currentCompany.whatsapp_phone;
+            }
+            if (currentCompany.whatsapp_instance_id) {
+                document.getElementById('cfgWaInstance').value = currentCompany.whatsapp_instance_id;
+            }
         }
 
         async function rechargePack(packType) {
@@ -884,8 +944,12 @@ if (!$currentUser) {
             if (tabId === 'plantillas') loadCompanyTemplates();
             if (tabId === 'expediente') loadWorkerFolders();
             if (tabId === 'whatsapp') {
-                document.getElementById('cfgWaPhone').value = currentCompany.whatsapp_phone || '+56984180479';
-                document.getElementById('cfgWaInstance').value = currentCompany.whatsapp_instance_id || 'sinnotario-b2b-' + currentCompany.id;
+                if (currentCompany.whatsapp_phone) {
+                    document.getElementById('cfgWaPhone').value = currentCompany.whatsapp_phone;
+                }
+                loadCompanyWhatsAppQr();
+            } else {
+                stopWhatsAppPolling();
             }
         }
 
@@ -1083,6 +1147,139 @@ if (!$currentUser) {
 
         function closeWorkerDetailModal() {
             document.getElementById('workerDetailModal').style.display = 'none';
+        }
+
+        let whatsappQrPollingTimer = null;
+
+        // Cargar QR y estado de WhatsApp
+        async function loadCompanyWhatsAppQr() {
+            if (!currentCompany || !currentCompany.id) return;
+
+            const qrLoading = document.getElementById('waQrLoading');
+            const imgQr = document.getElementById('imgWaQrCode');
+            const connectedNotice = document.getElementById('waConnectedNotice');
+            const statusBadge = document.getElementById('waStatusBadgeHeader');
+            const btnDisconnect = document.getElementById('btnDisconnectWa');
+
+            if (qrLoading) {
+                qrLoading.style.display = 'block';
+                qrLoading.innerHTML = '<i class="fas fa-spinner fa-spin fa-2x" style="color:var(--primary); margin-bottom:0.75rem;"></i><br>Generando enlace dinámico con WhatsApp...';
+            }
+            if (imgQr) imgQr.style.display = 'none';
+            if (connectedNotice) connectedNotice.style.display = 'none';
+
+            try {
+                const res = await fetch(`api/index.php?action=b2b_get_whatsapp_qr&company_id=${currentCompany.id}`);
+                const json = await res.json();
+
+                if (json.success && json.data) {
+                    const data = json.data;
+                    document.getElementById('cfgWaInstance').value = data.instance || data.instance_name || '';
+
+                    if (data.connected || data.state === 'open') {
+                        // Ya está conectado
+                        showWhatsAppConnectedState(data.instance);
+                    } else if (data.base64) {
+                        // QR disponible para escaneo
+                        const qrSrc = data.base64.startsWith('data:') ? data.base64 : `data:image/png;base64,${data.base64}`;
+                        if (imgQr) {
+                            imgQr.src = qrSrc;
+                            imgQr.style.display = 'block';
+                        }
+                        if (qrLoading) qrLoading.style.display = 'none';
+                        if (statusBadge) {
+                            statusBadge.innerHTML = `<span style="background:#FEF3C7; color:#B45309; font-weight:800; font-size:0.82rem; padding:6px 14px; border-radius:20px; display:inline-flex; align-items:center; gap:6px;">
+                                <i class="fas fa-qrcode"></i> Esperando escaneo QR
+                            </span>`;
+                        }
+                        if (btnDisconnect) btnDisconnect.style.display = 'none';
+
+                        // Iniciar sondeo inteligente de conexión (polling cada 3 segundos)
+                        startWhatsAppPolling();
+                    } else {
+                        if (qrLoading) {
+                            qrLoading.innerHTML = `<span style="color:#D97706;"><i class="fas fa-exclamation-circle fa-2x"></i><br>Instancia inicializando en el gateway. Reintentando...</span>`;
+                        }
+                        setTimeout(loadCompanyWhatsAppQr, 4000);
+                    }
+                } else {
+                    if (qrLoading) {
+                        qrLoading.innerHTML = `<span style="color:#DC2626;"><i class="fas fa-times-circle fa-2x"></i><br>Error: ${json.error || 'No fue posible contactar Evolution API'}</span>`;
+                    }
+                }
+            } catch (e) {
+                if (qrLoading) {
+                    qrLoading.innerHTML = `<span style="color:#DC2626;"><i class="fas fa-times-circle fa-2x"></i><br>Error de comunicación: ${e.message}</span>`;
+                }
+            }
+        }
+
+        function showWhatsAppConnectedState(instanceName) {
+            stopWhatsAppPolling();
+            const qrLoading = document.getElementById('waQrLoading');
+            const imgQr = document.getElementById('imgWaQrCode');
+            const connectedNotice = document.getElementById('waConnectedNotice');
+            const statusBadge = document.getElementById('waStatusBadgeHeader');
+            const btnDisconnect = document.getElementById('btnDisconnectWa');
+
+            if (qrLoading) qrLoading.style.display = 'none';
+            if (imgQr) imgQr.style.display = 'none';
+            if (connectedNotice) connectedNotice.style.display = 'block';
+            if (btnDisconnect) btnDisconnect.style.display = 'inline-block';
+
+            if (statusBadge) {
+                statusBadge.innerHTML = `<span style="background:#DCFCE7; color:#15803D; font-weight:800; font-size:0.82rem; padding:6px 14px; border-radius:20px; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="fas fa-check-circle"></i> Conectado en Vivo (Baileys)
+                </span>`;
+            }
+        }
+
+        function startWhatsAppPolling() {
+            stopWhatsAppPolling();
+            whatsappQrPollingTimer = setInterval(async () => {
+                if (!currentCompany || !currentCompany.id) return;
+                try {
+                    const res = await fetch(`api/index.php?action=b2b_get_whatsapp_status&company_id=${currentCompany.id}`);
+                    const json = await res.json();
+                    if (json.success && json.data) {
+                        if (json.data.connected || json.data.state === 'open') {
+                            showWhatsAppConnectedState(json.data.instance);
+                        }
+                    }
+                } catch (e) {
+                    console.log("Polling WhatsApp:", e);
+                }
+            }, 3000);
+        }
+
+        function stopWhatsAppPolling() {
+            if (whatsappQrPollingTimer) {
+                clearInterval(whatsappQrPollingTimer);
+                whatsappQrPollingTimer = null;
+            }
+        }
+
+        async function disconnectCompanyWhatsApp() {
+            if (!confirm("¿Seguro que deseas desvincular el WhatsApp corporativo de esta empresa? Los próximos contratos deberán enviarse por correo hasta que vuelvas a escanear el QR.")) {
+                return;
+            }
+
+            try {
+                const res = await fetch('api/index.php?action=b2b_disconnect_whatsapp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ company_id: currentCompany.id })
+                });
+                const json = await res.json();
+                if (json.success) {
+                    alert("Instancia desconectada con éxito.");
+                    loadCompanyWhatsAppQr();
+                } else {
+                    alert("Error: " + json.error);
+                }
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
         }
 
         async function saveCompanyWhatsApp(e) {
