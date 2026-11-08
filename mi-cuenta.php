@@ -430,6 +430,19 @@ $userEmpresaRut = htmlspecialchars($currentUser['empresa_rut'] ?? '');
                 <img src="assets/logos/sinnotario-logo.png" alt="SinNotario.cl Logo">
             </a>
 
+            <!-- Navegación Rápida Portal Clientes & Empresas -->
+            <nav style="display:flex; align-items:center; gap:1.25rem;">
+                <a href="index.php" style="color:#64748B; text-decoration:none; font-size:0.9rem; font-weight:600; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-home"></i> Inicio
+                </a>
+                <a href="mi-cuenta.php" style="color:var(--portal-blue); text-decoration:none; font-size:0.9rem; font-weight:700; border-bottom:2px solid var(--portal-blue); padding-bottom:4px; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-archive"></i> Mi Bóveda
+                </a>
+                <a href="empresas.php" class="btn-cta btn-gold" style="font-size:0.85rem; padding:0.45rem 1rem; text-decoration:none; border-radius:6px; font-weight:700; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.08);">
+                    <i class="fas fa-building"></i> Ir a Suite Empresas B2B
+                </a>
+            </nav>
+
             <div class="portal-user-badge">
                 <div class="portal-avatar">
                     <?php if ($userAvatar): ?>
@@ -457,11 +470,14 @@ $userEmpresaRut = htmlspecialchars($currentUser['empresa_rut'] ?? '');
                 <p>Monitorea tus trámites, el estado de tus firmantes y descarga copias certificadas con validez plena (Ley 19.799).</p>
             </div>
             <div class="portal-hero-actions">
+                <a href="empresas.php" class="btn-cta btn-gold" style="font-size:0.92rem; padding:0.65rem 1.25rem; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+                    <i class="fas fa-building"></i> Portal Empresas B2B
+                </a>
                 <a href="index.php#tramites" class="btn-new-doc">
-                    <i class="fas fa-pen-nib"></i> Redactar Nuevo Trámite
+                    <i class="fas fa-pen-nib"></i> Redactar Trámite
                 </a>
                 <a href="subir-documento.php" class="btn-upload-doc">
-                    <i class="fas fa-file-upload"></i> Subir Documento Propio
+                    <i class="fas fa-file-upload"></i> Subir PDF Propio
                 </a>
             </div>
         </div>
@@ -582,9 +598,14 @@ $userEmpresaRut = htmlspecialchars($currentUser['empresa_rut'] ?? '');
                         </div>
                     </div>
 
-                    <button type="submit" id="btnSaveProfile" class="btn-action-primary" style="padding:0.75rem 1.5rem; font-size:0.95rem; border:none; cursor:pointer;">
-                        <i class="fas fa-save"></i> Guardar Cambios
-                    </button>
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <button type="submit" id="btnSaveProfile" class="btn-action-primary" style="padding:0.75rem 1.5rem; font-size:0.95rem; border:none; cursor:pointer;">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                        <a href="empresas.php" class="btn-cta btn-gold" style="font-size:0.9rem; padding:0.65rem 1.25rem; text-decoration:none; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
+                            <i class="fas fa-building"></i> Abrir Suite Empresas B2B
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>

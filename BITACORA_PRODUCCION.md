@@ -1,5 +1,25 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-08 01:37 UTC-3] - SOL-0073
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0073`
+- **Alcance de los Cambios:**
+  - **Navegabilidad y Retorno Bidireccional entre Bóveda Privada (`mi-cuenta.php`) y Suite B2B (`empresas.php`):**
+    1. **Barra de Navegación Superior en `mi-cuenta.php`:**
+       - Incorporación de menú de acceso rápido con enlaces a *Inicio*, *Mi Bóveda* y botón destacado:
+         👉 **`<i class="fas fa-building"></i> Ir a Suite Empresas B2B`** en la cabecera fija.
+    2. **Botón en Hero Principal:**
+       - Se añadió el llamado a la acción prioritario **"Portal Empresas B2B"** junto a los botones de redacción de contratos y subida de PDF.
+    3. **Pestaña Mis Datos & Empresa:**
+       - Se integró el botón **"Abrir Suite Empresas B2B"** al pie del formulario de datos corporativos, permitiendo que un usuario persona natural transite de inmediato a la gestión masiva de su empresa sin perder el contexto ni tener que recurrir al historial del navegador.
+- **Pruebas Validadas:**
+  - Verificación sintáctica PHP Lint (`php -l`): 0 errores en `mi-cuenta.php`.
+  - Smoke tests HTTP 200 OK y presencia de los 3 nuevos enlaces de retorno a empresas en producción.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-08 01:34 UTC-3] - SOL-0072
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
