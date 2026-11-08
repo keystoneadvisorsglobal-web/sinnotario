@@ -254,6 +254,35 @@ if (!$currentUser) {
 
         <!-- PESTAÑA 1: SMART BULK & EMISIÓN -->
         <div id="pane_emision" class="b2b-tab-pane active">
+            <!-- Barra Superior de Selección de Plantilla para Emisión Masiva -->
+            <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="flex:1; min-width:280px;">
+                    <label style="display:block; font-size:0.85rem; font-weight:800; color:var(--primary); margin-bottom:4px;">
+                        <i class="fas fa-file-signature" style="color:var(--gold);"></i> 1. Selecciona la Plantilla para Emisión Masiva:
+                    </label>
+                    <select id="selectBatchTemplate" class="form-control" style="width:100%; padding:9px 12px; font-size:0.92rem; font-weight:700; color:#0A1C33; border:2px solid #D4AF37; border-radius:8px; background:#FFFBF0;" onchange="handleBatchTemplateChange()">
+                        <optgroup label="📋 Plantillas Oficiales SinNotario (Wizard Universal)">
+                            <option value="contrato-individual-trabajo" data-type="official" selected>Contrato Individual de Trabajo (Ley 40 Horas N° 21.561)</option>
+                            <option value="finiquito-laboral-mutuo-acuerdo" data-type="official">Finiquito Laboral por Mutuo Acuerdo (Código del Trabajo)</option>
+                            <option value="prestacion-servicios-honorarios" data-type="official">Contrato de Prestación de Servicios Profesionales / Honorarios</option>
+                            <option value="acuerdo-confidencialidad-nda" data-type="official">Acuerdo de Confidencialidad y No Divulgación (NDA)</option>
+                            <option value="contrato-arriendo-ley-21461" data-type="official">Contrato de Arriendo Residencial (Ley Devuélveme Mi Casa)</option>
+                        </optgroup>
+                        <optgroup label="🏢 Mis Plantillas Propias Personalizadas" id="optgroupCustomTemplates">
+                            <option value="" disabled>Cargando plantillas propias...</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:flex-end; gap:0.75rem;">
+                    <button type="button" class="btn-cta" style="background:#F1F5F9; color:#0A1C33 !important; border:1px solid #CBD5E1; padding:9px 14px; font-size:0.85rem;" onclick="downloadSampleCsv()">
+                        <i class="fas fa-download"></i> Descargar Planilla Excel (.csv) para esta Plantilla
+                    </button>
+                    <a href="javascript:void(0)" onclick="openTemplateWizardPreview()" class="btn-cta" style="background:#FFF; color:#2563EB !important; border:1px solid #BFDBFE; padding:9px 12px; font-size:0.85rem;" title="Ver estructura y redacción de la plantilla">
+                        <i class="fas fa-eye"></i> Ver Plantilla
+                    </a>
+                </div>
+            </div>
+
             <!-- Zona de Carga Masiva Drag-and-Drop -->
             <div class="upload-dropzone" id="dropzone" onclick="document.getElementById('excelFileInput').click()">
                 <input type="file" id="excelFileInput" accept=".csv, .txt, .xlsx" style="display: none;" onchange="handleExcelUpload(event)">
@@ -645,6 +674,7 @@ if (!$currentUser) {
 
         document.addEventListener('DOMContentLoaded', () => {
             loadCompanyProfile();
+            loadCompanyTemplates();
         });
 
         // Cargar datos de empresa y lotes anteriores
@@ -753,18 +783,83 @@ if (!$currentUser) {
             alert("Datos de la empresa actualizados para los próximos lotes.");
         }
 
-        // Descarga de CSV modelo
+        let cachedCompanyTemplates = [];
+
+        // Cambiar plantilla seleccionada para emisión masiva
+        function handleBatchTemplateChange() {
+            const select = document.getElementById('selectBatchTemplate');
+            const selectedOpt = select.options[select.selectedIndex];
+            console.log("Plantilla seleccionada para lote:", select.value);
+        }
+
+        function openTemplateWizardPreview() {
+            const select = document.getElementById('selectBatchTemplate');
+            const slug = select.value;
+            const selectedOpt = select.options[select.selectedIndex];
+            const isCustom = selectedOpt.getAttribute('data-type') === 'custom';
+
+            if (isCustom) {
+                switchB2BTab('plantillas', document.querySelector("button[onclick*='plantillas']"));
+            } else {
+                window.open(`redactar.php?slug=${slug}`, '_blank');
+            }
+        }
+
+        // Descarga de CSV modelo según la plantilla seleccionada
         function downloadSampleCsv() {
-            const csvContent = "nombre,rut,email,telefono,cargo,sueldo\n" +
-                "Patricio Alarcón Soto,14.234.567-6,patricio.alarcon@empresa.cl,+56991122334,Operador Técnico,750000\n" +
-                "Daniela Morales Vega,16.789.012-1,daniela.morales@empresa.cl,+56987654321,Jefa de Turno,1200000\n" +
-                "Cristián Fuentes Parra,18.456.789-K,cristian.fuentes@empresa.cl,+56977889900,Supervisor Faena,950000\n" +
-                "Marcela Silva Henríquez,19.123.456-1,marcela.silva@empresa.cl,+56966554433,Prevencionista de Riesgos,1100000\n";
+            const select = document.getElementById('selectBatchTemplate');
+            const slug = select.value;
+            const selectedOpt = select.options[select.selectedIndex];
+            const isCustom = selectedOpt ? selectedOpt.getAttribute('data-type') === 'custom' : false;
+
+            let csvContent = "";
+            let fileName = "planilla_modelo_" + slug + ".csv";
+
+            if (isCustom) {
+                // Obtener variables de la plantilla propia
+                const tplObj = cachedCompanyTemplates.find(t => String(t.id) === String(slug));
+                if (tplObj && Array.isArray(tplObj.variables) && tplObj.variables.length > 0) {
+                    csvContent = tplObj.variables.map(v => v.toLowerCase()).join(',') + "\n";
+                    // Fila de ejemplo
+                    csvContent += tplObj.variables.map(v => {
+                        const vl = v.toLowerCase();
+                        if (vl.includes('rut')) return '14.234.567-6';
+                        if (vl.includes('nombre')) return 'Patricio Alarcón Soto';
+                        if (vl.includes('email') || vl.includes('correo')) return 'patricio.alarcon@empresa.cl';
+                        if (vl.includes('telefono') || vl.includes('tel')) return '+56991122334';
+                        if (vl.includes('sueldo') || vl.includes('monto') || vl.includes('renta')) return '750000';
+                        if (vl.includes('cargo') || vl.includes('puesto')) return 'Operador Técnico';
+                        return 'Ejemplo ' + v;
+                    }).join(',') + "\n";
+                } else {
+                    csvContent = "nombre,rut,email,telefono,cargo,sueldo\nPatricio Alarcón Soto,14.234.567-6,patricio.alarcon@empresa.cl,+56991122334,Operador Técnico,750000\n";
+                }
+            } else if (slug === 'finiquito-laboral-mutuo-acuerdo') {
+                csvContent = "nombre,rut,email,telefono,cargo,fecha_ingreso,fecha_egreso,monto_total_finiquito\n" +
+                    "Patricio Alarcón Soto,14.234.567-6,patricio.alarcon@empresa.cl,+56991122334,Operador Técnico,01/03/2023,31/10/2026,1850000\n" +
+                    "Daniela Morales Vega,16.789.012-1,daniela.morales@empresa.cl,+56987654321,Jefa de Turno,15/01/2022,31/10/2026,3400000\n";
+            } else if (slug === 'prestacion-servicios-honorarios') {
+                csvContent = "nombre,rut,email,telefono,servicio_descripcion,honorario_mensual_bruto,fecha_inicio\n" +
+                    "Cristián Fuentes Parra,18.456.789-K,cristian.fuentes@empresa.cl,+56977889900,Asesoría en Transformación Digital,1200000,01/11/2026\n";
+            } else if (slug === 'acuerdo-confidencialidad-nda') {
+                csvContent = "nombre,rut,email,telefono,cargo,finalidad_reunion\n" +
+                    "Marcela Silva Henríquez,19.123.456-1,marcela.silva@empresa.cl,+56966554433,Consultora Externa,Evaluación de Alianza Estratégica B2B\n";
+            } else if (slug === 'contrato-arriendo-ley-21461') {
+                csvContent = "nombre,rut,email,telefono,direccion_inmueble,canon_arriendo_mensual,meses_garantia\n" +
+                    "Patricio Alarcón Soto,14.234.567-6,patricio.alarcon@empresa.cl,+56991122334,Av. Las Condes 1020 Depto 402,650000,1\n";
+            } else {
+                // Por defecto Contrato Individual de Trabajo
+                csvContent = "nombre,rut,email,telefono,cargo,sueldo\n" +
+                    "Patricio Alarcón Soto,14.234.567-6,patricio.alarcon@empresa.cl,+56991122334,Operador Técnico,750000\n" +
+                    "Daniela Morales Vega,16.789.012-1,daniela.morales@empresa.cl,+56987654321,Jefa de Turno,1200000\n" +
+                    "Cristián Fuentes Parra,18.456.789-K,cristian.fuentes@empresa.cl,+56977889900,Supervisor Faena,950000\n" +
+                    "Marcela Silva Henríquez,19.123.456-1,marcela.silva@empresa.cl,+56966554433,Prevencionista de Riesgos,1100000\n";
+            }
             
             const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = "planilla_modelo_nomina_sinnotario.csv";
+            link.download = fileName;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -807,10 +902,11 @@ if (!$currentUser) {
         // Enviar batch a la API backend
         async function uploadBatchToServer(titulo, rows) {
             try {
+                const selectedSlug = document.getElementById('selectBatchTemplate') ? document.getElementById('selectBatchTemplate').value : 'contrato-individual-trabajo';
                 document.getElementById('batchStatusFooter').textContent = 'Procesando lote y validando RUTs en el servidor...';
                 const payload = {
                     titulo: titulo,
-                    template_slug: 'contrato-individual-trabajo',
+                    template_slug: selectedSlug,
                     rows: rows,
                     company: currentCompany
                 };
@@ -967,35 +1063,53 @@ if (!$currentUser) {
                 const res = await fetch(`api/index.php?action=b2b_get_company_templates&company_id=${currentCompany.id}`);
                 const json = await res.json();
                 const container = document.getElementById('companyTemplatesList');
+                const optGroup = document.getElementById('optgroupCustomTemplates');
 
-                if (json.success && json.data && json.data.length > 0) {
-                    container.innerHTML = json.data.map(t => `
-                        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:1.25rem;">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                                <h4 style="font-weight:800; color:var(--primary); margin:0 0 6px;">${t.titulo}</h4>
-                                <span style="font-size:0.72rem; font-weight:700; background:#E2E8F0; color:#334155; padding:2px 8px; border-radius:4px;">${t.categoria}</span>
-                            </div>
-                            <div style="font-size:0.8rem; color:#64748B; margin-bottom:10px;">
-                                Variables detectadas (${t.variables.length}):<br>
-                                ${t.variables.map(v => `<code style="background:#FFF; border:1px solid #CBD5E1; padding:1px 5px; border-radius:3px; margin:2px; display:inline-block;">{{${v}}}</code>`).join('')}
-                            </div>
-                            <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-                                <button type="button" class="btn-cta" style="background:#FFF; color:#334155 !important; border:1px solid #CBD5E1; padding:4px 10px; font-size:0.75rem;" onclick="downloadCustomTemplateCsv(${t.id}, '${t.titulo}', ${JSON.stringify(t.variables).replace(/"/g, '&quot;')})">
-                                    <i class="fas fa-file-csv"></i> Descargar Excel Modelo
-                                </button>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    container.innerHTML = `
-                        <div style="padding:2.5rem; text-align:center; color:#94A3B8; grid-column:1/-1;">
-                            <i class="fas fa-file-contract fa-3x" style="margin-bottom:0.75rem; color:#CBD5E1;"></i>
-                            <p style="margin:0; font-size:0.95rem;">Aún no has registrado plantillas propias para tu empresa.</p>
-                            <button type="button" class="btn-cta btn-gold" style="margin-top:1rem; font-size:0.85rem;" onclick="openTemplateEditor()">
-                                <i class="fas fa-plus"></i> Crear Mi Primera Plantilla
-                            </button>
-                        </div>
-                    `;
+                if (json.success && json.data) {
+                    cachedCompanyTemplates = json.data;
+
+                    // Actualizar el selector de la Pestaña 1
+                    if (optGroup) {
+                        if (cachedCompanyTemplates.length === 0) {
+                            optGroup.innerHTML = `<option value="" disabled>(No has creado plantillas propias aún)</option>`;
+                        } else {
+                            optGroup.innerHTML = cachedCompanyTemplates.map(t => `
+                                <option value="${t.id}" data-type="custom">🏢 ${t.titulo} (${t.variables ? t.variables.length : 0} variables)</option>
+                            `).join('');
+                        }
+                    }
+
+                    if (container) {
+                        if (cachedCompanyTemplates.length > 0) {
+                            container.innerHTML = cachedCompanyTemplates.map(t => `
+                                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:1.25rem;">
+                                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                        <h4 style="font-weight:800; color:var(--primary); margin:0 0 6px;">${t.titulo}</h4>
+                                        <span style="font-size:0.72rem; font-weight:700; background:#E2E8F0; color:#334155; padding:2px 8px; border-radius:4px;">${t.categoria}</span>
+                                    </div>
+                                    <div style="font-size:0.8rem; color:#64748B; margin-bottom:10px;">
+                                        Variables detectadas (${t.variables.length}):<br>
+                                        ${t.variables.map(v => `<code style="background:#FFF; border:1px solid #CBD5E1; padding:1px 5px; border-radius:3px; margin:2px; display:inline-block;">{{${v}}}</code>`).join('')}
+                                    </div>
+                                    <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                                        <button type="button" class="btn-cta" style="background:#FFF; color:#334155 !important; border:1px solid #CBD5E1; padding:4px 10px; font-size:0.75rem;" onclick="downloadCustomTemplateCsv(${t.id}, '${t.titulo}', ${JSON.stringify(t.variables).replace(/"/g, '&quot;')})">
+                                            <i class="fas fa-file-csv"></i> Descargar Excel Modelo
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('');
+                        } else {
+                            container.innerHTML = `
+                                <div style="padding:2.5rem; text-align:center; color:#94A3B8; grid-column:1/-1;">
+                                    <i class="fas fa-file-contract fa-3x" style="margin-bottom:0.75rem; color:#CBD5E1;"></i>
+                                    <p style="margin:0; font-size:0.95rem;">Aún no has registrado plantillas propias para tu empresa.</p>
+                                    <button type="button" class="btn-cta btn-gold" style="margin-top:1rem; font-size:0.85rem;" onclick="openTemplateEditor()">
+                                        <i class="fas fa-plus"></i> Crear Mi Primera Plantilla
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    }
                 }
             } catch (e) {
                 console.error("Error al cargar plantillas:", e);

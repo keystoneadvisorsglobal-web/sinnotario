@@ -1,5 +1,27 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-08 01:48 UTC-3] - SOL-0076
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0076`
+- **Alcance de los Cambios:**
+  - **Selector Dinámico de Plantillas (Oficiales Wizard y Personalizadas) en la Pestaña 1 de Emisión Masiva (`empresas.php`):**
+    1. **Selector Desplegable Integrado:**
+       - Se incorporó la barra superior *"1. Selecciona la Plantilla para Emisión Masiva"* en la Pestaña 1 (*Smart Bulk & Emisión*).
+       - Permite alternar entre el catálogo oficial de SinNotario (*Contrato Individual de Trabajo Ley 40 Horas*, *Finiquito Laboral por Mutuo Acuerdo*, *Prestación de Servicios / Honorarios*, *Acuerdo NDA*, *Contrato de Arriendo Ley Devuélveme Mi Casa*) y **Mis Plantillas Propias Personalizadas** creadas por la empresa.
+    2. **Generación Adaptativa de Planillas Modelo Excel/CSV:**
+       - El botón *"Descargar Planilla Excel (.csv) para esta Plantilla"* detecta automáticamente la plantilla elegida y descarga la cabecera con las columnas requeridas (por ejemplo, finiquitos incluye fechas y monto finiquito; honorarios incluye descripción de servicios y monto bruto; o las variables `{{...}}` dinámicas de las plantillas propias).
+    3. **Previsualización de Redacción:**
+       - Botón *"Ver Plantilla"* que abre el Wizard o redirige al editor para revisar las cláusulas antes de cargar la nómina de trabajadores.
+    4. **Enlace al Motor de Emisión Masiva:**
+       - `uploadBatchToServer` ahora envía el `template_slug` dinámico correspondiente al backend para vincular los contratos emitidos con el instrumento legal elegido.
+- **Pruebas Validadas:**
+  - Verificación sintáctica PHP Lint (`php -l`): 0 errores en `empresas.php`.
+  - Comprobación remota de elementos interactivos (`selectBatchTemplate`) y descarga de CSVs específicos.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-08 01:43 UTC-3] - SOL-0075
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
