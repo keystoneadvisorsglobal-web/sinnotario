@@ -764,7 +764,7 @@ try {
             exit;
             break;
 
-        // 22. Recargar Bolsa Prepagada de Firmas (Vía Mercado Pago o Directo)
+        // 22. Recargar Bolsa Prepagada de Firmas (Vía Mercado Pago o Khipu)
         case 'b2b_recharge_bag':
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 jsonResponse(false, null, 'Método no permitido', 405);
@@ -773,6 +773,7 @@ try {
             $input = json_decode(file_get_contents('php://input'), true);
             $companyId = (int)($input['company_id'] ?? 0);
             $packType = trim($input['pack_type'] ?? 'PACK_50');
+            $gateway = strtoupper(trim($input['gateway'] ?? 'MERCADO_PAGO')); // MERCADO_PAGO o KHIPU
 
             if ($companyId <= 0) {
                 jsonResponse(false, null, 'ID de empresa inválido', 400);
@@ -792,12 +793,22 @@ try {
                 jsonResponse(false, null, 'Bolsa seleccionada no válida', 400);
             }
 
-            // Integración Mercado Pago
+            $sessionUser = $_SESSION['user_id'] ?? ($company['user_id'] ?? 0);
+
+            if ($gateway === 'KHIPU') {
+                require_once __DIR__ . '/../src/Services/KhipuService.php';
+                $khipu = new KhipuService();
+                if ($khipu->isConfigured()) {
+                    $khipuRes = $khipu->createB2BPackPayment($companyId, $packType, $packs[$packType], $company, (int)$sessionUser);
+                    jsonResponse(true, $khipuRes);
+                }
+            }
+
+            // Por defecto Mercado Pago
             require_once __DIR__ . '/../src/Services/MercadoPagoService.php';
             $mp = new MercadoPagoService();
 
             if ($mp->isConfigured()) {
-                $sessionUser = $_SESSION['user_id'] ?? ($company['user_id'] ?? 0);
                 $prefResult = $mp->createB2BPackPreference($companyId, $packType, $packs[$packType], $company, (int)$sessionUser);
                 jsonResponse(true, $prefResult);
             } else {

@@ -779,6 +779,114 @@ if (!$currentUser) {
         </div>
     </footer>
 
+    <!-- Modal de Checkout / Compra de Bolsas Prepagadas con Pasarelas de Pago -->
+    <div id="rechargeModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
+        <div style="background:#FFF; max-width:650px; width:92%; border-radius:16px; padding:2rem; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); max-height:90vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                <div>
+                    <h3 style="font-weight:800; color:var(--primary); margin:0; font-size:1.3rem;">
+                        <i class="fas fa-shopping-cart" style="color:var(--gold);"></i> Comprar Bolsa Prepagada de Firmas
+                    </h3>
+                    <p style="font-size:0.85rem; color:#64748B; margin:4px 0 0;">
+                        Selecciona el volumen de firmas y el medio de pago electrónico preferido.
+                    </p>
+                </div>
+                <button type="button" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748B;" onclick="closeRechargeModal()">&times;</button>
+            </div>
+
+            <!-- Paso 1: Elegir Bolsa -->
+            <div style="margin-bottom:1.5rem;">
+                <label style="display:block; font-size:0.85rem; font-weight:800; color:#1E293B; margin-bottom:8px;">
+                    1. Selecciona el Pack de Firmas:
+                </label>
+                <div style="display:grid; grid-template-columns:1fr; gap:0.75rem;">
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #E2E8F0; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPack50" onclick="selectCheckoutPack('PACK_50')">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <input type="radio" name="checkout_pack" value="PACK_50" checked style="accent-color:#009EE3; transform:scale(1.2);">
+                            <div>
+                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem;">Pack 50 Firmas</div>
+                                <div style="font-size:0.78rem; color:#64748B;">Ahorro 30% vs tarifa estándar ($3.490 + IVA c/u)</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:800; color:#0F2A4A; font-size:1.1rem;">$174.500 CLP</div>
+                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($207.655 total)</div>
+                        </div>
+                    </label>
+
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #D4AF37; background:#FFFDF5; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPack200" onclick="selectCheckoutPack('PACK_200')">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <input type="radio" name="checkout_pack" value="PACK_200" style="accent-color:#D4AF37; transform:scale(1.2);">
+                            <div>
+                                <span style="background:#FEF3C7; color:#B45309; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;">MÁS POPULAR</span>
+                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem; margin-top:2px;">Pack 200 Firmas</div>
+                                <div style="font-size:0.78rem; color:#64748B;">Ahorro 45% ($2.790 + IVA c/u)</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:800; color:#0F2A4A; font-size:1.1rem;">$558.000 CLP</div>
+                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($664.020 total)</div>
+                        </div>
+                    </label>
+
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #E2E8F0; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPack500" onclick="selectCheckoutPack('PACK_500')">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <input type="radio" name="checkout_pack" value="PACK_500" style="accent-color:#15803D; transform:scale(1.2);">
+                            <div>
+                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem;">Pack 500+ Enterprise</div>
+                                <div style="font-size:0.78rem; color:#64748B;">Tarifa mínima garantizada ($1.990 + IVA c/u)</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:800; color:#0F2A4A; font-size:1.1rem;">$995.000 CLP</div>
+                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($1.184.050 total)</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Paso 2: Elegir Medio de Pago -->
+            <div style="margin-bottom:1.5rem;">
+                <label style="display:block; font-size:0.85rem; font-weight:800; color:#1E293B; margin-bottom:8px;">
+                    2. Selecciona la Pasarela de Pago:
+                </label>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                    <label style="border:2px solid #009EE3; background:#F0F9FF; border-radius:10px; padding:1rem; cursor:pointer; display:flex; align-items:center; gap:10px;" id="labelGatewayMP" onclick="selectCheckoutGateway('MERCADO_PAGO')">
+                        <input type="radio" name="checkout_gateway" value="MERCADO_PAGO" checked style="accent-color:#009EE3;">
+                        <div>
+                            <div style="font-weight:800; color:#0369A1; font-size:0.92rem;">
+                                <i class="fas fa-credit-card"></i> Mercado Pago
+                            </div>
+                            <div style="font-size:0.75rem; color:#64748B;">Tarjetas de Crédito, Débito / Webpay</div>
+                        </div>
+                    </label>
+
+                    <label style="border:2px solid #CBD5E1; border-radius:10px; padding:1rem; cursor:pointer; display:flex; align-items:center; gap:10px;" id="labelGatewayKhipu" onclick="selectCheckoutGateway('KHIPU')">
+                        <input type="radio" name="checkout_gateway" value="KHIPU" style="accent-color:#6366F1;">
+                        <div>
+                            <div style="font-weight:800; color:#4338CA; font-size:0.92rem;">
+                                <i class="fas fa-university"></i> Khipu
+                            </div>
+                            <div style="font-size:0.75rem; color:#64748B;">Transferencia Bancaria Directa</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:0.85rem; display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; font-size:0.85rem;">
+                <span style="color:#64748B;"><i class="fas fa-receipt"></i> Emisión automática de Factura Exenta / Boleta Electrónica.</span>
+                <span style="font-weight:800; color:#0F2A4A;" id="checkoutTotalDisplay">$207.655 CLP (IVA incl.)</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="closeRechargeModal()">Cancelar</button>
+                <button type="button" id="btnConfirmCheckout" class="btn-cta btn-gold" style="padding:10px 22px; font-size:1rem;" onclick="executePackCheckout()">
+                    <i class="fas fa-lock"></i> Continuar al Pago Seguro
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="assets/js/app.js"></script>
     <script>
         let currentBatch = null;
@@ -851,11 +959,86 @@ if (!$currentUser) {
             }
         }
 
-        async function rechargePack(packType) {
+        // Variables de estado del Checkout Modal
+        let selectedPackKey = 'PACK_200';
+        let selectedGateway = 'MERCADO_PAGO';
+
+        const PACK_TOTALS = {
+            'PACK_50': { neto: 174500, total: 207655, label: '$207.655 CLP (IVA incl.)' },
+            'PACK_200': { neto: 558000, total: 664020, label: '$664.020 CLP (IVA incl.)' },
+            'PACK_500': { neto: 995000, total: 1184050, label: '$1.184.050 CLP (IVA incl.)' }
+        };
+
+        function openRechargeModal(preselectedPack = 'PACK_200') {
+            selectCheckoutPack(preselectedPack);
+            document.getElementById('rechargeModal').style.display = 'flex';
+        }
+
+        function closeRechargeModal() {
+            document.getElementById('rechargeModal').style.display = 'none';
+        }
+
+        function selectCheckoutPack(packKey) {
+            selectedPackKey = packKey;
+            ['PACK_50', 'PACK_200', 'PACK_500'].forEach(k => {
+                const label = document.getElementById('labelPack' + k.replace('PACK_', ''));
+                const radio = label ? label.querySelector('input[type="radio"]') : null;
+                if (label) {
+                    if (k === packKey) {
+                        label.style.borderColor = '#009EE3';
+                        label.style.background = '#F0F9FF';
+                        if (radio) radio.checked = true;
+                    } else {
+                        label.style.borderColor = '#E2E8F0';
+                        label.style.background = '#FFFFFF';
+                        if (radio) radio.checked = false;
+                    }
+                }
+            });
+
+            if (PACK_TOTALS[packKey]) {
+                document.getElementById('checkoutTotalDisplay').textContent = PACK_TOTALS[packKey].label;
+            }
+        }
+
+        function selectCheckoutGateway(gw) {
+            selectedGateway = gw;
+            const labelMP = document.getElementById('labelGatewayMP');
+            const labelKhipu = document.getElementById('labelGatewayKhipu');
+            const radioMP = labelMP.querySelector('input[type="radio"]');
+            const radioKhipu = labelKhipu.querySelector('input[type="radio"]');
+
+            if (gw === 'MERCADO_PAGO') {
+                labelMP.style.borderColor = '#009EE3';
+                labelMP.style.background = '#F0F9FF';
+                labelKhipu.style.borderColor = '#CBD5E1';
+                labelKhipu.style.background = '#FFFFFF';
+                radioMP.checked = true;
+                radioKhipu.checked = false;
+            } else {
+                labelKhipu.style.borderColor = '#6366F1';
+                labelKhipu.style.background = '#EEF2FF';
+                labelMP.style.borderColor = '#CBD5E1';
+                labelMP.style.background = '#FFFFFF';
+                radioKhipu.checked = true;
+                radioMP.checked = false;
+            }
+        }
+
+        function rechargePack(packType) {
+            openRechargeModal(packType);
+        }
+
+        async function executePackCheckout() {
             if (!currentCompany || !currentCompany.id) {
                 alert("Identificando empresa...");
                 return;
             }
+
+            const btn = document.getElementById('btnConfirmCheckout');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Conectando con pasarela segura...`;
 
             try {
                 const res = await fetch('api/index.php?action=b2b_recharge_bag', {
@@ -863,25 +1046,35 @@ if (!$currentUser) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         company_id: currentCompany.id,
-                        pack_type: packType
+                        pack_type: selectedPackKey,
+                        gateway: selectedGateway
                     })
                 });
                 const json = await res.json();
                 if (json.success) {
                     if (json.data && json.data.init_point) {
-                        // Redirigir a la pasarela de pago oficial de Mercado Pago
+                        // Redirigir a Mercado Pago
                         window.location.href = json.data.init_point;
+                    } else if (json.data && json.data.payment_url) {
+                        // Redirigir a Khipu
+                        window.location.href = json.data.payment_url;
                     } else if (json.data && json.data.saldo_nuevo !== undefined) {
-                        alert(`✅ ¡Recarga Exitosa!\n\n${json.data.message}\nNuevo Saldo: ${json.data.saldo_nuevo} firmas.`);
+                        // Modo simulador demo sin credenciales configuradas aún
+                        alert(`✅ ¡Recarga Exitosa (Modo Simulación)!\n\n${json.data.message}\nNuevo Saldo: ${json.data.saldo_nuevo} firmas.`);
+                        closeRechargeModal();
                         loadCompanyProfile();
                     } else {
                         alert(json.data.message || "Orden de compra generada exitosamente.");
+                        closeRechargeModal();
                     }
                 } else {
                     alert("Error en recarga: " + (json.error || 'No se pudo iniciar el pago'));
                 }
             } catch (e) {
                 alert("Error de comunicación con la pasarela de pagos: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
         }
 
