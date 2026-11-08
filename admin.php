@@ -137,7 +137,12 @@ if (isset($_POST['save_pricing_settings'])) {
     $stmtMpEn = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('mp_enabled', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
     $stmtMpEn->execute([$mpEnabled]);
 
-    $mpFields = ['mp_public_key', 'mp_access_token', 'mp_mode'];
+    $mpFields = [
+        'mp_mode',
+        'mp_public_key_production', 'mp_access_token_production',
+        'mp_public_key_sandbox', 'mp_access_token_sandbox',
+        'mp_public_key', 'mp_access_token' // retrocompatibilidad
+    ];
     $stmtMp = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
     foreach ($mpFields as $mpf) {
         if (isset($_POST[$mpf])) {
@@ -150,7 +155,12 @@ if (isset($_POST['save_pricing_settings'])) {
     $stmtKhEn = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('khipu_enabled', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
     $stmtKhEn->execute([$khipuEnabled]);
 
-    $khipuFields = ['khipu_receiver_id', 'khipu_secret_key', 'khipu_mode'];
+    $khipuFields = [
+        'khipu_mode',
+        'khipu_receiver_id_production', 'khipu_secret_key_production',
+        'khipu_receiver_id_sandbox', 'khipu_secret_key_sandbox',
+        'khipu_receiver_id', 'khipu_secret_key' // retrocompatibilidad
+    ];
     $stmtKhipu = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
     foreach ($khipuFields as $kf) {
         if (isset($_POST[$kf])) {
@@ -1164,8 +1174,15 @@ $allTemplates = $stmtTemplates->fetchAll();
                         </div>
 
                         <!-- Configuración Pasarela de Pagos: Mercado Pago Chile -->
+                        <!-- Configuración Pasarela de Pagos: Mercado Pago Chile -->
                         <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
-                            <?php $isMpActive = ($sysSettings['mp_enabled'] ?? '1') === '1'; ?>
+                            <?php 
+                                $isMpActive = ($sysSettings['mp_enabled'] ?? '1') === '1'; 
+                                $mpMode = $sysSettings['mp_mode'] ?? 'production';
+                                $currentMpToken = $mpMode === 'sandbox' 
+                                    ? ($sysSettings['mp_access_token_sandbox'] ?? ($sysSettings['mp_access_token'] ?? '')) 
+                                    : ($sysSettings['mp_access_token_production'] ?? ($sysSettings['mp_access_token'] ?? ''));
+                            ?>
                             <div style="margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
                                 <div>
                                     <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem; font-size:1rem;">
@@ -1180,37 +1197,69 @@ $allTemplates = $stmtTemplates->fetchAll();
                                         <input type="checkbox" name="mp_enabled" value="1" <?= $isMpActive ? 'checked' : '' ?> style="accent-color:#009EE3;">
                                         Habilitar Pasarela
                                     </label>
-                                    <span style="background:<?= ($isMpActive && !empty($sysSettings['mp_access_token'])) ? '#DCFCE7' : ($isMpActive ? '#FEF3C7' : '#F1F5F9') ?>; color:<?= ($isMpActive && !empty($sysSettings['mp_access_token'])) ? '#15803D' : ($isMpActive ? '#B45309' : '#64748B') ?>; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px;">
-                                        <?= !$isMpActive ? '<i class="fas fa-ban"></i> DESACTIVADA' : (!empty($sysSettings['mp_access_token']) ? '<i class="fas fa-check-circle"></i> ACTIVA & CONECTADA' : '<i class="fas fa-clock"></i> PENDIENTE CREDENCIALES') ?>
+                                    <span style="background:<?= ($isMpActive && !empty($currentMpToken)) ? '#DCFCE7' : ($isMpActive ? '#FEF3C7' : '#F1F5F9') ?>; color:<?= ($isMpActive && !empty($currentMpToken)) ? '#15803D' : ($isMpActive ? '#B45309' : '#64748B') ?>; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px;">
+                                        <?= !$isMpActive ? '<i class="fas fa-ban"></i> DESACTIVADA' : (!empty($currentMpToken) ? '<i class="fas fa-check-circle"></i> ACTIVA (' . strtoupper($mpMode) . ')' : '<i class="fas fa-clock"></i> PENDIENTE CREDENCIALES') ?>
                                     </span>
                                 </div>
                             </div>
 
-                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem;">
-                                <div class="form-group">
-                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Ambiente / Modo Operativo</label>
-                                    <select name="mp_mode" class="form-control">
-                                        <option value="production" <?= ($sysSettings['mp_mode'] ?? 'production') === 'production' ? 'selected' : '' ?>>Producción Oficial (En Vivo)</option>
-                                        <option value="sandbox" <?= ($sysSettings['mp_mode'] ?? '') === 'sandbox' ? 'selected' : '' ?>>Sandbox (Pruebas de Desarrollo)</option>
+                            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span style="font-size:0.85rem; font-weight:800; color:#0F2A4A;"><i class="fas fa-toggle-on" style="color:#009EE3;"></i> Ambiente Activo en Sistema:</span>
+                                    <select name="mp_mode" class="form-control" style="display:inline-block; width:auto; font-weight:700; padding:4px 10px; font-size:0.85rem;">
+                                        <option value="production" <?= $mpMode === 'production' ? 'selected' : '' ?>>🚀 Producción Oficial (En Vivo)</option>
+                                        <option value="sandbox" <?= $mpMode === 'sandbox' ? 'selected' : '' ?>>🧪 Sandbox (Pruebas de Desarrollo)</option>
                                     </select>
                                 </div>
-                                <div class="form-group">
-                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Public Key (Frontend)</label>
-                                    <input type="text" name="mp_public_key" class="form-control" placeholder="APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="<?= htmlspecialchars($sysSettings['mp_public_key'] ?? '') ?>">
+                                <span style="font-size:0.75rem; color:#64748B;">
+                                    El sistema conmuta automáticamente entre credenciales según el ambiente seleccionado.
+                                </span>
+                            </div>
+
+                            <!-- Bloque 1: Credenciales de Producción -->
+                            <div style="border:1px solid #E2E8F0; border-radius:8px; padding:1rem; margin-bottom:1rem; background:#FFFFFF;">
+                                <div style="font-size:0.85rem; font-weight:800; color:#059669; margin-bottom:0.75rem; display:flex; align-items:center; gap:6px;">
+                                    <i class="fas fa-shield-alt"></i> Credenciales de Producción Oficial (En Vivo)
                                 </div>
-                                <div class="form-group" style="grid-column: span 2;">
-                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Access Token (Privado / Backend)</label>
-                                    <input type="password" name="mp_access_token" class="form-control" placeholder="APP_USR-xxxxxxxxxxxx-xxxxxx-xxxxxxxxxxxxxxxx-xxxxxxxx" value="<?= htmlspecialchars($sysSettings['mp_access_token'] ?? '') ?>">
-                                    <small style="color:#64748B; font-size:0.75rem; display:block; margin-top:3px;">
-                                        Obtén tus credenciales de producción en: <a href="https://www.mercadopago.cl/developers" target="_blank" style="color:#009EE3; font-weight:700;">mercadopago.cl/developers</a>.
-                                    </small>
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem;">
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Public Key (Producción)</label>
+                                        <input type="text" name="mp_public_key_production" class="form-control" placeholder="APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="<?= htmlspecialchars($sysSettings['mp_public_key_production'] ?? ($sysSettings['mp_public_key'] ?? '')) ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Access Token (Producción)</label>
+                                        <input type="password" name="mp_access_token_production" class="form-control" placeholder="APP_USR-xxxxxxxxxxxx-xxxxxx-xxxxxxxxxxxxxxxx-xxxxxxxx" value="<?= htmlspecialchars($sysSettings['mp_access_token_production'] ?? ($sysSettings['mp_access_token'] ?? '')) ?>">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bloque 2: Credenciales de Sandbox / Pruebas -->
+                            <div style="border:1px solid #E2E8F0; border-radius:8px; padding:1rem; background:#FAF5FF;">
+                                <div style="font-size:0.85rem; font-weight:800; color:#7E22CE; margin-bottom:0.75rem; display:flex; align-items:center; gap:6px;">
+                                    <i class="fas fa-flask"></i> Credenciales de Sandbox (Pruebas)
+                                </div>
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem;">
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Public Key (Sandbox / Prueba)</label>
+                                        <input type="text" name="mp_public_key_sandbox" class="form-control" placeholder="APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="<?= htmlspecialchars($sysSettings['mp_public_key_sandbox'] ?? ($sysSettings['mp_public_key'] ?? '')) ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Access Token (Sandbox / Prueba)</label>
+                                        <input type="password" name="mp_access_token_sandbox" class="form-control" placeholder="APP_USR-xxxxxxxxxxxx-xxxxxx-xxxxxxxxxxxxxxxx-xxxxxxxx" value="<?= htmlspecialchars($sysSettings['mp_access_token_sandbox'] ?? ($sysSettings['mp_access_token'] ?? '')) ?>">
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Configuración Pasarela de Pagos: Khipu Chile -->
                         <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
-                            <?php $isKhActive = ($sysSettings['khipu_enabled'] ?? '1') === '1'; ?>
+                            <?php 
+                                $isKhActive = ($sysSettings['khipu_enabled'] ?? '1') === '1'; 
+                                $khMode = $sysSettings['khipu_mode'] ?? 'production';
+                                $currentKhSecret = $khMode === 'sandbox' 
+                                    ? ($sysSettings['khipu_secret_key_sandbox'] ?? ($sysSettings['khipu_secret_key'] ?? '')) 
+                                    : ($sysSettings['khipu_secret_key_production'] ?? ($sysSettings['khipu_secret_key'] ?? ''));
+                            ?>
                             <div style="margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
                                 <div>
                                     <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem; font-size:1rem;">
@@ -1225,30 +1274,56 @@ $allTemplates = $stmtTemplates->fetchAll();
                                         <input type="checkbox" name="khipu_enabled" value="1" <?= $isKhActive ? 'checked' : '' ?> style="accent-color:#6366F1;">
                                         Habilitar Pasarela
                                     </label>
-                                    <span style="background:<?= ($isKhActive && !empty($sysSettings['khipu_secret_key'])) ? '#DCFCE7' : ($isKhActive ? '#FEF3C7' : '#F1F5F9') ?>; color:<?= ($isKhActive && !empty($sysSettings['khipu_secret_key'])) ? '#15803D' : ($isKhActive ? '#B45309' : '#64748B') ?>; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px;">
-                                        <?= !$isKhActive ? '<i class="fas fa-ban"></i> DESACTIVADA' : (!empty($sysSettings['khipu_secret_key']) ? '<i class="fas fa-check-circle"></i> ACTIVA & CONECTADA' : '<i class="fas fa-clock"></i> PENDIENTE CREDENCIALES') ?>
+                                    <span style="background:<?= ($isKhActive && !empty($currentKhSecret)) ? '#DCFCE7' : ($isKhActive ? '#FEF3C7' : '#F1F5F9') ?>; color:<?= ($isKhActive && !empty($currentKhSecret)) ? '#15803D' : ($isKhActive ? '#B45309' : '#64748B') ?>; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px;">
+                                        <?= !$isKhActive ? '<i class="fas fa-ban"></i> DESACTIVADA' : (!empty($currentKhSecret) ? '<i class="fas fa-check-circle"></i> ACTIVA (' . strtoupper($khMode) . ')' : '<i class="fas fa-clock"></i> PENDIENTE CREDENCIALES') ?>
                                     </span>
                                 </div>
                             </div>
 
-                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem;">
-                                <div class="form-group">
-                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Ambiente / Modo Operativo</label>
-                                    <select name="khipu_mode" class="form-control">
-                                        <option value="production" <?= ($sysSettings['khipu_mode'] ?? 'production') === 'production' ? 'selected' : '' ?>>Producción Oficial (En Vivo)</option>
-                                        <option value="sandbox" <?= ($sysSettings['khipu_mode'] ?? '') === 'sandbox' ? 'selected' : '' ?>>Sandbox / Developer</option>
+                            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span style="font-size:0.85rem; font-weight:800; color:#0F2A4A;"><i class="fas fa-toggle-on" style="color:#6366F1;"></i> Ambiente Activo en Sistema:</span>
+                                    <select name="khipu_mode" class="form-control" style="display:inline-block; width:auto; font-weight:700; padding:4px 10px; font-size:0.85rem;">
+                                        <option value="production" <?= $khMode === 'production' ? 'selected' : '' ?>>🚀 Producción Oficial (En Vivo)</option>
+                                        <option value="sandbox" <?= $khMode === 'sandbox' ? 'selected' : '' ?>>🧪 Sandbox / Developer</option>
                                     </select>
                                 </div>
-                                <div class="form-group">
-                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Receiver ID (Cobrador ID)</label>
-                                    <input type="text" name="khipu_receiver_id" class="form-control" placeholder="Ej: 123456" value="<?= htmlspecialchars($sysSettings['khipu_receiver_id'] ?? '') ?>">
+                                <span style="font-size:0.75rem; color:#64748B;">
+                                    El sistema conmuta automáticamente entre credenciales según el ambiente seleccionado.
+                                </span>
+                            </div>
+
+                            <!-- Bloque 1: Credenciales Khipu Producción -->
+                            <div style="border:1px solid #E2E8F0; border-radius:8px; padding:1rem; margin-bottom:1rem; background:#FFFFFF;">
+                                <div style="font-size:0.85rem; font-weight:800; color:#059669; margin-bottom:0.75rem; display:flex; align-items:center; gap:6px;">
+                                    <i class="fas fa-shield-alt"></i> Credenciales Khipu Producción Oficial (En Vivo)
                                 </div>
-                                <div class="form-group" style="grid-column: span 2;">
-                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Secret Key (Llave Secreta Privada)</label>
-                                    <input type="password" name="khipu_secret_key" class="form-control" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="<?= htmlspecialchars($sysSettings['khipu_secret_key'] ?? '') ?>">
-                                    <small style="color:#64748B; font-size:0.75rem; display:block; margin-top:3px;">
-                                        Obtén tus llaves de cobrador en: <a href="https://khipu.com" target="_blank" style="color:#6366F1; font-weight:700;">khipu.com</a> (Perfil Comercial > Opciones de Pago > Desarrolladores).
-                                    </small>
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem;">
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Receiver ID (Producción)</label>
+                                        <input type="text" name="khipu_receiver_id_production" class="form-control" placeholder="Ej: 123456" value="<?= htmlspecialchars($sysSettings['khipu_receiver_id_production'] ?? ($sysSettings['khipu_receiver_id'] ?? '')) ?>">
+                                    </div>
+                                    <div class="form-group" style="grid-column: span 2;">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Secret Key (Producción)</label>
+                                        <input type="password" name="khipu_secret_key_production" class="form-control" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="<?= htmlspecialchars($sysSettings['khipu_secret_key_production'] ?? ($sysSettings['khipu_secret_key'] ?? '')) ?>">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bloque 2: Credenciales Khipu Sandbox -->
+                            <div style="border:1px solid #E2E8F0; border-radius:8px; padding:1rem; background:#FAF5FF;">
+                                <div style="font-size:0.85rem; font-weight:800; color:#7E22CE; margin-bottom:0.75rem; display:flex; align-items:center; gap:6px;">
+                                    <i class="fas fa-flask"></i> Credenciales Khipu Sandbox (Pruebas)
+                                </div>
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem;">
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Receiver ID (Sandbox / Prueba)</label>
+                                        <input type="text" name="khipu_receiver_id_sandbox" class="form-control" placeholder="Ej: 999999" value="<?= htmlspecialchars($sysSettings['khipu_receiver_id_sandbox'] ?? '') ?>">
+                                    </div>
+                                    <div class="form-group" style="grid-column: span 2;">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Secret Key (Sandbox / Prueba)</label>
+                                        <input type="password" name="khipu_secret_key_sandbox" class="form-control" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="<?= htmlspecialchars($sysSettings['khipu_secret_key_sandbox'] ?? '') ?>">
+                                    </div>
                                 </div>
                             </div>
                         </div>

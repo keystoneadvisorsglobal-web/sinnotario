@@ -16,10 +16,17 @@ class MercadoPagoService {
         $stmt = $pdo->query("SELECT key, value FROM system_settings WHERE key LIKE 'mp_%'");
         $settings = $stmt ? $stmt->fetchAll(PDO::FETCH_KEY_PAIR) : [];
 
-        $this->accessToken = trim($settings['mp_access_token'] ?? (getenv('MP_ACCESS_TOKEN') ?: ''));
-        $this->publicKey = trim($settings['mp_public_key'] ?? (getenv('MP_PUBLIC_KEY') ?: ''));
         $this->isSandbox = ($settings['mp_mode'] ?? 'production') === 'sandbox';
         $this->enabled = ($settings['mp_enabled'] ?? '1') === '1';
+
+        // Selección inteligente según ambiente activo
+        if ($this->isSandbox) {
+            $this->accessToken = trim($settings['mp_access_token_sandbox'] ?? ($settings['mp_access_token'] ?? (getenv('MP_ACCESS_TOKEN_SANDBOX') ?: getenv('MP_ACCESS_TOKEN') ?: '')));
+            $this->publicKey = trim($settings['mp_public_key_sandbox'] ?? ($settings['mp_public_key'] ?? (getenv('MP_PUBLIC_KEY_SANDBOX') ?: getenv('MP_PUBLIC_KEY') ?: '')));
+        } else {
+            $this->accessToken = trim($settings['mp_access_token_production'] ?? ($settings['mp_access_token'] ?? (getenv('MP_ACCESS_TOKEN_PROD') ?: getenv('MP_ACCESS_TOKEN') ?: '')));
+            $this->publicKey = trim($settings['mp_public_key_production'] ?? ($settings['mp_public_key'] ?? (getenv('MP_PUBLIC_KEY_PROD') ?: getenv('MP_PUBLIC_KEY') ?: '')));
+        }
     }
 
     private bool $enabled;

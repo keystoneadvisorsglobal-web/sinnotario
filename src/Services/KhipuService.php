@@ -18,10 +18,17 @@ class KhipuService {
         $stmt = $pdo->query("SELECT key, value FROM system_settings WHERE key LIKE 'khipu_%'");
         $settings = $stmt ? $stmt->fetchAll(PDO::FETCH_KEY_PAIR) : [];
 
-        $this->receiverId = trim($settings['khipu_receiver_id'] ?? (getenv('KHIPU_RECEIVER_ID') ?: ''));
-        $this->secretKey = trim($settings['khipu_secret_key'] ?? (getenv('KHIPU_SECRET_KEY') ?: ''));
         $this->isSandbox = ($settings['khipu_mode'] ?? 'production') === 'sandbox';
         $this->enabled = ($settings['khipu_enabled'] ?? '1') === '1';
+
+        // Selección inteligente según ambiente activo
+        if ($this->isSandbox) {
+            $this->receiverId = trim($settings['khipu_receiver_id_sandbox'] ?? ($settings['khipu_receiver_id'] ?? (getenv('KHIPU_RECEIVER_ID_SANDBOX') ?: getenv('KHIPU_RECEIVER_ID') ?: '')));
+            $this->secretKey = trim($settings['khipu_secret_key_sandbox'] ?? ($settings['khipu_secret_key'] ?? (getenv('KHIPU_SECRET_KEY_SANDBOX') ?: getenv('KHIPU_SECRET_KEY') ?: '')));
+        } else {
+            $this->receiverId = trim($settings['khipu_receiver_id_production'] ?? ($settings['khipu_receiver_id'] ?? (getenv('KHIPU_RECEIVER_ID_PROD') ?: getenv('KHIPU_RECEIVER_ID') ?: '')));
+            $this->secretKey = trim($settings['khipu_secret_key_production'] ?? ($settings['khipu_secret_key'] ?? (getenv('KHIPU_SECRET_KEY_PROD') ?: getenv('KHIPU_SECRET_KEY') ?: '')));
+        }
     }
 
     public function isConfigured(): bool {

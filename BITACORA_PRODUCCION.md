@@ -1426,3 +1426,17 @@
   - Smoke tests HTTP 200 en `admin.php`, `api/index.php?action=get_payment_gateways`, `redactar.php`, `subir-documento.php` y `empresas.php`.
   - Prueba dinámica de desactivación en caliente vía base de datos SQLite reflejada de inmediato por la API y restablecimiento a estado activo.
 - **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+### Registro de Despliegue: SOL-0089
+- **Fecha y Hora:** 2026-11-08 15:05:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0089`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Implementación de persistencia y conmutación de credenciales segregadas por ambiente (Producción Oficial vs. Sandbox de Pruebas) para pasarelas de pago:
+  1) **Consola Administrativa (`admin.php#tarifas`):** Rediseño visual con bloques independientes de credenciales: Bloque de Producción Oficial (verde) y Bloque de Sandbox (púrpura), tanto para Mercado Pago (`mp_public_key_production`, `mp_access_token_production`, `mp_public_key_sandbox`, `mp_access_token_sandbox`) como para Khipu (`khipu_receiver_id_production`, `khipu_secret_key_production`, etc.).
+  2) **Lógica Backend (`MercadoPagoService.php` y `KhipuService.php`):** Conmutación inteligente automática que selecciona las credenciales correspondientes según el `mode` activo ('production' o 'sandbox') con retrocompatibilidad.
+- **Pruebas Validadas:**
+  - `php -l` remoto en `admin.php`, `MercadoPagoService.php` y `KhipuService.php` con 0 errores.
+  - Smoke test en producción confirmando lectura de credenciales de prueba en sandbox.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
