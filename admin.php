@@ -50,6 +50,17 @@ $stmtCompanies = $pdo->query("
 ");
 $allCompanies = $stmtCompanies ? $stmtCompanies->fetchAll(PDO::FETCH_ASSOC) : [];
 
+// Consultas Clientes Persona Natural (SOL-0074)
+$stmtPersonas = $pdo->query("
+    SELECT u.*,
+           (SELECT COUNT(*) FROM documents WHERE user_id = u.id) as total_docs,
+           (SELECT COUNT(*) FROM documents WHERE user_id = u.id AND estado = 'COMPLETADO') as docs_completados,
+           (SELECT SUM(monto_pagado) FROM documents WHERE user_id = u.id) as gasto_total_clp
+    FROM users u
+    ORDER BY u.id DESC
+");
+$allPersonas = $stmtPersonas ? $stmtPersonas->fetchAll(PDO::FETCH_ASSOC) : [];
+
 $stmtBillingLogs = $pdo->query("
     SELECT b.*, c.razon_social, c.rut as empresa_rut
     FROM b2b_billing_logs b
@@ -385,6 +396,7 @@ $allTemplates = $stmtTemplates->fetchAll();
             <nav style="flex: 1;">
                 <a href="#dashboard" class="admin-nav-item active" data-tab="dashboard"><i class="fas fa-chart-line"></i> Dashboard General</a>
                 <a href="#empresas" class="admin-nav-item" data-tab="empresas" style="color:#D4AF37; font-weight:800;"><i class="fas fa-building"></i> Empresas & B2B</a>
+                <a href="#clientes" class="admin-nav-item" data-tab="clientes" style="color:#38BDF8; font-weight:700;"><i class="fas fa-users"></i> Clientes Persona</a>
                 <a href="#precios" class="admin-nav-item" data-tab="precios" style="color:var(--accent); font-weight:700;"><i class="fas fa-tags"></i> Precios & Tarifas</a>
                 <a href="#documentos" class="admin-nav-item" data-tab="documentos"><i class="fas fa-file-contract"></i> Monitor Contratos</a>
                 <a href="#whatsapp" class="admin-nav-item" data-tab="whatsapp"><i class="fab fa-whatsapp"></i> Instancias WhatsApp</a>
@@ -695,6 +707,121 @@ $allTemplates = $stmtTemplates->fetchAll();
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 1C. SECCIÓN: CLIENTES PERSONA (SOL-0074)   -->
+            <!-- ========================================== -->
+            <div id="section_clientes" class="admin-section">
+                <!-- KPIs Clientes Persona -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div style="font-size: 0.8rem; font-weight: 600; color: #64748B; text-transform: uppercase;">Total Clientes Persona</div>
+                        <div class="kpi-val" style="color:var(--primary);"><?= count($allPersonas) ?></div>
+                        <span style="font-size: 0.75rem; color: #0284C7;"><i class="fas fa-user-check"></i> Cuentas Registradas</span>
+                    </div>
+                    <div class="kpi-card">
+                        <div style="font-size: 0.8rem; font-weight: 600; color: #64748B; text-transform: uppercase;">Personas Naturales</div>
+                        <div class="kpi-val" style="color:#059669;">
+                            <?= count(array_filter($allPersonas, function($p) { return ($p['tipo_persona'] ?? 'NATURAL') === 'NATURAL'; })) ?>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #64748B;">Trámites personales / particulares</span>
+                    </div>
+                    <div class="kpi-card">
+                        <div style="font-size: 0.8rem; font-weight: 600; color: #64748B; text-transform: uppercase;">Contratos en Custodia</div>
+                        <div class="kpi-val" style="color:#2563EB;">
+                            <?= array_sum(array_column($allPersonas, 'total_docs')) ?>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #64748B;">Emitidos desde Bóveda Personal</span>
+                    </div>
+                    <div class="kpi-card">
+                        <div style="font-size: 0.8rem; font-weight: 600; color: #64748B; text-transform: uppercase;">Ventas Retail Clientes</div>
+                        <div class="kpi-val" style="color:#D4AF37;">
+                            $<?= number_format(array_sum(array_column($allPersonas, 'gasto_total_clp')), 0, '', '.') ?>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #B45309;">Pagos individuales recaudados</span>
+                    </div>
+                </div>
+
+                <!-- Tabla de Clientes Persona -->
+                <div class="table-wrap">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
+                        <div>
+                            <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary); margin:0;">
+                                <i class="fas fa-address-book" style="color:#0284C7;"></i> Registro de Clientes Persona
+                            </h3>
+                            <p style="font-size:0.83rem; color:#64748B; margin:4px 0 0;">Historial de usuarios individuales, datos de contacto, contratos en bóveda y recaudación.</p>
+                        </div>
+                        <input type="text" id="filterPersonasInput" placeholder="Buscar por nombre, RUT o email..." style="padding:8px 14px; border:1px solid #CBD5E1; border-radius:6px; font-size:0.85rem; width:280px;">
+                    </div>
+
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;" id="tablePersonas">
+                            <thead>
+                                <tr style="background: #F8FAFC; color: #64748B; text-align: left;">
+                                    <th style="padding: 0.75rem;">ID</th>
+                                    <th style="padding: 0.75rem;">Cliente / Titular</th>
+                                    <th style="padding: 0.75rem;">RUT</th>
+                                    <th style="padding: 0.75rem;">Contacto</th>
+                                    <th style="padding: 0.75rem;">Tipo / Origen</th>
+                                    <th style="padding: 0.75rem;">Empresa Asoc.</th>
+                                    <th style="padding: 0.75rem;">Documentos</th>
+                                    <th style="padding: 0.75rem;">Gasto Total</th>
+                                    <th style="padding: 0.75rem;">Registro</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($allPersonas)): ?>
+                                    <tr><td colspan="9" style="padding:2rem; text-align:center; color:#94A3B8;">No hay clientes registrados en la base de datos.</td></tr>
+                                <?php else: ?>
+                                    <?php foreach ($allPersonas as $persona): ?>
+                                        <tr class="persona-row" style="border-bottom: 1px solid #E2E8F0;">
+                                            <td style="padding: 0.75rem; font-weight: 700;">#<?= $persona['id'] ?></td>
+                                            <td style="padding: 0.75rem;">
+                                                <div style="font-weight: 700; color: var(--primary);">
+                                                    <?= htmlspecialchars($persona['nombre'] . ' ' . $persona['apellido']) ?>
+                                                </div>
+                                                <small style="color: #64748B;"><?= htmlspecialchars($persona['email']) ?></small>
+                                            </td>
+                                            <td style="padding: 0.75rem; font-family: monospace;">
+                                                <?= htmlspecialchars($persona['rut'] ?: 'No registrado') ?>
+                                            </td>
+                                            <td style="padding: 0.75rem; font-size:0.83rem;">
+                                                <?= htmlspecialchars($persona['telefono'] ?: '-') ?>
+                                            </td>
+                                            <td style="padding: 0.75rem;">
+                                                <span style="font-size:0.75rem; font-weight:800; padding:2px 8px; border-radius:4px; background:<?= ($persona['tipo_persona'] ?? 'NATURAL') === 'NATURAL' ? '#E0F2FE' : '#FEF3C7' ?>; color:<?= ($persona['tipo_persona'] ?? 'NATURAL') === 'NATURAL' ? '#0369A1' : '#B45309' ?>;">
+                                                    <?= htmlspecialchars($persona['tipo_persona'] ?? 'NATURAL') ?>
+                                                </span>
+                                                <div style="font-size:0.7rem; color:#94A3B8; margin-top:2px;">
+                                                    <?= $persona['auth_provider'] === 'GOOGLE' ? '<i class="fab fa-google" style="color:#EA4335;"></i> Google' : '<i class="fas fa-envelope"></i> Email' ?>
+                                                </div>
+                                            </td>
+                                            <td style="padding: 0.75rem; font-size:0.83rem;">
+                                                <?php if (!empty($persona['empresa_razon_social'])): ?>
+                                                    <strong><?= htmlspecialchars($persona['empresa_razon_social']) ?></strong><br>
+                                                    <code style="font-size:0.72rem; color:#64748B;"><?= htmlspecialchars($persona['empresa_rut']) ?></code>
+                                                <?php else: ?>
+                                                    <span style="color:#94A3B8;">—</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td style="padding: 0.75rem;">
+                                                <span style="font-weight:700; color:var(--primary);"><?= (int)$persona['total_docs'] ?></span> total<br>
+                                                <span style="font-size:0.75rem; color:#059669; font-weight:600;"><i class="fas fa-check"></i> <?= (int)$persona['docs_completados'] ?> completados</span>
+                                            </td>
+                                            <td style="padding: 0.75rem; font-weight:700; color:#0F2A4A;">
+                                                <?= $persona['gasto_total_clp'] ? '$' . number_format($persona['gasto_total_clp'], 0, '', '.') . ' CLP' : '$0 CLP' ?>
+                                            </td>
+                                            <td style="padding: 0.75rem; font-size:0.78rem; color:#64748B;">
+                                                <?= date('d/m/Y H:i', strtotime($persona['created_at'])) ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -1390,6 +1517,10 @@ $allTemplates = $stmtTemplates->fetchAll();
                 title: 'Administración B2B: Empresas, Suscripciones y Finanzas',
                 desc: 'Supervisión de clientes corporativos, saldos de bolsas prepagadas, devengo postpago y recargas.'
             },
+            'clientes': {
+                title: 'Directorio de Clientes Persona Natural & Particulares',
+                desc: 'Gestión y trazabilidad de usuarios individuales, trámites personales en bóveda y recaudación retail.'
+            },
             'precios': {
                 title: 'Gestor de Tarifas y Precios de Firma',
                 desc: 'Configuración comercial de precios base por documento y tarifa por firmante adicional.'
@@ -1457,6 +1588,19 @@ $allTemplates = $stmtTemplates->fetchAll();
             filterInput.addEventListener('input', (e) => {
                 const term = e.target.value.toLowerCase().trim();
                 const rows = document.querySelectorAll('.contract-row');
+                rows.forEach(r => {
+                    const text = r.innerText.toLowerCase();
+                    r.style.display = text.includes(term) ? '' : 'none';
+                });
+            });
+        }
+
+        // Filtrado en vivo de tabla de clientes persona
+        const filterPersonasInput = document.getElementById('filterPersonasInput');
+        if (filterPersonasInput) {
+            filterPersonasInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('.persona-row');
                 rows.forEach(r => {
                     const text = r.innerText.toLowerCase();
                     r.style.display = text.includes(term) ? '' : 'none';

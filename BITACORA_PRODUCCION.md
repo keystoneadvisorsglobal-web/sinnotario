@@ -1,5 +1,28 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-08 01:40 UTC-3] - SOL-0074
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0074`
+- **Alcance de los Cambios:**
+  - **Módulo de Gestión y Visión de Clientes Persona Natural en Consola Operativa (`admin.php`):**
+    1. **Nueva Sección '#clientes' en Menú Lateral:**
+       - Incorporación de la pestaña *"👥 Clientes Persona"* (`admin.php#clientes`) accesible con navegación SPA reactiva y hash en URL.
+    2. **Métricas y KPIs de Clientes Retail:**
+       - Total de clientes registrados (cuentas de usuarios).
+       - Segmentación de personas naturales vs. representantes legales.
+       - Volumen total de contratos emitidos y custodiados en bóvedas personales.
+       - Total recaudado en ventas retail individuales.
+    3. **Tabla Detallada con Filtro en Vivo:**
+       - Listado de clientes con Nombre Completo, Email, RUT personal, Teléfono/WhatsApp, Origen (Google OAuth vs. Email/Password local), Empresa vinculada (si aplica), Documentos totales y completados, Gasto total acumulado en CLP y Fecha de registro.
+       - Buscador reactivo en tiempo real por nombre, RUT o correo electrónico.
+- **Pruebas Validadas:**
+  - Verificación sintáctica PHP Lint (`php -l`): 0 errores en `admin.php`.
+  - Smoke test en producción validando carga correcta de registros de usuarios y métricas agregadas.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-08 01:37 UTC-3] - SOL-0073
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
