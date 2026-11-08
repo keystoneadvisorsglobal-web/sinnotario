@@ -1440,3 +1440,15 @@
   - `php -l` remoto en `admin.php`, `MercadoPagoService.php` y `KhipuService.php` con 0 errores.
   - Smoke test en producción confirmando lectura de credenciales de prueba en sandbox.
 - **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+### Registro de Despliegue: SOL-0090
+- **Fecha y Hora:** 2026-11-08 15:10:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0090`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Puesta en marcha definitiva y activación de credenciales oficiales de Producción de Mercado Pago Chile (Checkout Pro) para Keystone Advisors SpA:
+  1) **Credenciales Oficiales:** Registro y persistencia segura de `Public Key` (`APP_USR-d3f11046...`) y `Access Token` (`APP_USR-232065...`) en `system_settings`.
+  2) **Conmutación a Producción:** Activación formal de `mp_mode = 'production'` y `mp_enabled = '1'`.
+  3) **Prueba en Vivo (Smoke Test Real):** Generación exitosa de orden oficial con respuesta HTTP 200 OK y URL oficial de cobro real (`https://www.mercadopago.cl/checkout/v1/redirect?pref_id=3823282051-...`).
+- **Estado Final:** ✅ Éxito Total / 100% Operativo y en Vivo para recaudación real con Webpay, Crédito y Débito.
