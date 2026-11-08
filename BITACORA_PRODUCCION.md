@@ -1,5 +1,23 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-08 01:43 UTC-3] - SOL-0075
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0075`
+- **Alcance de los Cambios:**
+  - **Corrección de Inclusión de Dependencia B2BService en `empresas.php`:**
+    1. **Diagnóstico del Corte de Renderizado:**
+       - Al invocar `B2BService::getPrepaidPacks()` para el renderizado dinámico de los packs en `empresas.php`, el archivo no contaba con la declaración `require_once __DIR__ . '/src/Services/B2BService.php'`.
+       - Esto provocaba un `Fatal error: Class "B2BService" not found` en tiempo de ejecución al llegar al banner de bolsas, interrumpiendo el flujo HTML justo antes de imprimir los 3 packs y las 4 pestañas de la suite corporativa (*Smart Bulk & Emisión*, *Mis Plantillas Propias*, *Expediente del Trabajador* y *WhatsApp Oficial*).
+    2. **Resolución y Estabilización:**
+       - Incorporación de `require_once __DIR__ . '/src/Services/B2BService.php';` en la cabecera PHP de `empresas.php`.
+- **Pruebas Validadas:**
+  - Ejecución por CLI simulando sesión de usuario en entorno PHP 8.2: 0 errores fatales.
+  - Verificación del renderizado del 100% del DOM HTML (los 3 banners dinámicos, las 4 pestañas de navegación y los modales corporativos).
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-08 01:40 UTC-3] - SOL-0074
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

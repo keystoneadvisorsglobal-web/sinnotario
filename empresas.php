@@ -5,6 +5,7 @@
  */
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/src/Services/AuthService.php';
+require_once __DIR__ . '/src/Services/B2BService.php';
 
 $currentUser = AuthService::getCurrentUser();
 if (!$currentUser) {
