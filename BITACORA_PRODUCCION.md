@@ -1463,3 +1463,15 @@
   1) **Firma Secreta:** Registro de `mp_webhook_secret_production` y actualización de `mp_webhook_secret` con la clave secreta de producción (`2fd7fd0ddee87376b33b0329a2cc182d884762b1ed60826f422f333fc2c93956`).
   2) **Endpoint Oficial:** Vinculación confirmada hacia `https://sinnotario.cl/api/index.php?action=mp_webhook` para procesamiento asíncrono de eventos de pago en tiempo real con validación de cabecera HMAC SHA-256.
 - **Estado Final:** ✅ Éxito Total / 100% Operativo y Blindado.
+
+### Registro de Despliegue: SOL-0092
+- **Fecha y Hora:** 2026-11-08 15:35:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0092`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Reorganización y desacoplamiento de arquitectura UI en la Consola Administrativa (`admin.php`):
+  1) **Submenú Comercial Puro (`#precios`):** 'Precios & Tarifas' queda reservado exclusivamente a la gestión comercial: Tarifa por Firmante Adicional, Tarifa Base de Carga PDF Propio y la tabla de catálogo con el precio base de cada contrato/declaración jurada oficial.
+  2) **Nuevo Menú Dedicado de Infraestructura (`#integraciones`):** 'Pasarelas & Integraciones' (icono morado en la barra lateral) centraliza el 100% de la configuración técnica: Conmutador y credenciales de Mercado Pago (Producción y Sandbox), Firma Secreta del Webhook con URL oficial, Pasarela Khipu (Producción y Sandbox), Google OAuth Client ID y Servidor SMTP Titan Mail.
+  3) **Procesadores Independientes:** Separación en dos controladores POST (`save_pricing_settings` y `save_integrations_settings`) para evitar sobreescrituras accidentales de credenciales al ajustar precios.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo y desplegado en Producción.

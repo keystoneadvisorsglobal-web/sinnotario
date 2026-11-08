@@ -117,6 +117,12 @@ if (isset($_POST['save_pricing_settings'])) {
         }
     }
 
+    $msgPricingSuccess = '¡Precios de trámites y tarifas del catálogo oficial actualizadas exitosamente!';
+}
+
+// Procesar actualización de integraciones del sistema (Mercado Pago, Khipu, Google OAuth, SMTP)
+$msgIntegrationsSuccess = '';
+if (isset($_POST['save_integrations_settings'])) {
     if (isset($_POST['google_oauth_client_id'])) {
         $gClientId = trim($_POST['google_oauth_client_id']);
         $stmtG = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('google_oauth_client_id', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
@@ -169,7 +175,7 @@ if (isset($_POST['save_pricing_settings'])) {
         }
     }
 
-    $msgPricingSuccess = '¡Parámetros del sistema, credenciales y tarifas actualizadas exitosamente!';
+    $msgIntegrationsSuccess = '¡Configuración de pasarelas de pago, webhooks y credenciales actualizada exitosamente!';
 }
 
 // Procesar acciones de gestión B2B desde Consola Administrativa
@@ -451,6 +457,7 @@ $allTemplates = $stmtTemplates->fetchAll();
                 <a href="#clientes" class="admin-nav-item" data-tab="clientes" style="color:#38BDF8; font-weight:700;"><i class="fas fa-users"></i> Clientes Persona</a>
                 <a href="#pagos" class="admin-nav-item" data-tab="pagos" style="color:#10B981; font-weight:800;"><i class="fas fa-cash-register"></i> Pagos & Conciliación</a>
                 <a href="#precios" class="admin-nav-item" data-tab="precios" style="color:var(--accent); font-weight:700;"><i class="fas fa-tags"></i> Precios & Tarifas</a>
+                <a href="#integraciones" class="admin-nav-item" data-tab="integraciones" style="color:#A855F7; font-weight:700;"><i class="fas fa-cogs"></i> Pasarelas & Integraciones</a>
                 <a href="#documentos" class="admin-nav-item" data-tab="documentos"><i class="fas fa-file-contract"></i> Monitor Contratos</a>
                 <a href="#whatsapp" class="admin-nav-item" data-tab="whatsapp"><i class="fab fa-whatsapp"></i> Instancias WhatsApp</a>
                 <a href="#vault" class="admin-nav-item" data-tab="vault"><i class="fas fa-database"></i> Bóveda Cloudflare R2</a>
@@ -1119,7 +1126,7 @@ $allTemplates = $stmtTemplates->fetchAll();
                     <div style="background:#ECFDF5; border:1px solid #10B981; color:#065F46; padding:1rem; border-radius:10px; margin-bottom:1.5rem; display:flex; align-items:center; gap:0.75rem;">
                         <i class="fas fa-check-circle fa-2x"></i>
                         <div>
-                            <strong>¡Configuración Guardada!</strong>
+                            <strong>¡Tarifas Guardadas!</strong>
                             <p style="margin:0; font-size:0.88rem;"><?= htmlspecialchars($msgPricingSuccess) ?></p>
                         </div>
                     </div>
@@ -1130,7 +1137,7 @@ $allTemplates = $stmtTemplates->fetchAll();
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
                             <div>
                                 <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary); margin:0;">
-                                    <i class="fas fa-sliders-h" style="color:var(--accent);"></i> Parámetros Globales de Tarifas y Firmas
+                                    <i class="fas fa-tags" style="color:var(--accent);"></i> Parámetros Globales de Tarifas y Firmas
                                 </h3>
                                 <p style="font-size:0.85rem; color:#64748B; margin:0.25rem 0 0;">
                                     Define la tarifa por firmante adicional y el precio base de documentos propios cargados por clientes.
@@ -1162,21 +1169,99 @@ $allTemplates = $stmtTemplates->fetchAll();
                                 <input type="number" name="precio_base_subir_pdf" class="form-control" style="font-weight:800; font-size:1.1rem; color:#065F46;" value="<?= $currentPrecioBasePdf ?>" min="0" step="1" required>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Integración Google OAuth / GIS -->
-                        <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
-                            <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem;">
-                                <i class="fab fa-google" style="color:#EA4335;"></i> Google Client ID para Inicio de Sesión (OAuth 2.0 / GIS)
-                            </label>
-                            <p style="font-size:0.78rem; color:#64748B; margin:0.15rem 0 0.4rem;">
-                                ID de cliente de la consola de Google Cloud (ej: <code>xxxx.apps.googleusercontent.com</code>) para habilitar "Continuar con Google".
+                    <div class="card-panel" style="margin-top:1.5rem;">
+                        <div style="margin-bottom:1.25rem;">
+                            <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary); margin:0;">
+                                <i class="fas fa-file-alt" style="color:var(--accent);"></i> Catálogo Oficial: Precio Base por Instrumento (1 Firmante)
+                            </h3>
+                            <p style="font-size:0.85rem; color:#64748B; margin:0.25rem 0 0;">
+                                Puedes ajustar el precio base de cada contrato o declaración jurada del catálogo oficial.
                             </p>
-                            <input type="text" name="google_oauth_client_id" class="form-control" placeholder="Ej: 123456789-abcdef.apps.googleusercontent.com" value="<?= htmlspecialchars($sysSettings['google_oauth_client_id'] ?? '') ?>">
+                        </div>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:70px;">ID</th>
+                                    <th>Nombre del Instrumento</th>
+                                    <th>Categoría</th>
+                                    <th>Validez & Tipo</th>
+                                    <th style="width:200px;">Precio Base CLP (1 Firmante)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($allTemplates as $tpl): ?>
+                                    <tr>
+                                        <td><strong>#<?= $tpl['id'] ?></strong></td>
+                                        <td>
+                                            <strong style="color:var(--primary);"><?= htmlspecialchars($tpl['nombre']) ?></strong>
+                                            <div style="font-size:0.75rem; color:#64748B;">/redactar.php?slug=<?= htmlspecialchars($tpl['slug']) ?></div>
+                                        </td>
+                                        <td>
+                                            <span class="badge" style="background:#F1F5F9; color:#475569; text-transform:uppercase; font-size:0.7rem;">
+                                                <?= htmlspecialchars($tpl['categoria']) ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span style="font-size:0.78rem; color:#059669; font-weight:600;">
+                                                <i class="fas fa-check-circle"></i> Ley 19.799
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div style="display:flex; align-items:center; gap:0.35rem;">
+                                                <span style="font-weight:700; color:#64748B;">$</span>
+                                                <input type="number" name="tpl_prices[<?= $tpl['id'] ?>]" class="form-control" style="font-weight:800; text-align:right;" value="<?= (int)$tpl['precio_base'] ?>" min="0" step="1" required>
+                                                <span style="font-size:0.75rem; color:#64748B;">CLP</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+
+                        <div style="margin-top:1.5rem; text-align:right;">
+                            <button type="submit" name="save_pricing_settings" class="btn-cta btn-gold">
+                                <i class="fas fa-save"></i> Guardar Todas las Tarifas
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 1.2 SECCIÓN: PASARELAS & INTEGRACIONES     -->
+            <!-- ========================================== -->
+            <div id="section_integraciones" class="admin-section">
+                <?php if (!empty($msgIntegrationsSuccess)): ?>
+                    <div style="background:#ECFDF5; border:1px solid #10B981; color:#065F46; padding:1rem; border-radius:10px; margin-bottom:1.5rem; display:flex; align-items:center; gap:0.75rem;">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                        <div>
+                            <strong>¡Integraciones Guardadas!</strong>
+                            <p style="margin:0; font-size:0.88rem;"><?= htmlspecialchars($msgIntegrationsSuccess) ?></p>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <form method="POST">
+                    <div class="card-panel">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                            <div>
+                                <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary); margin:0;">
+                                    <i class="fas fa-cogs" style="color:#A855F7;"></i> Pasarelas de Pago y Conectores de Infraestructura
+                                </h3>
+                                <p style="font-size:0.85rem; color:#64748B; margin:0.25rem 0 0;">
+                                    Configura los conectores bancarios, webhooks de conciliación, Google OAuth y servidor SMTP.
+                                </p>
+                            </div>
+                            <button type="submit" name="save_integrations_settings" class="btn-cta btn-gold" style="background:#A855F7; border-color:#9333EA;">
+                                <i class="fas fa-save"></i> Guardar Configuración de Integraciones
+                            </button>
                         </div>
 
                         <!-- Configuración Pasarela de Pagos: Mercado Pago Chile -->
-                        <!-- Configuración Pasarela de Pagos: Mercado Pago Chile -->
-                        <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
+                        <div style="margin-top:1rem;">
                             <?php 
                                 $isMpActive = ($sysSettings['mp_enabled'] ?? '1') === '1'; 
                                 $mpMode = $sysSettings['mp_mode'] ?? 'production';
@@ -1235,7 +1320,7 @@ $allTemplates = $stmtTemplates->fetchAll();
                             </div>
 
                             <!-- Bloque 2: Credenciales de Sandbox / Pruebas -->
-                            <div style="border:1px solid #E2E8F0; border-radius:8px; padding:1rem; margin-bottom:1rem; background:#FAF5FF;">
+                            <div style="border:1px solid #E2E8F0; border-radius:8px; padding:1rem; background:#FAF5FF;">
                                 <div style="font-size:0.85rem; font-weight:800; color:#7E22CE; margin-bottom:0.75rem; display:flex; align-items:center; gap:6px;">
                                     <i class="fas fa-flask"></i> Credenciales de Sandbox (Pruebas)
                                 </div>
@@ -1246,13 +1331,13 @@ $allTemplates = $stmtTemplates->fetchAll();
                                     </div>
                                     <div class="form-group">
                                         <label style="font-size:0.8rem; font-weight:600; color:#334155;">Access Token (Sandbox / Prueba)</label>
-                                        <input type="password" name="mp_access_token_sandbox" class="form-control" placeholder="APP_USR-xxxxxxxxxxxx-xxxxxx-xxxxxxxxxxxxxxxx-xxxxxxxx" value="<?= htmlspecialchars($sysSettings['mp_access_token_sandbox'] ?? ($sysSettings['mp_access_token'] ?? '')) ?>">
+                                        <input type="password" name="mp_access_token_sandbox" class="form-control" placeholder="APP_USR-xxxxxxxxxxxx-xxxxxx-xxxxxxxxxxxxxxxx-xxxxxxxx" value="<?= htmlspecialchars($sysSettings['mp_access_token_sandbox'] ?? '') ?>">
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Firma Secreta del Webhook (Integridad Criptográfica) -->
-                            <div style="background:#F1F5F9; border:1px solid #CBD5E1; border-radius:8px; padding:0.85rem 1rem;">
+                            <div style="background:#F1F5F9; border:1px solid #CBD5E1; border-radius:8px; padding:0.85rem 1rem; margin-top:1rem;">
                                 <div class="form-group" style="margin-bottom:0;">
                                     <label style="font-size:0.8rem; font-weight:700; color:#1E293B; display:flex; align-items:center; gap:6px;">
                                         <i class="fas fa-key" style="color:#0284C7;"></i> Firma Secreta del Webhook (Signature Secret)
@@ -1342,6 +1427,17 @@ $allTemplates = $stmtTemplates->fetchAll();
                             </div>
                         </div>
 
+                        <!-- Integración Google OAuth / GIS -->
+                        <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
+                            <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem;">
+                                <i class="fab fa-google" style="color:#EA4335;"></i> Google Client ID para Inicio de Sesión (OAuth 2.0 / GIS)
+                            </label>
+                            <p style="font-size:0.78rem; color:#64748B; margin:0.15rem 0 0.4rem;">
+                                ID de cliente de la consola de Google Cloud (ej: <code>xxxx.apps.googleusercontent.com</code>) para habilitar "Continuar con Google".
+                            </p>
+                            <input type="text" name="google_oauth_client_id" class="form-control" placeholder="Ej: 123456789-abcdef.apps.googleusercontent.com" value="<?= htmlspecialchars($sysSettings['google_oauth_client_id'] ?? '') ?>">
+                        </div>
+
                         <!-- Configuración SMTP para Correos Transaccionales -->
                         <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
                             <div style="margin-bottom:1rem;">
@@ -1380,67 +1476,15 @@ $allTemplates = $stmtTemplates->fetchAll();
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="card-panel">
-                        <div style="margin-bottom:1.25rem;">
-                            <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary); margin:0;">
-                                <i class="fas fa-file-alt" style="color:var(--accent);"></i> Catálogo Oficial: Precio Base por Instrumento (1 Firmante)
-                            </h3>
-                            <p style="font-size:0.85rem; color:#64748B; margin:0.25rem 0 0;">
-                                Puedes ajustar el precio base de cada contrato o declaración jurada del catálogo oficial.
-                            </p>
-                        </div>
-
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th style="width:70px;">ID</th>
-                                    <th>Nombre del Instrumento</th>
-                                    <th>Categoría</th>
-                                    <th>Validez & Tipo</th>
-                                    <th style="width:200px;">Precio Base CLP (1 Firmante)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($allTemplates as $tpl): ?>
-                                    <tr>
-                                        <td><strong>#<?= $tpl['id'] ?></strong></td>
-                                        <td>
-                                            <strong style="color:var(--primary);"><?= htmlspecialchars($tpl['nombre']) ?></strong>
-                                            <div style="font-size:0.75rem; color:#64748B;">/redactar.php?slug=<?= htmlspecialchars($tpl['slug']) ?></div>
-                                        </td>
-                                        <td>
-                                            <span class="badge" style="background:#F1F5F9; color:#475569; text-transform:uppercase; font-size:0.7rem;">
-                                                <?= htmlspecialchars($tpl['categoria']) ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span style="font-size:0.78rem; color:#059669; font-weight:600;">
-                                                <i class="fas fa-check-circle"></i> Ley 19.799
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div style="display:flex; align-items:center; gap:0.35rem;">
-                                                <span style="font-weight:700; color:#64748B;">$</span>
-                                                <input type="number" name="tpl_prices[<?= $tpl['id'] ?>]" class="form-control" style="font-weight:800; text-align:right;" value="<?= (int)$tpl['precio_base'] ?>" min="0" step="1" required>
-                                                <span style="font-size:0.75rem; color:#64748B;">CLP</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
 
                         <div style="margin-top:1.5rem; text-align:right;">
-                            <button type="submit" name="save_pricing_settings" class="btn-cta btn-gold">
-                                <i class="fas fa-save"></i> Guardar Todas las Tarifas
+                            <button type="submit" name="save_integrations_settings" class="btn-cta btn-gold" style="background:#A855F7; border-color:#9333EA;">
+                                <i class="fas fa-save"></i> Guardar Configuración de Integraciones
                             </button>
                         </div>
                     </div>
                 </form>
             </div>
-
             <!-- ========================================== -->
             <!-- 2. SECCIÓN: MONITOR DE CONTRATOS           -->
             <!-- ========================================== -->
@@ -1893,6 +1937,10 @@ $allTemplates = $stmtTemplates->fetchAll();
             'precios': {
                 title: 'Gestor de Tarifas y Precios de Firma',
                 desc: 'Configuración comercial de precios base por documento y tarifa por firmante adicional.'
+            },
+            'integraciones': {
+                title: 'Pasarelas de Pago, Webhooks y Conectores de Sistema',
+                desc: 'Administración de credenciales de Mercado Pago, Khipu, llaves criptográficas de Webhooks, Google OAuth y servidor SMTP.'
             },
             'documentos': {
                 title: 'Monitor y Auditoría de Contratos',
