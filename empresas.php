@@ -129,23 +129,67 @@ if (!$currentUser) {
                     <div style="display:flex; align-items:center; gap:8px;">
                         <span style="font-weight: 800; font-size: 1.1rem; color: var(--primary);" id="dispRazonSocial">Keystone Advisors SpA</span>
                         <span style="background:#DCFCE7; color:#15803D; font-size:0.75rem; font-weight:800; padding:2px 8px; border-radius:12px;" id="dispPlanEstado">PLAN ACTIVO</span>
+                        <span style="background:#EFF6FF; color:#1D4ED8; font-size:0.75rem; font-weight:800; padding:2px 8px; border-radius:12px;" id="dispModalidadCobro">PREPAGO</span>
                     </div>
                     <div style="font-size: 0.85rem; color: #64748B;">
-                        RUT: <strong id="dispRutEmpresa">78.089.686-8</strong> | Rep. Legal: <strong id="dispRepLegal">Maritza Vásquez (17.297.004-4)</strong>
+                        RUT: <strong id="dispRutEmpresa">78.089.686-8</strong> | Tarifa por Firma: <strong id="dispTarifaTramo">$2.490 CLP</strong>
                     </div>
                 </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 1.5rem;">
-                <!-- Widget de Consumo y Cupo de Firmas del Plan -->
-                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 0.5rem 1rem; text-align: right;">
-                    <div style="font-size: 0.75rem; color: #64748B; font-weight: 600;">CUPO PLAN MENSUAL (<span id="dispPlanNombre">INICIAL</span>)</div>
-                    <div style="font-size: 1.05rem; font-weight: 800; color: var(--primary);">
-                        <span id="dispFirmasUsadas" style="color: #0A1C33;">0</span> / <span id="dispFirmasTotales">50</span> firmas
+            <div style="display: flex; align-items: center; gap: 1.25rem;">
+                <!-- Widget Financiero: Bolsa Prepago o Facturación Postpago -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 0.5rem 1rem; text-align: right;" id="widgetFinanciero">
+                    <div style="font-size: 0.72rem; color: #64748B; font-weight: 700; text-transform: uppercase;" id="lblSaldoModalidad">BOLSA PREPAGADA ACTIVA</div>
+                    <div style="font-size: 1.15rem; font-weight: 800; color: #15803D;" id="valSaldoModalidad">
+                        <span id="dispSaldoPrepago">50</span> firmas disponibles
                     </div>
-                    <div style="font-size: 0.72rem; color: #10B981; font-weight: 600;" id="dispFirmasDisponibles">50 disponibles</div>
+                    <div style="font-size: 0.72rem; color: #64748B;" id="subSaldoModalidad">Total histórico emitido: <strong id="dispHistoricoUsadas">0</strong></div>
                 </div>
-                <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important; border:1px solid #CBD5E1; font-size:0.85rem;" onclick="openCompanyModal()">
-                    <i class="fas fa-cog"></i> Perfil & Plan
+                
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <button type="button" class="btn-cta btn-gold" style="padding:6px 12px; font-size:0.82rem;" onclick="openRechargeModal()">
+                        <i class="fas fa-shopping-cart"></i> Comprar Bolsa
+                    </button>
+                    <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important; border:1px solid #CBD5E1; padding:4px 10px; font-size:0.8rem;" onclick="openCompanyModal()">
+                        <i class="fas fa-cog"></i> Configurar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banner de Selección de Bolsas con Descuento -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
+                <div>
+                    <span style="font-size:0.75rem; font-weight:800; color:#2563EB; background:#EFF6FF; padding:2px 8px; border-radius:4px;">PACK 50 FIRMAS</span>
+                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$3.490 <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                    <p style="margin:0; font-size:0.78rem; color:#64748B;">Ahorro 30% vs tarifa estándar ($174.500 CLP)</p>
+                </div>
+                <button type="button" class="btn-cta" style="background:#0F2A4A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_50')">
+                    Recargar
+                </button>
+            </div>
+
+            <div style="background:#FFFFFF; border:2px solid #D4AF37; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm); position:relative;">
+                <span style="position:absolute; top:-10px; right:15px; background:#D4AF37; color:#0A1C33; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:10px;">MÁS POPULAR</span>
+                <div>
+                    <span style="font-size:0.75rem; font-weight:800; color:#B45309; background:#FEF3C7; padding:2px 8px; border-radius:4px;">PACK 200 FIRMAS</span>
+                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$2.790 <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                    <p style="margin:0; font-size:0.78rem; color:#64748B;">Ahorro 45% vs tarifa estándar ($558.000 CLP)</p>
+                </div>
+                <button type="button" class="btn-cta btn-gold" style="padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_200')">
+                    Recargar
+                </button>
+            </div>
+
+            <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
+                <div>
+                    <span style="font-size:0.75rem; font-weight:800; color:#15803D; background:#DCFCE7; padding:2px 8px; border-radius:4px;">PACK 500+ ENTERPRISE</span>
+                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$1.990 <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                    <p style="margin:0; font-size:0.78rem; color:#64748B;">Tarifa mínima garantizada ($995.000 CLP)</p>
+                </div>
+                <button type="button" class="btn-cta" style="background:#0F2A4A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_500')">
+                    Recargar
                 </button>
             </div>
         </div>
@@ -352,33 +396,62 @@ if (!$currentUser) {
         function updateCompanyUI() {
             document.getElementById('dispRazonSocial').textContent = currentCompany.razon_social || 'Keystone Advisors SpA';
             document.getElementById('dispRutEmpresa').textContent = currentCompany.rut || '78.089.686-8';
-            document.getElementById('dispRepLegal').textContent = (currentCompany.rep_legal_nombre || 'Maritza Vásquez') + ' (' + (currentCompany.rep_legal_rut || '17.297.004-4') + ')';
-            
-            // Plan y gastos
-            const totalPlan = parseInt(currentCompany.firmas_totales_plan || 50);
-            const usadas = parseInt(currentCompany.firmas_utilizadas || 0);
-            const disponibles = Math.max(0, totalPlan - usadas);
-            const planNombre = (currentCompany.plan_nombre || 'PLAN_INICIAL').replace('_', ' ');
-
-            document.getElementById('dispPlanNombre').textContent = planNombre;
-            document.getElementById('dispFirmasUsadas').textContent = usadas;
-            document.getElementById('dispFirmasTotales').textContent = totalPlan;
-            document.getElementById('dispFirmasDisponibles').textContent = disponibles + ' disponibles';
+            document.getElementById('dispTarifaTramo').textContent = '$' + Number(currentCompany.tarifa_tramo_clp || 2490).toLocaleString('es-CL') + ' CLP';
             document.getElementById('dispPlanEstado').textContent = currentCompany.plan_estado || 'ACTIVO';
             
-            // Modal
-            document.getElementById('modalPlanBadge').textContent = (currentCompany.plan_estado || 'ACTIVO') + ' - ' + planNombre;
-            document.getElementById('modalPlanCupo').textContent = totalPlan + ' firmas / mes';
-            document.getElementById('modalPlanCosto').textContent = (currentCompany.costo_mensual_uf || '2.50') + ' UF + IVA / mes';
-            document.getElementById('modalPlanConsumo').textContent = usadas + ' firmas';
-            document.getElementById('modalPlanExtra').textContent = '$' + (currentCompany.costo_firma_extra_clp ? Number(currentCompany.costo_firma_extra_clp).toLocaleString('es-CL') : '2.490') + ' CLP';
+            const modalidad = currentCompany.modalidad_cobro || 'PREPAGO';
+            document.getElementById('dispModalidadCobro').textContent = modalidad;
 
+            if (modalidad === 'PREPAGO') {
+                document.getElementById('lblSaldoModalidad').textContent = 'BOLSA PREPAGADA ACTIVA';
+                const saldo = parseInt(currentCompany.saldo_firmas_prepago || 0);
+                document.getElementById('valSaldoModalidad').innerHTML = `<span id="dispSaldoPrepago" style="color:${saldo < 10 ? '#DC2626' : '#15803D'};">${saldo}</span> firmas disponibles`;
+                document.getElementById('subSaldoModalidad').innerHTML = `Total firmas consumidas: <strong>${currentCompany.firmas_utilizadas || 0}</strong>`;
+            } else {
+                document.getElementById('lblSaldoModalidad').textContent = 'CRÉDITO POSTPAGO MENSUAL';
+                const gasto = Number(currentCompany.gasto_acumulado_periodo || 0).toLocaleString('es-CL');
+                const umbral = currentCompany.umbral_max_postpago || 200;
+                document.getElementById('valSaldoModalidad').innerHTML = `<span style="color:#1D4ED8;">$${gasto} CLP</span> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">a facturar</span>`;
+                document.getElementById('subSaldoModalidad').innerHTML = `Consumo: <strong>${currentCompany.firmas_utilizadas || 0}</strong> / Umbral máx: <strong>${umbral}</strong>`;
+            }
+            
             // Modal fields
             document.getElementById('cfgRazonSocial').value = currentCompany.razon_social || '';
             document.getElementById('cfgRutEmpresa').value = currentCompany.rut || '';
             document.getElementById('cfgRepNombre').value = currentCompany.rep_legal_nombre || '';
             document.getElementById('cfgRepRut').value = currentCompany.rep_legal_rut || '';
             document.getElementById('cfgRepEmail').value = currentCompany.rep_legal_email || '';
+        }
+
+        async function rechargePack(packType) {
+            if (!currentCompany || !currentCompany.id) {
+                alert("Identificando empresa...");
+                return;
+            }
+
+            if (!confirm(`¿Confirmas la activación y compra de la bolsa ${packType} para ${currentCompany.razon_social}?`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch('api/index.php?action=b2b_recharge_bag', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        company_id: currentCompany.id,
+                        pack_type: packType
+                    })
+                });
+                const json = await res.json();
+                if (json.success) {
+                    alert(`✅ ¡Recarga Exitosa!\n\n${json.data.message}\nNuevo Saldo: ${json.data.saldo_nuevo} firmas.`);
+                    loadCompanyProfile();
+                } else {
+                    alert("Error en recarga: " + json.error);
+                }
+            } catch (e) {
+                alert("Error de comunicación: " + e.message);
+            }
         }
 
         function openCompanyModal() {

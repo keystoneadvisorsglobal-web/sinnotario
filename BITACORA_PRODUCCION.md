@@ -1,5 +1,32 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 23:57 UTC-3] - SOL-0065
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0065`
+- **Alcance de los Cambios:**
+  - **Paso 1: Control Financiero B2B Prepago vs. Postpago, Bolsas de Firmas y Umbrales:**
+    1. **Esquema de Base de Datos y Registro Contable:**
+       - Se extendió la tabla `companies` con atributos financieros: `modalidad_cobro` (`PREPAGO` / `POSTPAGO`), `saldo_firmas_prepago` (bolsa de firmas adquiridas), `umbral_max_postpago` (límite de firmas antes de corte), `gasto_acumulado_periodo` (monto CLP a facturar en mes calendario) y `tarifa_tramo_clp`.
+       - Se creó la tabla `b2b_billing_logs` para registrar con trazabilidad inalterable cada movimiento contable (`RECARGA_PREPAGO`, `CONSUMO_FIRMA`, `FACTURACION_MENSUAL`) con saldo anterior, nuevo saldo y monto en CLP.
+    2. **Lógica de Bloqueo y Control en Backend (`B2BService.php`):**
+       - Si la empresa está en `PREPAGO`, el motor de firma masiva valida que el saldo de la bolsa cubra la cantidad exacta del lote; si no, deniega la firma y solicita recarga.
+       - Si la empresa está en `POSTPAGO`, el motor valida que el consumo acumulado más el lote no supere el umbral de crédito pactado.
+       - Cada firma masiva descuenta de la bolsa o acumula en la deuda mensual a facturar con Factura Electrónica (DTE 33).
+       - Se desarrolló el método `rechargePrepagoBag` para abonar bolsas con tarifas reducidas (Pack 50 a $3.490 c/u, Pack 200 a $2.790 c/u, Pack 500 Enterprise a $1.990 c/u).
+    3. **Endpoints de API (`api/index.php`):**
+       - `b2b_recharge_bag`: Procesamiento y acreditación de saldo de firmas.
+       - `b2b_get_billing_logs`: Consulta de auditoría financiera para la empresa.
+    4. **Frontend y UX Corporativo (`empresas.php`):**
+       - Widget superior dinámico con indicador dual: bolsa de firmas activas en tiempo real vs. gasto acumulado a facturar.
+       - Banner de 3 tarjetas de bolsas prepagadas con descuentos automáticos y botón de compra/recarga inmediata.
+- **Pruebas Validadas:**
+  - Validación sintáctica PHP Lint: 0 errores.
+  - Ejecución de prueba contable: recarga de Pack 50 registrada exitosamente en `b2b_billing_logs` con incremento de saldo a 100 firmas y `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 23:49 UTC-3] - SOL-0064
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

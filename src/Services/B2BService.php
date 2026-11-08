@@ -233,7 +233,9 @@ class B2BService {
         $stmtBatch = $pdo->prepare("
             SELECT b.*, c.id as comp_id, c.razon_social, c.rut as empresa_rut, c.direccion as empresa_dir,
                    c.rep_legal_nombre, c.rep_legal_rut, c.plan_nombre, c.plan_estado,
-                   c.firmas_totales_plan, c.firmas_utilizadas, c.costo_firma_extra_clp
+                   c.firmas_totales_plan, c.firmas_utilizadas, c.costo_firma_extra_clp,
+                   c.modalidad_cobro, c.saldo_firmas_prepago, c.umbral_max_postpago,
+                   c.gasto_acumulado_periodo, c.tarifa_tramo_clp
             FROM b2b_batches b
             LEFT JOIN companies c ON b.company_id = c.id
             WHERE b.id = ?
@@ -254,9 +256,29 @@ class B2BService {
             throw new Exception("El lote no contiene registros válidos para emitir contratos.");
         }
 
+        $itemsCount = count($items);
+
         // Validar estado del plan de la empresa
         if ($batch['plan_estado'] === 'SUSPENDIDO' || $batch['plan_estado'] === 'VENCIDO') {
             throw new Exception("El plan corporativo de su empresa se encuentra " . $batch['plan_estado'] . ". Regularice su suscripción para continuar firmando.");
+        }
+
+        // Validar Financieramente: PREPAGO vs POSTPAGO
+        $modalidad = $batch['modalidad_cobro'] ?: 'PREPAGO';
+        $saldoPrepago = (int)($batch['saldo_firmas_prepago'] ?? 0);
+        $umbralPostpago = (int)($batch['umbral_max_postpago'] ?? 200);
+        $firmasUsadas = (int)($batch['firmas_utilizadas'] ?? 0);
+        $tarifaUnit = (int)($batch['tarifa_tramo_clp'] ?: 2490);
+
+        if ($modalidad === 'PREPAGO') {
+            if ($saldoPrepago < $itemsCount) {
+                throw new Exception("Saldo de firmas prepagadas insuficiente. Su bolsa actual tiene {$saldoPrepago} firmas disponibles y el lote requiere {$itemsCount}. Por favor recargue una bolsa de firmas con descuento.");
+            }
+        } else {
+            // POSTPAGO: Validar que no sobrepase el umbral de crédito
+            if (($firmasUsadas + $itemsCount) > $umbralPostpago) {
+                throw new Exception("Límite de sobregiro alcanzado para modalidad Postpago ({$umbralPostpago} firmas). Consumo proyectado: " . ($firmasUsadas + $itemsCount) . ". Solicite ampliación de umbral a Keystone Advisors.");
+            }
         }
 
         // Obtener template
@@ -376,12 +398,61 @@ class B2BService {
 
         // Incrementar firmas consumidas en la empresa para control de plan y gastos
         if (!empty($batch['company_id'])) {
-            $stmtUpdComp = $pdo->prepare("
-                UPDATE companies 
-                SET firmas_utilizadas = COALESCE(firmas_utilizadas, 0) + ?, updated_at = datetime('now') 
-                WHERE id = ?
-            ");
-            $stmtUpdComp->execute([$signedCount, $batch['company_id']]);
+            $nuevoGastoPeriodo = (int)($batch['gasto_acumulado_periodo'] ?? 0) + ($signedCount * $tarifaUnit);
+
+            if ($modalidad === 'PREPAGO') {
+                $nuevoSaldoPrepago = max(0, $saldoPrepago - $signedCount);
+                $stmtUpdComp = $pdo->prepare("
+                    UPDATE companies 
+                    SET firmas_utilizadas = COALESCE(firmas_utilizadas, 0) + ?,
+                        saldo_firmas_prepago = ?,
+                        updated_at = datetime('now') 
+                    WHERE id = ?
+                ");
+                $stmtUpdComp->execute([$signedCount, $nuevoSaldoPrepago, $batch['company_id']]);
+
+                // Registrar en log contable
+                $stmtLog = $pdo->prepare("
+                    INSERT INTO b2b_billing_logs (
+                        company_id, tipo_movimiento, modalidad, cantidad_firmas,
+                        monto_clp, saldo_anterior, saldo_nuevo, descripcion
+                    ) VALUES (?, 'CONSUMO_FIRMA', 'PREPAGO', ?, 0, ?, ?, ?)
+                ");
+                $stmtLog->execute([
+                    $batch['company_id'],
+                    $signedCount,
+                    $saldoPrepago,
+                    $nuevoSaldoPrepago,
+                    "Consumo masivo de {$signedCount} firmas en Lote #{$batchId}"
+                ]);
+
+            } else {
+                // Modalidad POSTPAGO
+                $stmtUpdComp = $pdo->prepare("
+                    UPDATE companies 
+                    SET firmas_utilizadas = COALESCE(firmas_utilizadas, 0) + ?,
+                        gasto_acumulado_periodo = ?,
+                        updated_at = datetime('now') 
+                    WHERE id = ?
+                ");
+                $stmtUpdComp->execute([$signedCount, $nuevoGastoPeriodo, $batch['company_id']]);
+
+                // Registrar en log contable para Factura DTE 33 fin de mes
+                $stmtLog = $pdo->prepare("
+                    INSERT INTO b2b_billing_logs (
+                        company_id, tipo_movimiento, modalidad, cantidad_firmas,
+                        monto_clp, saldo_anterior, saldo_nuevo, descripcion
+                    ) VALUES (?, 'CONSUMO_FIRMA', 'POSTPAGO', ?, ?, ?, ?, ?)
+                ");
+                $stmtLog->execute([
+                    $batch['company_id'],
+                    $signedCount,
+                    $signedCount * $tarifaUnit,
+                    $firmasUsadas,
+                    $firmasUsadas + $signedCount,
+                    "Consumo devengado postpago: {$signedCount} firmas a \${$tarifaUnit} CLP"
+                ]);
+            }
         }
 
         return [
@@ -389,6 +460,61 @@ class B2BService {
             'signed_count' => $signedCount,
             'status' => 'EN_FIRMA',
             'message' => "Se firmaron masivamente {$signedCount} contratos con certificación legal. Los colaboradores han sido convocados vía correo y WhatsApp."
+        ];
+    }
+
+    /**
+     * Recargar bolsa de firmas prepagadas
+     */
+    public static function rechargePrepagoBag($companyId, $packType) {
+        $pdo = Database::getInstance();
+
+        $packs = [
+            'PACK_50' => ['firmas' => 50, 'precio_unit' => 3490, 'total' => 174500, 'nombre' => 'Bolsa 50 Firmas'],
+            'PACK_200' => ['firmas' => 200, 'precio_unit' => 2790, 'total' => 558000, 'nombre' => 'Bolsa 200 Firmas'],
+            'PACK_500' => ['firmas' => 500, 'precio_unit' => 1990, 'total' => 995000, 'nombre' => 'Bolsa 500 Firmas Enterprise']
+        ];
+
+        if (!isset($packs[$packType])) {
+            throw new Exception("Tipo de bolsa no válida.");
+        }
+
+        $pack = $packs[$packType];
+
+        $stmtC = $pdo->prepare("SELECT saldo_firmas_prepago FROM companies WHERE id = ?");
+        $stmtC->execute([$companyId]);
+        $saldoActual = (int)$stmtC->fetchColumn();
+        $nuevoSaldo = $saldoActual + $pack['firmas'];
+
+        $stmtUpd = $pdo->prepare("
+            UPDATE companies 
+            SET saldo_firmas_prepago = ?, tarifa_tramo_clp = ?, updated_at = datetime('now')
+            WHERE id = ?
+        ");
+        $stmtUpd->execute([$nuevoSaldo, $pack['precio_unit'], $companyId]);
+
+        // Registrar movimiento
+        $stmtLog = $pdo->prepare("
+            INSERT INTO b2b_billing_logs (
+                company_id, tipo_movimiento, modalidad, cantidad_firmas,
+                monto_clp, saldo_anterior, saldo_nuevo, descripcion
+            ) VALUES (?, 'RECARGA_PREPAGO', 'PREPAGO', ?, ?, ?, ?, ?)
+        ");
+        $stmtLog->execute([
+            $companyId,
+            $pack['firmas'],
+            $pack['total'],
+            $saldoActual,
+            $nuevoSaldo,
+            "Recarga de {$pack['nombre']} a \${$pack['precio_unit']} c/u"
+        ]);
+
+        return [
+            'success' => true,
+            'pack' => $pack,
+            'saldo_anterior' => $saldoActual,
+            'saldo_nuevo' => $nuevoSaldo,
+            'message' => "Bolsa de {$pack['firmas']} firmas activada exitosamente."
         ];
     }
 

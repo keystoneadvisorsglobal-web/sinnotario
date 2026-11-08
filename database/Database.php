@@ -91,13 +91,35 @@ class Database {
                 'firmas_totales_plan' => "ALTER TABLE companies ADD COLUMN firmas_totales_plan INTEGER DEFAULT 50;",
                 'firmas_utilizadas' => "ALTER TABLE companies ADD COLUMN firmas_utilizadas INTEGER DEFAULT 0;",
                 'costo_mensual_uf' => "ALTER TABLE companies ADD COLUMN costo_mensual_uf DECIMAL(6,2) DEFAULT 2.50;",
-                'costo_firma_extra_clp' => "ALTER TABLE companies ADD COLUMN costo_firma_extra_clp INTEGER DEFAULT 2490;"
+                'costo_firma_extra_clp' => "ALTER TABLE companies ADD COLUMN costo_firma_extra_clp INTEGER DEFAULT 2490;",
+                // Atributos de Control Financiero B2B (Prepago / Postpago y Umbrales)
+                'modalidad_cobro' => "ALTER TABLE companies ADD COLUMN modalidad_cobro VARCHAR(20) DEFAULT 'PREPAGO';",
+                'saldo_firmas_prepago' => "ALTER TABLE companies ADD COLUMN saldo_firmas_prepago INTEGER DEFAULT 50;",
+                'umbral_max_postpago' => "ALTER TABLE companies ADD COLUMN umbral_max_postpago INTEGER DEFAULT 200;",
+                'gasto_acumulado_periodo' => "ALTER TABLE companies ADD COLUMN gasto_acumulado_periodo INTEGER DEFAULT 0;",
+                'tarifa_tramo_clp' => "ALTER TABLE companies ADD COLUMN tarifa_tramo_clp INTEGER DEFAULT 2490;"
             ];
             foreach ($missingCompCols as $cCol => $cSql) {
                 if (!in_array($cCol, $compCols)) {
                     $this->pdo->exec($cSql);
                 }
             }
+
+            // Historial de Recargas de Bolsas y Facturaciones B2B
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS b2b_billing_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_id INTEGER NOT NULL,
+                tipo_movimiento VARCHAR(30) NOT NULL, -- RECARGA_PREPAGO, CONSUMO_FIRMA, FACTURACION_MENSUAL
+                modalidad VARCHAR(20) NOT NULL, -- PREPAGO, POSTPAGO
+                cantidad_firmas INTEGER NOT NULL,
+                monto_clp INTEGER DEFAULT 0,
+                saldo_anterior INTEGER DEFAULT 0,
+                saldo_nuevo INTEGER DEFAULT 0,
+                descripcion TEXT,
+                documento_tributario_folio VARCHAR(50),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+            );");
             $this->pdo->exec("CREATE TABLE IF NOT EXISTS companies (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
@@ -118,6 +140,11 @@ class Database {
                 firmas_utilizadas INTEGER DEFAULT 0, -- consumo acumulado
                 costo_mensual_uf DECIMAL(6,2) DEFAULT 2.50, -- valor mensual en UF o CLP
                 costo_firma_extra_clp INTEGER DEFAULT 2490, -- valor por firma extra
+                modalidad_cobro VARCHAR(20) DEFAULT 'PREPAGO', -- PREPAGO, POSTPAGO
+                saldo_firmas_prepago INTEGER DEFAULT 50, -- Bolsa de firmas prepagadas
+                umbral_max_postpago INTEGER DEFAULT 200, -- Límite máximo de crédito para emisión continua
+                gasto_acumulado_periodo INTEGER DEFAULT 0, -- Monto CLP acumulado para factura mensual DTE 33
+                tarifa_tramo_clp INTEGER DEFAULT 2490, -- Precio unitario contratado
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL

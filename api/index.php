@@ -733,6 +733,38 @@ try {
             exit;
             break;
 
+        // 22. Recargar Bolsa Prepagada de Firmas
+        case 'b2b_recharge_bag':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $companyId = (int)($input['company_id'] ?? 0);
+            $packType = trim($input['pack_type'] ?? 'PACK_50');
+
+            if ($companyId <= 0) {
+                jsonResponse(false, null, 'ID de empresa inválido', 400);
+            }
+
+            $resRecarga = B2BService::rechargePrepagoBag($companyId, $packType);
+            jsonResponse(true, $resRecarga);
+            break;
+
+        // 23. Obtener Historial de Facturación y Consumo B2B
+        case 'b2b_get_billing_logs':
+            $companyId = (int)($_GET['company_id'] ?? 0);
+            if ($companyId <= 0) {
+                jsonResponse(false, null, 'ID de empresa requerido', 400);
+            }
+
+            $stmtLogs = $pdo->prepare("SELECT * FROM b2b_billing_logs WHERE company_id = ? ORDER BY id DESC LIMIT 50");
+            $stmtLogs->execute([$companyId]);
+            $logs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC);
+
+            jsonResponse(true, $logs);
+            break;
+
         // 17. Estado de salud / Check
         case 'health':
             $r2 = new StorageR2Adapter();
