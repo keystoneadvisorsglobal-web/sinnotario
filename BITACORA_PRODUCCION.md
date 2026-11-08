@@ -1,5 +1,25 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-08 01:34 UTC-3] - SOL-0072
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0072`
+- **Alcance de los Cambios:**
+  - **Alineación Comercial: Saldo Inicial Cero ($0) para Nuevas Empresas Auto-Registradas:**
+    1. **Ajuste en `B2BService::getOrCreateCompany`:**
+       - Se corrigió la asignación de saldo por defecto al provisionar una empresa nueva: `saldo_firmas_prepago = 0`, `firmas_totales_plan = 0` y `costo_mensual_uf = 0`.
+       - Las empresas registradas no recibirán firmas de cortesía automáticas; quedan obligadas a adquirir una bolsa prepagada a través de la pasarela de pagos para emitir y certificar contratos.
+    2. **Actualización del Esquema Base en `Database.php`:**
+       - Valores predeterminados actualizados a `0` para `saldo_firmas_prepago` y `umbral_max_postpago` en la definición de tabla y migraciones.
+    3. **Normalización de Base de Datos en Producción:**
+       - Se actualizó el registro de la empresa creada en pruebas (*Keystone Solutions*, RUT `76.938.743-9`), dejando su saldo disponible en **0 firmas**.
+- **Pruebas Validadas:**
+  - Verificación sintáctica PHP Lint: 0 errores en `B2BService.php` y `Database.php`.
+  - Comprobación en base de datos SQLite en producción: registro ID 2 reflejando saldo 0.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-08 01:32 UTC-3] - SOL-0071
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

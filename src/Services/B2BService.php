@@ -61,8 +61,9 @@ class B2BService {
                     user_id, rut, razon_social, giro, direccion, comuna, ciudad,
                     rep_legal_nombre, rep_legal_rut, rep_legal_email,
                     whatsapp_phone, whatsapp_instance_id,
-                    plan_nombre, plan_estado, firmas_totales_plan, firmas_utilizadas, costo_mensual_uf, costo_firma_extra_clp
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PLAN_INICIAL', 'ACTIVO', 50, 0, 2.50, 2490)
+                    plan_nombre, plan_estado, firmas_totales_plan, firmas_utilizadas, costo_mensual_uf, costo_firma_extra_clp,
+                    modalidad_cobro, saldo_firmas_prepago, umbral_max_postpago, gasto_acumulado_periodo, tarifa_tramo_clp
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PLAN_INICIAL', 'ACTIVO', 0, 0, 0, 2490, 'PREPAGO', 0, 0, 0, 2490)
             ");
             $stmtIns->execute([
                 $userId,

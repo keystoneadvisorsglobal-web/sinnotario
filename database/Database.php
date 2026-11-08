@@ -94,8 +94,8 @@ class Database {
                 'costo_firma_extra_clp' => "ALTER TABLE companies ADD COLUMN costo_firma_extra_clp INTEGER DEFAULT 2490;",
                 // Atributos de Control Financiero B2B (Prepago / Postpago y Umbrales)
                 'modalidad_cobro' => "ALTER TABLE companies ADD COLUMN modalidad_cobro VARCHAR(20) DEFAULT 'PREPAGO';",
-                'saldo_firmas_prepago' => "ALTER TABLE companies ADD COLUMN saldo_firmas_prepago INTEGER DEFAULT 50;",
-                'umbral_max_postpago' => "ALTER TABLE companies ADD COLUMN umbral_max_postpago INTEGER DEFAULT 200;",
+                'saldo_firmas_prepago' => "ALTER TABLE companies ADD COLUMN saldo_firmas_prepago INTEGER DEFAULT 0;",
+                'umbral_max_postpago' => "ALTER TABLE companies ADD COLUMN umbral_max_postpago INTEGER DEFAULT 0;",
                 'gasto_acumulado_periodo' => "ALTER TABLE companies ADD COLUMN gasto_acumulado_periodo INTEGER DEFAULT 0;",
                 'tarifa_tramo_clp' => "ALTER TABLE companies ADD COLUMN tarifa_tramo_clp INTEGER DEFAULT 2490;"
             ];
