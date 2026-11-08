@@ -820,6 +820,17 @@ try {
             jsonResponse(true, ['status' => 'received']);
             break;
 
+        // 22D. Webhook y Notificaciones de Khipu
+        case 'khipu_webhook':
+            $apiVer = $_POST['api_version'] ?? '';
+            $notifToken = $_POST['notification_token'] ?? '';
+            if (!empty($notifToken)) {
+                error_log("Khipu Webhook recibido: token {$notifToken}");
+            }
+            echo "OK";
+            exit;
+            break;
+
         // 22B. Obtener Catálogo Dinámico de Packs Prepagados
         case 'b2b_get_packs':
             $packs = B2BService::getPrepaidPacks();
