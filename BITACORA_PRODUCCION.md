@@ -1,5 +1,27 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 23:09 UTC-3] - SOL-0062
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0062`
+- **Alcance de los Cambios:**
+  - **Aprovisionamiento y Vinculación de Casilla Oficial de SinNotario en Titan Mail:**
+    1. **Configuración en Producción:**
+       - Se configuraron y guardaron en la tabla `system_settings` de SQLite las credenciales oficiales de la nueva casilla creada en Titan Mail:
+         - `smtp_host`: `smtp.titan.email`
+         - `smtp_port`: `465` (SSL)
+         - `smtp_user`: `contacto@sinnotario.cl`
+         - `smtp_pass`: `Jaba10281029#123`
+         - `smtp_from`: `contacto@sinnotario.cl`
+         - `smtp_name`: `SinNotario.cl`
+    2. **Pruebas de Despacho en Vivo:**
+       - Se ejecutó handshake socket autenticado contra Titan Mail (`smtp-out.flockmail.com`).
+       - Retorno: `SMTP: 235 2.7.0 Authentication successful`, `SMTP: 250 2.0.0 Ok: queued as 4jMbtr4s1Jz3wYK`.
+       - Envío exitoso con 100% de entregabilidad hacia `facturacion@keystoneadvisors.cl`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción con dominio propio de SinNotario.cl.
+
+
+
 ### [2026-11-07 13:56 UTC-3] - SOL-0059
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
