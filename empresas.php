@@ -194,96 +194,245 @@ if (!$currentUser) {
             </div>
         </div>
 
-        <!-- Zona de Carga Masiva Drag-and-Drop -->
-        <div class="upload-dropzone" id="dropzone" onclick="document.getElementById('excelFileInput').click()">
-            <input type="file" id="excelFileInput" accept=".csv, .txt, .xlsx" style="display: none;" onchange="handleExcelUpload(event)">
-            <i class="fas fa-file-excel fa-3x" style="color: #10B981; margin-bottom: 1rem;"></i>
-            <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--primary);">Arrastra tu planilla CSV/Excel o haz clic para cargar</h3>
-            <p style="color: #64748B; font-size: 0.88rem; margin-top: 0.35rem;">
-                Formatos admitidos: <code>.csv</code> (separado por coma o punto y coma). Columnas recomendadas: <code>nombre</code>, <code>rut</code>, <code>email</code>, <code>telefono</code>, <code>cargo</code>, <code>sueldo</code>.
-            </p>
-            <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem;">
-                <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important; border:1px solid #CBD5E1;" onclick="event.stopPropagation(); downloadSampleCsv();">
-                    <i class="fas fa-download"></i> Descargar Planilla Modelo (.csv)
-                </button>
-                <button type="button" class="btn-cta btn-gold" onclick="event.stopPropagation(); loadSampleData();">
-                    <i class="fas fa-magic"></i> Cargar Nómina de Muestra
-                </button>
-            </div>
+        <!-- Navegación por Pestañas Corporativas B2B -->
+        <div style="display:flex; gap:0.5rem; margin-bottom:1.5rem; border-bottom:2px solid #E2E8F0; padding-bottom:0.5rem;">
+            <button type="button" class="tab-btn-b2b active" onclick="switchB2BTab('emision', this)">
+                <i class="fas fa-file-excel"></i> 1. Smart Bulk & Emisión
+            </button>
+            <button type="button" class="tab-btn-b2b" onclick="switchB2BTab('plantillas', this)">
+                <i class="fas fa-layer-group"></i> 2. Mis Plantillas Propias
+            </button>
+            <button type="button" class="tab-btn-b2b" onclick="switchB2BTab('expediente', this)">
+                <i class="fas fa-folder-open"></i> 3. Expediente del Trabajador
+            </button>
+            <button type="button" class="tab-btn-b2b" onclick="switchB2BTab('whatsapp', this)">
+                <i class="fab fa-whatsapp"></i> 4. WhatsApp Oficial
+            </button>
         </div>
 
-        <!-- Tabla de Mapeo y Validación Previa -->
-        <div id="parsedWrap" class="parsed-table-wrap">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-                <div>
-                    <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary); margin:0;">
-                        Lote Procesado: <span id="batchTitleHeader">Nómina de Contratos</span>
-                    </h3>
-                    <div style="display: flex; gap: 10px; margin-top: 6px;">
-                        <span class="metric-pill metric-valid" id="validCountPill"><i class="fas fa-check-circle"></i> 0 Válidos</span>
-                        <span class="metric-pill metric-invalid" id="invalidCountPill"><i class="fas fa-exclamation-triangle"></i> 0 Inválidos</span>
-                        <span style="font-size: 0.85rem; color: #64748B; align-self: center;" id="totalRecordsText">Total: 0 registros</span>
+        <style>
+            .tab-btn-b2b {
+                background: none;
+                border: none;
+                font-size: 0.95rem;
+                font-weight: 700;
+                color: #64748B;
+                padding: 8px 16px;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .tab-btn-b2b:hover {
+                color: var(--primary);
+                background: #F1F5F9;
+            }
+            .tab-btn-b2b.active {
+                color: #0A1C33;
+                background: #FEF3C7;
+                border: 1px solid #D4AF37;
+            }
+            .b2b-tab-pane {
+                display: none;
+            }
+            .b2b-tab-pane.active {
+                display: block;
+            }
+        </style>
+
+        <!-- PESTAÑA 1: SMART BULK & EMISIÓN -->
+        <div id="pane_emision" class="b2b-tab-pane active">
+            <!-- Zona de Carga Masiva Drag-and-Drop -->
+            <div class="upload-dropzone" id="dropzone" onclick="document.getElementById('excelFileInput').click()">
+                <input type="file" id="excelFileInput" accept=".csv, .txt, .xlsx" style="display: none;" onchange="handleExcelUpload(event)">
+                <i class="fas fa-file-excel fa-3x" style="color: #10B981; margin-bottom: 1rem;"></i>
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--primary);">Arrastra tu planilla CSV/Excel o haz clic para cargar</h3>
+                <p style="color: #64748B; font-size: 0.88rem; margin-top: 0.35rem;">
+                    Formatos admitidos: <code>.csv</code> (separado por coma o punto y coma). Columnas recomendadas: <code>nombre</code>, <code>rut</code>, <code>email</code>, <code>telefono</code>, <code>cargo</code>, <code>sueldo</code>.
+                </p>
+                <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem;">
+                    <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important; border:1px solid #CBD5E1;" onclick="event.stopPropagation(); downloadSampleCsv();">
+                        <i class="fas fa-download"></i> Descargar Planilla Modelo (.csv)
+                    </button>
+                    <button type="button" class="btn-cta btn-gold" onclick="event.stopPropagation(); loadSampleData();">
+                        <i class="fas fa-magic"></i> Cargar Nómina de Muestra
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabla de Mapeo y Validación Previa -->
+            <div id="parsedWrap" class="parsed-table-wrap">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary); margin:0;">
+                            Lote Procesado: <span id="batchTitleHeader">Nómina de Contratos</span>
+                        </h3>
+                        <div style="display: flex; gap: 10px; margin-top: 6px;">
+                            <span class="metric-pill metric-valid" id="validCountPill"><i class="fas fa-check-circle"></i> 0 Válidos</span>
+                            <span class="metric-pill metric-invalid" id="invalidCountPill"><i class="fas fa-exclamation-triangle"></i> 0 Inválidos</span>
+                            <span style="font-size: 0.85rem; color: #64748B; align-self: center;" id="totalRecordsText">Total: 0 registros</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" id="btnExportDt" onclick="exportCurrentBatchDt()" disabled>
+                            <i class="fas fa-file-export"></i> Exportar Libro DT (Ley 21.327)
+                        </button>
+                        <button class="btn-cta btn-gold" id="btnSignBatch" onclick="signBatchConfirm()">
+                            <i class="fas fa-signature"></i> Firmar Lote con 1 Clic
+                        </button>
                     </div>
                 </div>
-                <div style="display: flex; gap: 0.75rem;">
-                    <button class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" id="btnExportDt" onclick="exportCurrentBatchDt()" disabled>
-                        <i class="fas fa-file-export"></i> Exportar Libro DT (Ley 21.327)
-                    </button>
-                    <button class="btn-cta btn-gold" id="btnSignBatch" onclick="signBatchConfirm()">
-                        <i class="fas fa-signature"></i> Firmar Lote con 1 Clic
-                    </button>
+
+                <div style="overflow-x: auto; max-height: 400px; border: 1px solid var(--border); border-radius: 8px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                        <thead>
+                            <tr style="background:#F8FAFC; color:#64748B; text-align:left; position: sticky; top:0; z-index: 10;">
+                                <th style="padding:0.75rem;">#</th>
+                                <th style="padding:0.75rem;">Nombre Colaborador</th>
+                                <th style="padding:0.75rem;">RUT</th>
+                                <th style="padding:0.75rem;">Correo</th>
+                                <th style="padding:0.75rem;">Teléfono / WhatsApp</th>
+                                <th style="padding:0.75rem;">Cargo</th>
+                                <th style="padding:0.75rem;">Sueldo</th>
+                                <th style="padding:0.75rem; text-align:center;">Estado / Validación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="parsedTableBody">
+                            <!-- Inyectado dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #64748B;">
+                    <div>
+                        <i class="fas fa-shield-alt" style="color: var(--primary);"></i> Certificación criptográfica con hash SHA-256 e integración con la Dirección del Trabajo.
+                    </div>
+                    <div id="batchStatusFooter">Estado: Listo para emisión</div>
                 </div>
             </div>
 
-            <div style="overflow-x: auto; max-height: 400px; border: 1px solid var(--border); border-radius: 8px;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
-                    <thead>
-                        <tr style="background:#F8FAFC; color:#64748B; text-align:left; position: sticky; top:0; z-index: 10;">
-                            <th style="padding:0.75rem;">#</th>
-                            <th style="padding:0.75rem;">Nombre Colaborador</th>
-                            <th style="padding:0.75rem;">RUT</th>
-                            <th style="padding:0.75rem;">Correo</th>
-                            <th style="padding:0.75rem;">Teléfono / WhatsApp</th>
-                            <th style="padding:0.75rem;">Cargo</th>
-                            <th style="padding:0.75rem;">Sueldo</th>
-                            <th style="padding:0.75rem; text-align:center;">Estado / Validación</th>
-                        </tr>
-                    </thead>
-                    <tbody id="parsedTableBody">
-                        <!-- Inyectado dinámicamente -->
-                    </tbody>
-                </table>
-            </div>
-
-            <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #64748B;">
-                <div>
-                    <i class="fas fa-shield-alt" style="color: var(--primary);"></i> Certificación criptográfica con hash SHA-256 e integración con la Dirección del Trabajo.
+            <!-- Historial de Lotes Emitidos -->
+            <div class="history-card">
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">
+                    <i class="fas fa-history"></i> Historial de Lotes y Contratos Masivos
+                </h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                        <thead>
+                            <tr style="background:#F8FAFC; color:#64748B; text-align:left;">
+                                <th style="padding:0.75rem;">ID Lote</th>
+                                <th style="padding:0.75rem;">Título</th>
+                                <th style="padding:0.75rem;">Fecha Creación</th>
+                                <th style="padding:0.75rem;">Registros</th>
+                                <th style="padding:0.75rem;">Estado</th>
+                                <th style="padding:0.75rem; text-align:right;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="batchesHistoryBody">
+                            <tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94A3B8;">Cargando historial de lotes...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div id="batchStatusFooter">Estado: Listo para emisión</div>
             </div>
         </div>
 
-        <!-- Historial de Lotes Emitidos -->
-        <div class="history-card">
-            <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">
-                <i class="fas fa-history"></i> Historial de Lotes y Contratos Masivos
-            </h3>
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
-                    <thead>
-                        <tr style="background:#F8FAFC; color:#64748B; text-align:left;">
-                            <th style="padding:0.75rem;">ID Lote</th>
-                            <th style="padding:0.75rem;">Título</th>
-                            <th style="padding:0.75rem;">Fecha Creación</th>
-                            <th style="padding:0.75rem;">Registros</th>
-                            <th style="padding:0.75rem;">Estado</th>
-                            <th style="padding:0.75rem; text-align:right;">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="batchesHistoryBody">
-                        <tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94A3B8;">Cargando historial de lotes...</td></tr>
-                    </tbody>
-                </table>
+        <!-- PESTAÑA 2: PLANTILLAS PROPIAS DE LA EMPRESA -->
+        <div id="pane_plantillas" class="b2b-tab-pane">
+            <div style="background:#FFFFFF; border:1px solid var(--border); border-radius:12px; padding:1.5rem; margin-bottom:1.5rem; box-shadow:var(--shadow-sm);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <h3 style="font-size:1.2rem; font-weight:800; color:var(--primary); margin:0;">
+                            <i class="fas fa-layer-group" style="color:#D4AF37;"></i> Diseña y Carga tus Propios Contratos
+                        </h3>
+                        <p style="color:#64748B; font-size:0.85rem; margin:4px 0 0;">
+                            Pega el texto legal de tu empresa y utiliza variables entre dobles llaves como <code>{{NOMBRE}}</code>, <code>{{RUT}}</code>, <code>{{CARGO}}</code>, <code>{{SUELDO}}</code>.
+                        </p>
+                    </div>
+                    <button type="button" class="btn-cta btn-gold" onclick="openTemplateEditor()">
+                        <i class="fas fa-plus"></i> Crear Nueva Plantilla Propia
+                    </button>
+                </div>
+
+                <div id="companyTemplatesList" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:1rem;">
+                    <div style="padding:2rem; text-align:center; color:#94A3B8; grid-column:1/-1;">Cargando plantillas de la empresa...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 3: EXPEDIENTE DIGITAL DEL TRABAJADOR -->
+        <div id="pane_expediente" class="b2b-tab-pane">
+            <div style="background:#FFFFFF; border:1px solid var(--border); border-radius:12px; padding:1.5rem; box-shadow:var(--shadow-sm);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                    <div>
+                        <h3 style="font-size:1.2rem; font-weight:800; color:var(--primary); margin:0;">
+                            <i class="fas fa-folder-open" style="color:#2563EB;"></i> Carpetas Digitales por Colaborador
+                        </h3>
+                        <p style="color:#64748B; font-size:0.85rem; margin:4px 0 0;">
+                            Historial centralizado de contratos primitivos, anexos de 40 Horas, comprobantes y finiquitos bajo custodia certificada.
+                        </p>
+                    </div>
+                    <input type="text" id="workerSearchInput" placeholder="Buscar por nombre o RUT..." style="padding:8px 12px; border:1px solid #CBD5E1; border-radius:6px; font-size:0.85rem; width:250px;" oninput="filterWorkerFolders()">
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                        <thead>
+                            <tr style="background:#F8FAFC; color:#64748B; text-align:left;">
+                                <th style="padding:0.75rem;">Colaborador</th>
+                                <th style="padding:0.75rem;">RUT</th>
+                                <th style="padding:0.75rem;">Cargo Actual</th>
+                                <th style="padding:0.75rem;">Documentos</th>
+                                <th style="padding:0.75rem;">Estado</th>
+                                <th style="padding:0.75rem; text-align:right;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="workerFoldersTableBody">
+                            <tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94A3B8;">Cargando expedientes de colaboradores...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 4: WHATSAPP OFICIAL DEDICADO -->
+        <div id="pane_whatsapp" class="b2b-tab-pane">
+            <div style="background:#FFFFFF; border:1px solid var(--border); border-radius:12px; padding:2rem; box-shadow:var(--shadow-sm); max-width:800px; margin:0 auto;">
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+                    <div style="width:54px; height:54px; border-radius:12px; background:#DCFCE7; color:#15803D; display:flex; align-items:center; justify-content:center; font-size:1.8rem;">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size:1.3rem; font-weight:800; color:var(--primary); margin:0;">WhatsApp Oficial de tu Propia Empresa</h3>
+                        <p style="color:#64748B; font-size:0.88rem; margin:4px 0 0;">
+                            Tus trabajadores reciben los enlaces de firma desde el número oficial de tu empresa vía Evolution API v2, generando 98% de tasa de apertura.
+                        </p>
+                    </div>
+                </div>
+
+                <form onsubmit="saveCompanyWhatsApp(event)">
+                    <div style="margin-bottom:1.25rem;">
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Número de WhatsApp Oficial (con código de país)</label>
+                        <input type="text" id="cfgWaPhone" class="form-control" style="width:100%; padding:10px 14px; border:1px solid #CBD5E1; border-radius:8px;" placeholder="+56912345678" value="+56984180479">
+                        <small style="color:#64748B;">Número corporativo que verán tus trabajadores al recibir la notificación de firma.</small>
+                    </div>
+
+                    <div style="margin-bottom:1.5rem;">
+                        <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Identificador de Instancia Dedicada</label>
+                        <input type="text" id="cfgWaInstance" class="form-control" style="width:100%; padding:10px 14px; border:1px solid #CBD5E1; border-radius:8px; font-family:monospace;" placeholder="sinnotario-empresa-instance" readonly>
+                        <small style="color:#64748B;">Canal seguro aprovisionado en alta disponibilidad bajo cifrado TLS.</small>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.85rem; color:#15803D; font-weight:700;">
+                            <i class="fas fa-check-circle"></i> Instancia Evolution API Activa y Homologada
+                        </span>
+                        <button type="submit" class="btn-cta btn-gold">
+                            <i class="fas fa-save"></i> Guardar Configuración WhatsApp
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -350,6 +499,66 @@ if (!$currentUser) {
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal de Creación / Edición de Plantilla Propia -->
+    <div id="templateModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#FFF; max-width:750px; width:90%; border-radius:12px; padding:2rem; box-shadow:var(--shadow-lg); max-height:90vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                <h3 style="font-weight:800; color:var(--primary); margin:0;">Diseñar Plantilla Propia de Contrato</h3>
+                <button type="button" style="background:none; border:none; font-size:1.5rem; cursor:pointer;" onclick="closeTemplateModal()">&times;</button>
+            </div>
+
+            <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:0.85rem; font-size:0.82rem; color:#1E40AF; margin-bottom:1.25rem;">
+                <strong>Instrucciones:</strong> Escribe o pega el texto legal de tu empresa. Inserta variables como <code>{{NOMBRE}}</code>, <code>{{RUT}}</code>, <code>{{CARGO}}</code>, <code>{{SUELDO}}</code>, <code>{{FECHA_INICIO}}</code>. El sistema las detectará automáticamente para armar tu planilla Excel personalizada.
+            </div>
+
+            <form onsubmit="saveCustomTemplate(event)">
+                <div style="margin-bottom:1rem;">
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Título de la Plantilla</label>
+                    <input type="text" id="tplTitleInput" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #CBD5E1; border-radius:6px;" placeholder="Ej. Contrato Faena Minera Antofagasta" required>
+                </div>
+
+                <div style="margin-bottom:1rem;">
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Categoría</label>
+                    <select id="tplCategorySelect" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #CBD5E1; border-radius:6px;">
+                        <option value="laboral">Laboral & RRHH (Contratos y Anexos)</option>
+                        <option value="comercial">Comercial & Servicios</option>
+                        <option value="arriendo">Inmobiliario & Arriendos</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom:1.25rem;">
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">Cuerpo del Contrato con Variables</label>
+                    <textarea id="tplBodyInput" rows="12" class="form-control" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:6px; font-family:monospace; font-size:0.85rem; line-height:1.4;" placeholder="En Santiago de Chile, comparecen por una parte {{EMPRESA_RAZON_SOCIAL}}, RUT {{EMPRESA_RUT}}, y por la otra don/doña {{NOMBRE}}, cédula nacional de identidad N° {{RUT}}..." required></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
+                    <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="closeTemplateModal()">Cancelar</button>
+                    <button type="submit" class="btn-cta btn-gold">Guardar Plantilla y Mapear Variables</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Detalle Expediente del Trabajador -->
+    <div id="workerDetailModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#FFF; max-width:700px; width:90%; border-radius:12px; padding:2rem; box-shadow:var(--shadow-lg); max-height:85vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                <div>
+                    <h3 style="font-weight:800; color:var(--primary); margin:0;" id="workerModalName">Patricio Alarcón Soto</h3>
+                    <p style="color:#64748B; font-size:0.85rem; margin:2px 0 0;" id="workerModalRut">RUT: 14.234.567-6 | Cargo: Operador Técnico</p>
+                </div>
+                <button type="button" style="background:none; border:none; font-size:1.5rem; cursor:pointer;" onclick="closeWorkerDetailModal()">&times;</button>
+            </div>
+
+            <div style="border-top:1px solid #E2E8F0; padding-top:1rem;">
+                <h4 style="font-size:0.95rem; font-weight:800; color:#334155; margin-bottom:0.75rem;">Documentos en Custodia del Trabajador</h4>
+                <div id="workerDocsContainer">
+                    <p style="color:#94A3B8; font-size:0.85rem;">Cargando documentos del expediente...</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -654,6 +863,250 @@ if (!$currentUser) {
                 return;
             }
             window.location.href = `api/index.php?action=b2b_export_dt&batch_id=${currentBatch.batch_id}`;
+        }
+
+        // ==========================================
+        // FUNCIONALIDADES PASO 2: PESTAÑAS, EXPEDIENTES, PLANTILLAS & WHATSAPP
+        // ==========================================
+        let allWorkerFolders = [];
+
+        function switchB2BTab(tabId, btn) {
+            document.querySelectorAll('.tab-btn-b2b').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.b2b-tab-pane').forEach(p => p.classList.remove('active'));
+
+            if (btn) btn.classList.add('active');
+            const target = document.getElementById('pane_' + tabId);
+            if (target) target.classList.add('active');
+
+            if (tabId === 'plantillas') loadCompanyTemplates();
+            if (tabId === 'expediente') loadWorkerFolders();
+            if (tabId === 'whatsapp') {
+                document.getElementById('cfgWaPhone').value = currentCompany.whatsapp_phone || '+56984180479';
+                document.getElementById('cfgWaInstance').value = currentCompany.whatsapp_instance_id || 'sinnotario-b2b-' + currentCompany.id;
+            }
+        }
+
+        // Cargar plantillas propias
+        async function loadCompanyTemplates() {
+            if (!currentCompany || !currentCompany.id) return;
+            try {
+                const res = await fetch(`api/index.php?action=b2b_get_company_templates&company_id=${currentCompany.id}`);
+                const json = await res.json();
+                const container = document.getElementById('companyTemplatesList');
+
+                if (json.success && json.data && json.data.length > 0) {
+                    container.innerHTML = json.data.map(t => `
+                        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:1.25rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <h4 style="font-weight:800; color:var(--primary); margin:0 0 6px;">${t.titulo}</h4>
+                                <span style="font-size:0.72rem; font-weight:700; background:#E2E8F0; color:#334155; padding:2px 8px; border-radius:4px;">${t.categoria}</span>
+                            </div>
+                            <div style="font-size:0.8rem; color:#64748B; margin-bottom:10px;">
+                                Variables detectadas (${t.variables.length}):<br>
+                                ${t.variables.map(v => `<code style="background:#FFF; border:1px solid #CBD5E1; padding:1px 5px; border-radius:3px; margin:2px; display:inline-block;">{{${v}}}</code>`).join('')}
+                            </div>
+                            <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                                <button type="button" class="btn-cta" style="background:#FFF; color:#334155 !important; border:1px solid #CBD5E1; padding:4px 10px; font-size:0.75rem;" onclick="downloadCustomTemplateCsv(${t.id}, '${t.titulo}', ${JSON.stringify(t.variables).replace(/"/g, '&quot;')})">
+                                    <i class="fas fa-file-csv"></i> Descargar Excel Modelo
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `
+                        <div style="padding:2.5rem; text-align:center; color:#94A3B8; grid-column:1/-1;">
+                            <i class="fas fa-file-contract fa-3x" style="margin-bottom:0.75rem; color:#CBD5E1;"></i>
+                            <p style="margin:0; font-size:0.95rem;">Aún no has registrado plantillas propias para tu empresa.</p>
+                            <button type="button" class="btn-cta btn-gold" style="margin-top:1rem; font-size:0.85rem;" onclick="openTemplateEditor()">
+                                <i class="fas fa-plus"></i> Crear Mi Primera Plantilla
+                            </button>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error("Error al cargar plantillas:", e);
+            }
+        }
+
+        function openTemplateEditor() {
+            document.getElementById('templateModal').style.display = 'flex';
+        }
+
+        function closeTemplateModal() {
+            document.getElementById('templateModal').style.display = 'none';
+        }
+
+        async function saveCustomTemplate(e) {
+            e.preventDefault();
+            const titulo = document.getElementById('tplTitleInput').value.trim();
+            const cuerpo = document.getElementById('tplBodyInput').value.trim();
+            const categoria = document.getElementById('tplCategorySelect').value;
+
+            try {
+                const res = await fetch('api/index.php?action=b2b_save_company_template', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        company_id: currentCompany.id,
+                        titulo: titulo,
+                        cuerpo_texto: cuerpo,
+                        categoria: categoria
+                    })
+                });
+                const json = await res.json();
+                if (json.success) {
+                    alert(`✅ Plantilla Guardada Exitosamente.\nSe detectaron ${json.data.total_variables} variables dinámicas:\n` + json.data.variables.map(v => '• {{' + v + '}}').join('\n'));
+                    closeTemplateModal();
+                    loadCompanyTemplates();
+                } else {
+                    alert("Error: " + json.error);
+                }
+            } catch (e) {
+                alert("Error al guardar: " + e.message);
+            }
+        }
+
+        function downloadCustomTemplateCsv(id, title, vars) {
+            const defaultCols = vars.length > 0 ? vars : ['nombre', 'rut', 'email', 'telefono', 'cargo', 'sueldo'];
+            const header = defaultCols.join(',') + "\n";
+            const sampleRow = defaultCols.map(v => 'Ejemplo_' + v).join(',') + "\n";
+            const blob = new Blob(["\uFEFF" + header + sampleRow], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `plantilla_${title.toLowerCase().replace(/\s+/g, '_')}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Cargar expedientes digitales
+        async function loadWorkerFolders() {
+            if (!currentCompany || !currentCompany.id) return;
+            try {
+                const res = await fetch(`api/index.php?action=b2b_get_worker_folders&company_id=${currentCompany.id}`);
+                const json = await res.json();
+                const tbody = document.getElementById('workerFoldersTableBody');
+
+                if (json.success && json.data) {
+                    allWorkerFolders = json.data;
+                    renderWorkerFolders(allWorkerFolders);
+                }
+            } catch (e) {
+                console.error("Error al cargar expedientes:", e);
+            }
+        }
+
+        function renderWorkerFolders(folders) {
+            const tbody = document.getElementById('workerFoldersTableBody');
+            if (!folders || folders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="padding:2rem; text-align:center; color:#94A3B8;">No hay trabajadores registrados en el expediente digital todavía. Se crearán automáticamente con cada emisión de contrato.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = folders.map(f => `
+                <tr style="border-bottom: 1px solid #E2E8F0;">
+                    <td style="padding:0.75rem; font-weight:700; color:var(--primary);">${f.colaborador_nombre}</td>
+                    <td style="padding:0.75rem; font-family:monospace;">${f.colaborador_rut}</td>
+                    <td style="padding:0.75rem;">${f.cargo_actual || 'Operador'}</td>
+                    <td style="padding:0.75rem;">
+                        <span style="background:#EFF6FF; color:#1D4ED8; font-weight:800; font-size:0.78rem; padding:2px 8px; border-radius:10px;">
+                            ${f.total_documentos || 1} doc(s)
+                        </span>
+                    </td>
+                    <td style="padding:0.75rem;">
+                        <span style="background:#DCFCE7; color:#15803D; font-weight:700; font-size:0.75rem; padding:2px 8px; border-radius:4px;">
+                            ${f.estado_laboral || 'ACTIVO'}
+                        </span>
+                    </td>
+                    <td style="padding:0.75rem; text-align:right;">
+                        <button type="button" class="btn-cta btn-gold" style="padding:4px 10px; font-size:0.75rem;" onclick="viewWorkerFolderDetail(${f.id})">
+                            <i class="fas fa-folder-open"></i> Ver Expediente
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterWorkerFolders() {
+            const q = document.getElementById('workerSearchInput').value.toLowerCase().trim();
+            const filtered = allWorkerFolders.filter(f => 
+                (f.colaborador_nombre && f.colaborador_nombre.toLowerCase().includes(q)) ||
+                (f.colaborador_rut && f.colaborador_rut.toLowerCase().includes(q))
+            );
+            renderWorkerFolders(filtered);
+        }
+
+        async function viewWorkerFolderDetail(folderId) {
+            try {
+                const res = await fetch(`api/index.php?action=b2b_get_worker_folder_detail&folder_id=${folderId}`);
+                const json = await res.json();
+                if (json.success && json.data) {
+                    const f = json.data.folder;
+                    const docs = json.data.documents || [];
+
+                    document.getElementById('workerModalName').textContent = f.colaborador_nombre;
+                    document.getElementById('workerModalRut').textContent = `RUT: ${f.colaborador_rut} | Cargo: ${f.cargo_actual || 'Colaborador'} | Correo: ${f.colaborador_email || '-'}`;
+
+                    const container = document.getElementById('workerDocsContainer');
+                    if (docs.length === 0) {
+                        container.innerHTML = `<p style="color:#94A3B8; font-size:0.85rem;">No hay documentos registrados aún.</p>`;
+                    } else {
+                        container.innerHTML = docs.map(d => `
+                            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:0.85rem; margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <div style="font-weight:700; color:var(--primary); font-size:0.9rem;">${d.titulo}</div>
+                                    <div style="font-size:0.78rem; color:#64748B;">
+                                        Tipo: <strong>${d.tipo_documento}</strong> | Fecha: ${d.fecha_emision || d.created_at} | Estado: <span style="color:#15803D; font-weight:700;">${d.estado_firma}</span>
+                                    </div>
+                                    ${d.pdf_sha256 ? `<div style="font-size:0.7rem; font-family:monospace; color:#94A3B8;">Hash: ${d.pdf_sha256.substring(0,24)}...</div>` : ''}
+                                </div>
+                                <div>
+                                    ${d.codigo_verificacion ? `
+                                        <a href="verificar.php?code=${d.codigo_verificacion}" target="_blank" class="btn-cta" style="background:#FFF; color:#334155 !important; border:1px solid #CBD5E1; padding:4px 8px; font-size:0.75rem;">
+                                            <i class="fas fa-qrcode"></i> Verificar
+                                        </a>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+
+                    document.getElementById('workerDetailModal').style.display = 'flex';
+                }
+            } catch (e) {
+                alert("Error al cargar expediente: " + e.message);
+            }
+        }
+
+        function closeWorkerDetailModal() {
+            document.getElementById('workerDetailModal').style.display = 'none';
+        }
+
+        async function saveCompanyWhatsApp(e) {
+            e.preventDefault();
+            const phone = document.getElementById('cfgWaPhone').value.trim();
+            const instance = document.getElementById('cfgWaInstance').value.trim();
+
+            try {
+                const res = await fetch('api/index.php?action=b2b_update_whatsapp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        company_id: currentCompany.id,
+                        whatsapp_phone: phone,
+                        whatsapp_instance_id: instance
+                    })
+                });
+                const json = await res.json();
+                if (json.success) {
+                    alert("✅ " + json.data.message);
+                    currentCompany.whatsapp_phone = phone;
+                } else {
+                    alert("Error: " + json.error);
+                }
+            } catch (e) {
+                alert("Error al guardar WhatsApp: " + e.message);
+            }
         }
 
         // Renderizar historial de lotes

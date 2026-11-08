@@ -1,5 +1,38 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-08 00:36 UTC-3] - SOL-0066
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0066`
+- **Alcance de los Cambios:**
+  - **Paso 2: Plantillas Propias de la Empresa, Expediente Digital del Trabajador y WhatsApp Dedicado:**
+    1. **Esquema de Base de Datos SQLite:**
+       - `company_templates`: Gestión de contratos personalizados de la empresa, clasificación por categoría y detección automática de variables (`variables_json`).
+       - `worker_folders`: Agrupador único por empresa y RUT de colaborador con estado laboral, cargo actual y contador de documentos.
+       - `worker_documents`: Trazabilidad histórica de contratos iniciales, anexos de jornada (40 Horas), comprobantes de entrega y finiquitos bajo custodia forense con hash SHA-256.
+    2. **Lógica de Servicios en Backend (`B2BService.php`):**
+       - `saveCompanyTemplate`: Parseo con expresiones regulares de variables `{{...}}`, creación de slug único y persistencia.
+       - `getCompanyTemplates`: Consulta de plantillas activas de la empresa con su lista de variables.
+       - `linkWorkerFolderDocument`: Vinculación automática en la emisión masiva de contratos para alimentar el expediente digital del colaborador en caliente.
+       - `getCompanyWorkerFolders` y `getWorkerFolderDetail`: Consultas optimizadas con relaciones hacia la tabla `documents`.
+       - `updateCompanyWhatsApp`: Configuración de número corporativo e instancia dedicada Evolution API v2.
+    3. **Endpoints de API (`api/index.php`):**
+       - `b2b_get_worker_folders`, `b2b_get_worker_folder_detail`, `b2b_save_company_template`, `b2b_get_company_templates`, `b2b_update_whatsapp`.
+    4. **Frontend y UX Corporativo Multitarea (`empresas.php`):**
+       - Sistema de navegación por 4 pestañas interactivas sin recarga:
+         - **1. Smart Bulk & Emisión:** Carga masiva CSV/Excel, validación de RUT Módulo 11, firma 1-clic y conector DT.
+         - **2. Mis Plantillas Propias:** Editor de contratos propios, visualización de variables detectadas y botón de descarga de plantilla Excel a la medida exacta de su contrato.
+         - **3. Expediente del Trabajador:** Buscador en vivo por RUT/nombre, tabla de carpetas y modal con visor cronológico de documentos y hashes de custodia.
+         - **4. WhatsApp Oficial:** Panel de control de número de chip corporativo e instancia dedicada Evolution API.
+- **Pruebas Validadas:**
+  - Validación sintáctica PHP Lint en servidor: 0 errores en todos los archivos.
+  - Creación de plantilla personalizada con 6 variables dinámicas verificada con éxito.
+  - Vinculación y apertura de expediente digital de colaborador validada.
+  - Smoke tests HTTP en producción retornando `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 23:57 UTC-3] - SOL-0065
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

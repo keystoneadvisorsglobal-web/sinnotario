@@ -120,6 +120,55 @@ class Database {
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
             );");
+
+            // Paso 2: Plantillas Propias de la Empresa con Variables Dinámicas (SOL-0066)
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS company_templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_id INTEGER NOT NULL,
+                slug VARCHAR(100) NOT NULL,
+                titulo VARCHAR(200) NOT NULL,
+                categoria VARCHAR(50) DEFAULT 'laboral', -- laboral, comercial, rrhh, arriendo
+                cuerpo_texto TEXT NOT NULL, -- Texto legal con variables {{NOMBRE}}, {{RUT}}, {{CARGO}}, etc.
+                variables_json TEXT, -- Array JSON con los nombres de variables detectadas
+                is_active BOOLEAN DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+            );");
+
+            // Paso 2: Expediente Digital del Trabajador (Agrupador histórico de contratos, anexos y finiquitos)
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS worker_folders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_id INTEGER NOT NULL,
+                colaborador_rut VARCHAR(20) NOT NULL,
+                colaborador_nombre VARCHAR(150) NOT NULL,
+                colaborador_email VARCHAR(150),
+                colaborador_telefono VARCHAR(30),
+                cargo_actual VARCHAR(150),
+                fecha_ingreso DATE,
+                estado_laboral VARCHAR(30) DEFAULT 'ACTIVO', -- ACTIVO, LICENCIA, FINIQUITADO
+                total_documentos INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+                UNIQUE(company_id, colaborador_rut)
+            );");
+
+            // Paso 2: Documentos asociados al expediente del trabajador
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS worker_documents (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                worker_folder_id INTEGER NOT NULL,
+                document_id INTEGER,
+                tipo_documento VARCHAR(50) NOT NULL, -- CONTRATO_INICIAL, ANEXO_40_HORAS, ANEXO_SUELDO, FINIQUITO, EPP, VACACIONES
+                titulo VARCHAR(200) NOT NULL,
+                fecha_emision DATE,
+                estado_firma VARCHAR(30) DEFAULT 'PENDIENTE',
+                pdf_r2_key VARCHAR(255),
+                pdf_sha256 VARCHAR(64),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (worker_folder_id) REFERENCES worker_folders(id) ON DELETE CASCADE,
+                FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE SET NULL
+            );");
             $this->pdo->exec("CREATE TABLE IF NOT EXISTS companies (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,

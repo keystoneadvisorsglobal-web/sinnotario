@@ -765,6 +765,79 @@ try {
             jsonResponse(true, $logs);
             break;
 
+        // 24. Obtener Expedientes Digitales de Trabajadores (Paso 2)
+        case 'b2b_get_worker_folders':
+            $companyId = (int)($_GET['company_id'] ?? 0);
+            if ($companyId <= 0) {
+                jsonResponse(false, null, 'ID de empresa requerido', 400);
+            }
+
+            $folders = B2BService::getCompanyWorkerFolders($companyId);
+            jsonResponse(true, $folders);
+            break;
+
+        // 25. Obtener Detalle de Expediente Digital con sus Documentos
+        case 'b2b_get_worker_folder_detail':
+            $folderId = (int)($_GET['folder_id'] ?? 0);
+            if ($folderId <= 0) {
+                jsonResponse(false, null, 'ID de carpeta requerido', 400);
+            }
+
+            $detail = B2BService::getWorkerFolderDetail($folderId);
+            jsonResponse(true, $detail);
+            break;
+
+        // 26. Guardar / Actualizar Plantilla Propia de Empresa (Paso 2)
+        case 'b2b_save_company_template':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $companyId = (int)($input['company_id'] ?? 0);
+            $titulo = trim($input['titulo'] ?? '');
+            $cuerpo = trim($input['cuerpo_texto'] ?? '');
+            $categoria = trim($input['categoria'] ?? 'laboral');
+            $tplId = isset($input['template_id']) ? (int)$input['template_id'] : null;
+
+            if ($companyId <= 0 || empty($titulo) || empty($cuerpo)) {
+                jsonResponse(false, null, 'Datos obligatorios incompletos (título y cuerpo de contrato requeridos)', 400);
+            }
+
+            $resTpl = B2BService::saveCompanyTemplate($companyId, $titulo, $cuerpo, $categoria, $tplId);
+            jsonResponse(true, $resTpl);
+            break;
+
+        // 27. Obtener Plantillas Propias de la Empresa
+        case 'b2b_get_company_templates':
+            $companyId = (int)($_GET['company_id'] ?? 0);
+            if ($companyId <= 0) {
+                jsonResponse(false, null, 'ID de empresa requerido', 400);
+            }
+
+            $tpls = B2BService::getCompanyTemplates($companyId);
+            jsonResponse(true, $tpls);
+            break;
+
+        // 28. Configurar WhatsApp Oficial Dedicado de la Empresa
+        case 'b2b_update_whatsapp':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $companyId = (int)($input['company_id'] ?? 0);
+            $phone = trim($input['whatsapp_phone'] ?? '');
+            $instanceId = trim($input['whatsapp_instance_id'] ?? '');
+
+            if ($companyId <= 0 || empty($phone)) {
+                jsonResponse(false, null, 'Teléfono WhatsApp requerido', 400);
+            }
+
+            $resWa = B2BService::updateCompanyWhatsApp($companyId, $phone, $instanceId);
+            jsonResponse(true, $resWa);
+            break;
+
         // 17. Estado de salud / Check
         case 'health':
             $r2 = new StorageR2Adapter();

@@ -389,6 +389,25 @@ class B2BService {
             ");
             $stmtUpdItem->execute([$docId, $now, $item['id']]);
 
+            // Paso 2: Vincular o actualizar Expediente Digital del Trabajador (worker_folders)
+            try {
+                self::linkWorkerFolderDocument(
+                    $batch['company_id'],
+                    $item['colaborador_rut'],
+                    $item['colaborador_nombre'],
+                    $item['colaborador_email'],
+                    $item['colaborador_telefono'],
+                    $item['cargo'],
+                    $docId,
+                    'CONTRATO_INICIAL',
+                    $docTitle,
+                    $pdfResult['pdf_sha256'] ?? null,
+                    $pdfResult['r2_key'] ?? null
+                );
+            } catch (Exception $eExp) {
+                error_log("Error vinculando expediente digital: " . $eExp->getMessage());
+            }
+
             $signedCount++;
         }
 
@@ -464,6 +483,154 @@ class B2BService {
     }
 
     /**
+     * Vincula o crea el expediente digital de un trabajador y registra un nuevo documento
+     */
+    public static function linkWorkerFolderDocument($companyId, $rut, $nombre, $email, $tel, $cargo, $docId, $tipoDoc, $tituloDoc, $sha256 = null, $r2Key = null) {
+        $pdo = Database::getInstance();
+
+        // 1. Obtener o crear carpeta del trabajador
+        $stmtFolder = $pdo->prepare("SELECT * FROM worker_folders WHERE company_id = ? AND colaborador_rut = ?");
+        $stmtFolder->execute([$companyId, $rut]);
+        $folder = $stmtFolder->fetch(PDO::FETCH_ASSOC);
+
+        if (!$folder) {
+            $stmtInsFolder = $pdo->prepare("
+                INSERT INTO worker_folders (
+                    company_id, colaborador_rut, colaborador_nombre, colaborador_email,
+                    colaborador_telefono, cargo_actual, fecha_ingreso, total_documentos
+                ) VALUES (?, ?, ?, ?, ?, ?, date('now'), 1)
+            ");
+            $stmtInsFolder->execute([$companyId, $rut, $nombre, $email, $tel, $cargo]);
+            $folderId = $pdo->lastInsertId();
+        } else {
+            $folderId = $folder['id'];
+            $stmtUpdFolder = $pdo->prepare("
+                UPDATE worker_folders
+                SET colaborador_nombre = COALESCE(?, colaborador_nombre),
+                    colaborador_email = COALESCE(?, colaborador_email),
+                    cargo_actual = COALESCE(?, cargo_actual),
+                    total_documentos = total_documentos + 1,
+                    updated_at = datetime('now')
+                WHERE id = ?
+            ");
+            $stmtUpdFolder->execute([$nombre, $email, $cargo, $folderId]);
+        }
+
+        // 2. Insertar documento en el expediente
+        $stmtDoc = $pdo->prepare("
+            INSERT INTO worker_documents (
+                worker_folder_id, document_id, tipo_documento, titulo,
+                fecha_emision, estado_firma, pdf_r2_key, pdf_sha256
+            ) VALUES (?, ?, ?, ?, date('now'), 'FIRMADO', ?, ?)
+        ");
+        $stmtDoc->execute([$folderId, $docId, $tipoDoc, $tituloDoc, $r2Key, $sha256]);
+
+        return $folderId;
+    }
+
+    /**
+     * Obtiene el listado de expedientes digitales de la empresa
+     */
+    public static function getCompanyWorkerFolders($companyId) {
+        $pdo = Database::getInstance();
+        $stmt = $pdo->prepare("
+            SELECT f.*,
+                   (SELECT COUNT(*) FROM worker_documents WHERE worker_folder_id = f.id) as docs_count
+            FROM worker_folders f
+            WHERE f.company_id = ?
+            ORDER BY f.colaborador_nombre ASC
+        ");
+        $stmt->execute([$companyId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Obtiene el expediente digital detallado de un trabajador
+     */
+    public static function getWorkerFolderDetail($folderId) {
+        $pdo = Database::getInstance();
+        $stmtF = $pdo->prepare("SELECT * FROM worker_folders WHERE id = ?");
+        $stmtF->execute([$folderId]);
+        $folder = $stmtF->fetch(PDO::FETCH_ASSOC);
+
+        if (!$folder) {
+            throw new Exception("Expediente no encontrado.");
+        }
+
+        $stmtDocs = $pdo->prepare("
+            SELECT d.*, doc.codigo_verificacion, doc.pdf_sha256 as doc_sha, doc.pdf_r2_key as doc_r2
+            FROM worker_documents d
+            LEFT JOIN documents doc ON d.document_id = doc.id
+            WHERE d.worker_folder_id = ?
+            ORDER BY d.id DESC
+        ");
+        $stmtDocs->execute([$folderId]);
+        $docs = $stmtDocs->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'folder' => $folder,
+            'documents' => $docs
+        ];
+    }
+
+    /**
+     * Guarda o actualiza una plantilla propia de la empresa con detección de variables {{...}}
+     */
+    public static function saveCompanyTemplate($companyId, $titulo, $cuerpoTexto, $categoria = 'laboral', $templateId = null) {
+        $pdo = Database::getInstance();
+
+        // Detectar variables encerradas en {{...}}
+        preg_match_all('/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/', $cuerpoTexto, $matches);
+        $rawVars = array_unique($matches[1] ?? []);
+        $variables = array_values($rawVars);
+
+        $slug = 'custom-' . strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $titulo)) . '-' . substr(md5(uniqid()), 0, 4);
+
+        if ($templateId) {
+            $stmt = $pdo->prepare("
+                UPDATE company_templates
+                SET titulo = ?, cuerpo_texto = ?, variables_json = ?, categoria = ?, updated_at = datetime('now')
+                WHERE id = ? AND company_id = ?
+            ");
+            $stmt->execute([$titulo, $cuerpoTexto, json_encode($variables, JSON_UNESCAPED_UNICODE), $categoria, $templateId, $companyId]);
+            $id = $templateId;
+        } else {
+            $stmt = $pdo->prepare("
+                INSERT INTO company_templates (
+                    company_id, slug, titulo, categoria, cuerpo_texto, variables_json
+                ) VALUES (?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([$companyId, $slug, $titulo, $categoria, $cuerpoTexto, json_encode($variables, JSON_UNESCAPED_UNICODE)]);
+            $id = $pdo->lastInsertId();
+        }
+
+        return [
+            'id' => $id,
+            'titulo' => $titulo,
+            'slug' => $slug,
+            'categoria' => $categoria,
+            'variables' => $variables,
+            'total_variables' => count($variables)
+        ];
+    }
+
+    /**
+     * Obtiene las plantillas propias de una empresa
+     */
+    public static function getCompanyTemplates($companyId) {
+        $pdo = Database::getInstance();
+        $stmt = $pdo->prepare("SELECT * FROM company_templates WHERE company_id = ? AND is_active = 1 ORDER BY id DESC");
+        $stmt->execute([$companyId]);
+        $templates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($templates as &$t) {
+            $t['variables'] = !empty($t['variables_json']) ? json_decode($t['variables_json'], true) : [];
+        }
+
+        return $templates;
+    }
+
+    /**
      * Recargar bolsa de firmas prepagadas
      */
     public static function rechargePrepagoBag($companyId, $packType) {
@@ -515,6 +682,26 @@ class B2BService {
             'saldo_anterior' => $saldoActual,
             'saldo_nuevo' => $nuevoSaldo,
             'message' => "Bolsa de {$pack['firmas']} firmas activada exitosamente."
+        ];
+    }
+
+    /**
+     * Actualiza la configuración de WhatsApp Oficial Dedicado de la empresa
+     */
+    public static function updateCompanyWhatsApp($companyId, $phone, $instanceId) {
+        $pdo = Database::getInstance();
+        $stmt = $pdo->prepare("
+            UPDATE companies
+            SET whatsapp_phone = ?, whatsapp_instance_id = ?, updated_at = datetime('now')
+            WHERE id = ?
+        ");
+        $stmt->execute([$phone, $instanceId, $companyId]);
+
+        return [
+            'success' => true,
+            'whatsapp_phone' => $phone,
+            'whatsapp_instance_id' => $instanceId,
+            'message' => 'Configuración de WhatsApp Oficial Dedicado actualizada.'
         ];
     }
 
