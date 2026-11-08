@@ -82,6 +82,64 @@ class Database {
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );");
 
+            // Tablas B2B Corporativas (SOL-0063)
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS companies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                rut VARCHAR(20) NOT NULL,
+                razon_social VARCHAR(200) NOT NULL,
+                giro VARCHAR(200),
+                direccion VARCHAR(255),
+                comuna VARCHAR(100),
+                ciudad VARCHAR(100),
+                rep_legal_nombre VARCHAR(150),
+                rep_legal_rut VARCHAR(20),
+                rep_legal_email VARCHAR(150),
+                whatsapp_phone VARCHAR(30),
+                whatsapp_instance_id VARCHAR(100),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            );");
+
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS b2b_batches (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_id INTEGER,
+                user_id INTEGER,
+                titulo VARCHAR(255) NOT NULL,
+                template_slug VARCHAR(100) NOT NULL DEFAULT 'contrato-individual-trabajo',
+                total_records INTEGER DEFAULT 0,
+                valid_records INTEGER DEFAULT 0,
+                invalid_records INTEGER DEFAULT 0,
+                status VARCHAR(30) DEFAULT 'BORRADOR', -- BORRADOR, EN_FIRMA, COMPLETADO
+                batch_hash VARCHAR(64),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            );");
+
+            $this->pdo->exec("CREATE TABLE IF NOT EXISTS b2b_batch_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                batch_id INTEGER NOT NULL,
+                document_id INTEGER,
+                fila_num INTEGER NOT NULL,
+                colaborador_nombre VARCHAR(150) NOT NULL,
+                colaborador_rut VARCHAR(20) NOT NULL,
+                colaborador_email VARCHAR(150),
+                colaborador_telefono VARCHAR(30),
+                cargo VARCHAR(150),
+                sueldo VARCHAR(50),
+                datos_extra TEXT, -- JSON con campos dinámicos
+                is_valid BOOLEAN DEFAULT 1,
+                error_detalle TEXT,
+                status VARCHAR(30) DEFAULT 'PENDIENTE', -- PENDIENTE, FIRMADO, ERROR
+                fecha_firma DATETIME,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (batch_id) REFERENCES b2b_batches(id) ON DELETE CASCADE,
+                FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE SET NULL
+            );");
+
         } catch (Exception $e) {
             error_log("Database migration warning: " . $e->getMessage());
         }

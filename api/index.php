@@ -17,6 +17,7 @@ require_once __DIR__ . '/adapters/StorageR2Adapter.php';
 require_once __DIR__ . '/../src/Services/DocumentPdfService.php';
 require_once __DIR__ . '/../src/Services/GeminiLegalService.php';
 require_once __DIR__ . '/../src/Services/AuthService.php';
+require_once __DIR__ . '/../src/Services/B2BService.php';
 
 $pdo = Database::getInstance();
 $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -619,6 +620,117 @@ try {
             $stmtUpd->execute([$nombre, $apellido, $telefono, $rut, $empresaNombre, $empresaRut, $user['id']]);
 
             jsonResponse(true, ['message' => 'Perfil actualizado exitosamente']);
+            break;
+
+        // ==========================================
+        // ENDPOINTS B2B EMPRESAS (SOL-0063)
+        // ==========================================
+
+        // 18. Obtener datos de empresa del usuario autenticado o crear perfil empresa
+        case 'b2b_get_company':
+            $user = AuthService::getCurrentUser();
+            $userId = $user ? $user['id'] : null;
+
+            $rutEmpresa = isset($_GET['rut']) ? trim($_GET['rut']) : ($user['empresa_rut'] ?? '78.089.686-8');
+            $razonSocial = isset($_GET['razon_social']) ? trim($_GET['razon_social']) : ($user['empresa_razon_social'] ?? 'Keystone Advisors SpA');
+
+            $company = B2BService::getOrCreateCompany($userId, [
+                'rut' => $rutEmpresa,
+                'razon_social' => $razonSocial,
+                'rep_legal_nombre' => $user ? ($user['nombre'] . ' ' . $user['apellido']) : 'Maritza Vásquez',
+                'rep_legal_rut' => $user['rut'] ?? '17.297.004-4',
+                'rep_legal_email' => $user['email'] ?? 'contacto@sinnotario.cl'
+            ]);
+
+            // Obtener historial de lotes emitidos
+            $stmtBatches = $pdo->prepare("
+                SELECT b.*, 
+                       (SELECT COUNT(*) FROM b2b_batch_items WHERE batch_id = b.id AND status = 'FIRMADO') as firmados_count
+                FROM b2b_batches b
+                WHERE b.company_id = ? OR (b.user_id IS NOT NULL AND b.user_id = ?)
+                ORDER BY b.id DESC
+                LIMIT 20
+            ");
+            $stmtBatches->execute([$company['id'], $userId]);
+            $batches = $stmtBatches->fetchAll(PDO::FETCH_ASSOC);
+
+            jsonResponse(true, [
+                'company' => $company,
+                'batches' => $batches
+            ]);
+            break;
+
+        // 19. Cargar y validar lote de nómina masiva
+        case 'b2b_upload_batch':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+
+            $user = AuthService::getCurrentUser();
+            $userId = $user ? $user['id'] : null;
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!$input) {
+                jsonResponse(false, null, 'Payload JSON requerido', 400);
+            }
+
+            $titulo = trim($input['titulo'] ?? ('Lote Nómina - ' . date('d/m/Y H:i')));
+            $templateSlug = trim($input['template_slug'] ?? 'contrato-individual-trabajo');
+            $rows = $input['rows'] ?? [];
+
+            if (empty($rows) || !is_array($rows)) {
+                jsonResponse(false, null, 'No se proporcionaron filas para procesar', 400);
+            }
+
+            $companyData = $input['company'] ?? [
+                'rut' => $user['empresa_rut'] ?? '78.089.686-8',
+                'razon_social' => $user['empresa_razon_social'] ?? 'Keystone Advisors SpA',
+                'rep_legal_nombre' => $user ? ($user['nombre'] . ' ' . $user['apellido']) : 'Maritza Vásquez',
+                'rep_legal_rut' => $user['rut'] ?? '17.297.004-4',
+                'rep_legal_email' => $user['email'] ?? 'contacto@sinnotario.cl'
+            ];
+
+            $company = B2BService::getOrCreateCompany($userId, $companyData);
+            $batchResult = B2BService::processBatchUpload($userId, $company['id'], $titulo, $templateSlug, $rows);
+
+            jsonResponse(true, [
+                'batch' => $batchResult,
+                'company' => $company
+            ]);
+            break;
+
+        // 20. Firmar masivamente lote en 1 Clic (Generación de contratos + PDFs con FEA/FES)
+        case 'b2b_sign_batch':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $batchId = (int)($input['batch_id'] ?? 0);
+
+            if ($batchId <= 0) {
+                jsonResponse(false, null, 'ID de lote inválido', 400);
+            }
+
+            $repLegalData = $input['rep_legal'] ?? [];
+            $resSign = B2BService::signBatch($batchId, $repLegalData);
+
+            jsonResponse(true, $resSign);
+            break;
+
+        // 21. Exportar Lote a Formato Libro Digital DT (Ley N° 21.327)
+        case 'b2b_export_dt':
+            $batchId = (int)($_GET['batch_id'] ?? 0);
+            if ($batchId <= 0) {
+                jsonResponse(false, null, 'ID de lote requerido', 400);
+            }
+
+            $csvData = B2BService::exportDtCsv($batchId);
+            header('Content-Type: text/csv; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="Libro_Digital_DT_Lote_' . $batchId . '.csv"');
+            echo "\xEF\xBB\xBF"; // UTF-8 BOM para Excel
+            echo $csvData;
+            exit;
             break;
 
         // 17. Estado de salud / Check

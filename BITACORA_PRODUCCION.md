@@ -1,5 +1,44 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-07 23:15 UTC-3] - SOL-0063
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0063`
+- **Alcance de los Cambios:**
+  - **Backend y Suite Corporativa B2B Empresas (`empresas.php`):**
+    1. **Esquema de Base de Datos SQLite:**
+       - Se diseñaron e implementaron las tablas relacionales para el ecosistema B2B corporativo:
+         - `companies`: Almacenamiento de razón social, RUT de la empresa, giro, dirección, representante legal (nombre, RUT, correo) y canal dedicado de WhatsApp (`whatsapp_phone`, `whatsapp_instance_id`).
+         - `b2b_batches`: Cabecera de lotes de emisión masiva (título, plantilla, conteo de válidos/inválidos, hash criptográfico SHA-256 del lote, estado `BORRADOR` / `EN_FIRMA` / `COMPLETADO`).
+         - `b2b_batch_items`: Detalle línea a línea de colaboradores (RUT, nombre, correo, teléfono, cargo, sueldo, estado de validación Módulo 11 y vínculo directo al contrato `document_id`).
+    2. **Servicio Centralizado B2B (`B2BService.php`):**
+       - Validador y formateador de RUT chileno con algoritmo oficial Módulo 11.
+       - Gestor de empresa por usuario o por RUT.
+       - Procesador e ingestor de lotes con categorización en tiempo real.
+       - Motor de firma masiva en 1 Clic (`signBatch`): genera automáticamente documentos individuales en la tabla `documents`, convoca a los firmantes (`document_signers`), estampa la firma del representante legal (`FEA`), invoca el generador criptográfico `DocumentPdfService::generateAndVaultDocument()` y actualiza el estado.
+       - Generador del archivo oficial para el Libro Digital DT de la Dirección del Trabajo conforme a la Ley N° 21.327 (`RUT_EMPLEADOR;RAZON_SOCIAL;RUT_TRABAJADOR;NOMBRE_TRABAJADOR;CARGO;SUELDO_BASE;FECHA_INICIO;JORNADA;ESTADO_CONTRATO;CODIGO_SINNOTARIO`).
+    3. **Endpoints de API (`api/index.php`):**
+       - `b2b_get_company`: Retorna datos de la empresa y los últimos lotes emitidos con sus contratos firmados.
+       - `b2b_upload_batch`: Recepción de filas CSV/Excel procesadas en navegador, validación de nómina y persistencia en lote.
+       - `b2b_sign_batch`: Ejecución de firma en lote en 1 clic.
+       - `b2b_export_dt`: Descarga directa de archivo CSV codificado con BOM UTF-8 compatible con el portal Mi DT.
+    4. **Frontend Reactivo B2B (`empresas.php`):**
+       - Conexión del dropzone con `PapaParse` para procesamiento client-side de planillas `.csv` y `.txt`.
+       - Tabla interactiva con métricas visuales de RUTs válidos vs. inválidos.
+       - Botón de "Descargar Planilla Modelo" y botón "Cargar Nómina de Muestra".
+       - Modal emergente para configurar los datos corporativos de la empresa y del representante legal.
+       - Botón reactivo "Firmar Lote con 1 Clic" con feedback y confirmación.
+       - Botón "Exportar Libro DT" para descarga inmediata.
+       - Tabla de historial de lotes emitidos en la empresa.
+- **Pruebas Validadas:**
+  - Validación sintáctica PHP Lint en servidor: 0 errores en todos los archivos (`Database.php`, `B2BService.php`, `index.php`, `empresas.php`).
+  - Migración exitosa de base de datos en producción.
+  - Ejecución de prueba de lote completo con firma masiva de contratos y generación del archivo CSV para la Dirección del Trabajo verificado con éxito.
+  - Smoke tests HTTP en producción: `https://sinnotario.cl/empresas.php` y endpoints de API retornando `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-07 23:09 UTC-3] - SOL-0062
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
