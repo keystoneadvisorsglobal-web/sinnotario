@@ -386,6 +386,14 @@ def create_document():
     add_bullet("Implementación en PHP nativo de alta velocidad (KeystoneSmtpClient) con conexión cifrada SSL (puerto 465) a smtp.titan.email, autenticación AUTH LOGIN, cabeceras MIME blindadas y registros de ciberseguridad DNS (SPF, DKIM 2048-bit y DMARC).", "Cliente Socket SMTP con Titan Mail: ")
     add_bullet("Módulo de supervisión en /admin para editar en vivo credenciales SMTP, buzón emisor y visualizar bitácora de respuestas SMTP en tiempo real sin reiniciar servidores.", "Consola de Gestión Administrativa en Caliente: ")
 
+    add_h2("3.15. Módulo 15: Suite de Inteligencia Financiera, Control de Costos de Firma y Conciliación Bancaria (/admin/finanzas)")
+    add_body("Consola de tesorería y analítica financiera blindada con doble factor de autenticación (PIN maestro o token OTP de directores) para control exhaustivo del flujo de caja y rentabilidad unitaria.")
+    add_bullet("Capa de seguridad restringida exclusiva para directores con expiración de sesión a los 15 minutos de inactividad y registro forense inalterable en audit_logs de cada consulta o exportación contable.", "Seguridad Reforzada (Dual-Lock): ")
+    add_bullet("Ingresos brutos acumulados, base gravable neta (sin IVA), ticket promedio por instrumento y margen bruto unitario real tras deducir costos directos de pasarelas y firmas.", "Dashboard de Ventas y Márgenes en Vivo: ")
+    add_bullet("Cálculo y previsión en tiempo real de la pre-factura devengada a pagar al PSC (IDOK/FirmaYa), desglosando firmas simples (FES con OTP) vs firmas avanzadas (FEA con ClaveÚnica), con alertas preventivas de saldo mayorista.", "Control de Egresos y Liquidación de Proveedores de Firma: ")
+    add_bullet("Motor de cuadre a 3 vías que cruza automáticamente la recaudación web (Transbank Webpay y transferencias Fintoc) y de sucursales contra la cartola bancaria de la cuenta corriente de Keystone Advisors SpA, alertando discrepancias.", "Conciliación Bancaria Automática: ")
+    add_bullet("Reporte automatizado de Débito Fiscal IVA (19%) por boletas y facturas emitidas versus Crédito Fiscal recuperable para la preparación ágil del Formulario 29 mensual ante el SII.", "Previsión Tributaria F29: ")
+
     # SECCIÓN 4
     add_h1("4. Modelo Híbrido: Plataforma Digital + Red de Oficinas Físicas")
     add_body("La Oficina Física de SinNotario.cl humaniza la tecnología y atiende la brecha digital mediante interfaces operativas especializadas para el personal de sucursal, cabinas de firma privada en tablets seguras y salas de asesoría legal presencial con abogados.")

@@ -22,6 +22,7 @@
    - [3.5 Módulo 5: Backend Administrativo y Consola de Configuración de la Plataforma](#35-módulo-5-backend-administrativo-y-consola-de-configuración-de-la-plataforma)
    - [3.13 Módulo 13: Motor de Facturación Electrónica Automática SII (Boletas y Facturas DTE)](#313-módulo-13-motor-de-facturación-electrónica-automática-sii-boletas-y-facturas-dte)
    - [3.14 Módulo 14: Infraestructura de Correo Transaccional Oficial (Titan Mail SMTP & Casillas Operativas)](#314-módulo-14-infraestructura-de-correo-transaccional-oficial-titan-mail-smtp--casillas-operativas)
+   - [3.15 Módulo 15: Suite de Inteligencia Financiera, Control de Costos de Firma y Conciliación Bancaria](#315-módulo-15-suite-de-inteligencia-financiera-control-de-costos-de-firma-y-conciliación-bancaria)
 4. [Modelo Híbrido: Plataforma Digital + Oficina Física](#4-modelo-híbrido-plataforma-digital--oficina-física)
    - [4.1 Por qué una Oficina Física (Resolución de Brechas)](#41-por-qué-una-oficina-física-resolución-de-brechas)
    - [4.2 Servicios de la Oficina Física](#42-servicios-de-la-oficina-física)
@@ -1215,6 +1216,89 @@ Desde la Consola de Administración ([`admin.php`](file:///Users/rodrigo/Documen
 * Usuario y contraseña del buzón operativo.
 * Dirección de correo y nombre del remitente visual.
 * Logs detallados de cada intento de conexión SMTP con códigos de retorno (`250 OK`, `354 Enter mail`, `235 Auth successful`).
+
+---
+
+### 3.15 Módulo 15: Suite de Inteligencia Financiera, Control de Costos de Firma y Conciliación Bancaria (`/admin/finanzas`)
+
+Para garantizar la rentabilidad unitaria por documento, proyectar el flujo de caja, controlar con precisión quirúrgica las obligaciones por pagar con los Prestadores de Servicios de Certificación (PSC de Firma Electrónica) y conciliar cada peso recaudado contra la cartola de la cuenta corriente bancaria de Keystone Advisors SpA, **SinNotario.cl** incorpora un **Módulo de Inteligencia Financiera de Acceso Restringido**.
+
+```mermaid
+flowchart TD
+    subgraph Ingresos_Pasarelas ["1. Recaudación y Ventas Brutas"]
+        A1["Webpay Plus (Tarjetas)"] --> B["Borradores / Pagos Confirmados"]
+        A2["Fintoc (Open Banking)"] --> B
+        A3["POS Presencial / Caja"] --> B
+    end
+
+    subgraph Costos_Directos ["2. Matriz de Egresos Directos (COGS)"]
+        C1["Costo Firma PSC (IDOK/FirmaYa por firmante)"]
+        C2["Comisiones de Pasarela (Transbank / Fintoc)"]
+        C3["Costo Storage R2 + SMS/WhatsApp"]
+    end
+
+    B --> D["Motor de Conciliación y Liquidación Financiera"]
+    C1 --> D
+    C2 --> D
+    C3 --> D
+
+    subgraph Modulo_Financiero ["3. Dashboard Financiero (Protegido por Clave Maestra)"]
+        D --> E["📊 Estado de Resultados Unitario (Margen Bruto Real)"]
+        D --> F["📉 Previsión de Pago a Proveedores PSC (FirmaYa/IDOK)"]
+        D --> G["🏦 Conciliación Bancaria Automática (Cartola Cuenta Corriente)"]
+        D --> H["📑 Cuadre Fiscal IVA Débito vs. Facturación SII"]
+    end
+```
+
+#### A. Control de Acceso y Blindaje de Seguridad Reforzado
+* **Acceso de Nivel Directores (Dual-Lock):**
+  * Para ingresar a `/admin/finanzas` o activar las vistas financieras de la consola, no basta con la sesión administrativa general.
+  * Se exige una **segunda clave maestra de tesorería (PIN Financiero de 6 a 8 caracteres o confirmación OTP al correo del Director)**.
+  * La sesión financiera expira automáticamente tras **15 minutos de inactividad**.
+  * Todas las consultas y exportaciones a Excel/CSV se asientan con marca de agua y hash en la bitácora inalterable de auditoría (`audit_logs`).
+
+#### B. Dashboard de Ventas e Ingresos en Tiempo Real
+1. **KPIs Financieros Clave:**
+   * **Ventas Brutas Totales (CLP):** Ingreso bruto acumulado (diario, semanal, mensual o rango personalizado).
+   * **Ingresos Netos (Sin IVA):** Base gravable real de la compañía tras descontar el 19% de IVA de boletas y facturas.
+   * **Ticket Promedio por Trámite:** Valor medio facturado por contrato (plantilla base + firmantes adicionales).
+   * **Margen Bruto Unitario (% y $):** Ingreso Neto menos el costo directo de los firmantes convocados y la comisión de la pasarela.
+2. **Desglose por Canal y Categoría:**
+   * Comparativa de recaudación: **Canal Web (Autoatención)** vs. **Canal Sucursales Físicas (Caja)**.
+   * Ventas por familia legal: Inmobiliario (Arriendos/Promesas) vs. Laboral (Finiquitos/Contratos) vs. Trámites Personales.
+   * Método de pago preferente: % Cobrado por Transferencia Fintoc (menor comisión) vs. Débito/Crédito Webpay.
+
+#### C. Control de Egresos y Liquidación de Proveedores de Firma (PSC / IDOK / FirmaYa)
+Cada vez que un cliente suscribe un contrato con 2, 3 o 4 comparecientes, SinNotario genera un pasivo con el prestador acreditado de firma electrónica:
+1. **Matriz de Costos por Tipo de Firma:**
+   * **Costo FES (Firma Electrónica Simple con OTP/SMS):** Tarifa unitaria mayorista pactada con el PSC (ej. ~$450 a $650 CLP + IVA por firmante).
+   * **Costo FEA (Firma Electrónica Avanzada con ClaveÚnica):** Tarifa unitaria mayorista pactada (ej. ~$1.200 a $1.800 CLP + IVA por firma avanzada).
+2. **Monitor de Obligaciones Devengadas por Pagar:**
+   * Contador exacto de firmas consumidas en el mes en curso segregadas por proveedor y modalidad.
+   * **Monto Total a Desembolsar:** Cálculo automático de la pre-factura que emitirá el proveedor (IDOK/FirmaYa) a fin de mes.
+   * Alerta preventiva de saldo o límite de paquete de firmas para evitar que los clientes queden bloqueados en el portal por agotamiento de cupo mayorista.
+
+#### D. Motor de Conciliación Bancaria Automática (Cuadre con Cuenta Corriente)
+Uno de los mayores dolores de cabeza operativos es cruzar lo que dice el portal web con el dinero real depositado en el banco:
+1. **Importador de Cartolas Bancarias (CSV / Excel / Open Banking):**
+   * El administrador de finanzas arrastra el extracto de movimientos de la cuenta corriente de Keystone Advisors SpA (Banco Santander, Banco de Chile, BancoEstado o Bci).
+2. **Algoritmo de Conciliación a 3 Vías:**
+   * **Vía 1: Transbank Webpay Plus:**
+     * Cruza el Código de Autorización y Folio de Transbank con el abono consolidado en la cartola bancaria a las 24/48 hrs hábiles (descontando la comisión de 1,49% débito / 2,29% crédito).
+   * **Vía 2: Transferencias Fintoc:**
+     * Conciliación 1 a 1 en tiempo real gracias al identificador único de transferencia bancaria de la cartola.
+   * **Vía 3: Recaudación en Efectivo / POS Sucursal:**
+     * Cuadre de cierres de caja diarios de los ejecutivos presenciales contra las boletas de depósito bancario.
+3. **Semáforo de Conciliación:**
+   * 🟢 **Conciliado:** El monto cobrado en el portal coincide exactamente con el abono bancario neto.
+   * 🟡 **Pendiente de Abono:** Transacción aprobada en Webpay pero aún dentro del ciclo de retención de 24/48 hrs del adquiriente.
+   * 🔴 **Discrepancia / Contragolpe:** Diferencia de montos o anulación no cuadrante que requiere investigación de tesorería.
+
+#### E. Cuadre Tributario y Previsión de IVA F29
+* Reporte consolidado para el contador de Keystone Advisors:
+  * Total de **Débito Fiscal IVA (19%)** generado por las Boletas Electrónicas (DTE 39) y Facturas (DTE 33) emitidas.
+  * Desglose de **Crédito Fiscal IVA** recuperable proveniente de las facturas de costos de Transbank, Fintoc, IDOK y Cloudflare.
+  * Estimación anticipada del impuesto mensual a declarar en el Formulario 29 ante el SII.
 
 ---
 
