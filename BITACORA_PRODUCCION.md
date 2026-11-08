@@ -1,5 +1,30 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-08 00:40 UTC-3] - SOL-0067
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0067`
+- **Alcance de los Cambios:**
+  - **Auto-Registro de Empresas B2B, Email de Bienvenida y Manual Operativo PDF:**
+    1. **Auto-Registro Inmediato:**
+       - Se amplió el formulario de registro en [`login.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/login.php) con la sección: *"🏢 ¿Representas a una Empresa? (Razón Social y RUT Empresa)"*.
+       - Al enviar el registro, `AuthService::registerUser()` detecta la condición jurídica, crea el usuario y auto-aprovisiona de inmediato la empresa en la tabla `companies` con bolsa inicial de firmas activas.
+       - La empresa obtiene acceso instantáneo a [`empresas.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/empresas.php) sin necesidad de aprobación humana o amarras contractuales.
+    2. **Despacho Automático de Correo de Bienvenida:**
+       - Se implementó `MailService::sendB2BWelcome()` utilizando Titan Mail SMTP (`contacto@sinnotario.cl`).
+       - Se envía automáticamente al representante legal al crearse la cuenta, resumiendo los 4 pasos operativos, enlace a su portal y botón directo al instructivo.
+    3. **Instructivo Operativo y Manual de Usuario PDF:**
+       - Se creó la página oficial [`docs/manual-operativo-empresas.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/docs/manual-operativo-empresas.php) con diseño sobrio y profesional bajo normas de impresión A4 (`window.print()` / Guardar como PDF).
+       - Explica en detalle el uso del Smart Bulk Wizard, la firma 1-clic con FEA, exportación DT Ley 21.327, plantillas con variables `{{...}}`, expediente digital del trabajador y tabla de tarifas prepago.
+       - Se añadió el botón visible **"Instructivo PDF"** en la barra de navegación de `empresas.php`.
+- **Pruebas Validadas:**
+  - Validación sintáctica PHP Lint: 0 errores en todos los archivos.
+  - Envío de prueba de correo de bienvenida B2B validado vía socket SMTP de Titan Mail (`250 OK`).
+  - Renderizado de `manual-operativo-empresas.php` respondiendo con `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+
+
 ### [2026-11-08 00:36 UTC-3] - SOL-0066
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

@@ -100,6 +100,9 @@ if (!$currentUser) {
                 <li><a href="admin.php">Consola Operativa</a></li>
             </ul>
             <div>
+                <a href="docs/manual-operativo-empresas.php" target="_blank" class="btn-cta" style="background:#F1F5F9; color:#0A1C33 !important; border:1px solid #CBD5E1; margin-right:8px;">
+                    <i class="fas fa-file-pdf"></i> Instructivo PDF
+                </a>
                 <a href="https://wa.me/56984180479?text=Hola,%20solicito%20soporte%20corporativo%20B2B%20en%20SinNotario.cl" target="_blank" class="btn-cta btn-gold">
                     <i class="fab fa-whatsapp"></i> Soporte Empresas
                 </a>

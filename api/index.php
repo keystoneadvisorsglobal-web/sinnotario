@@ -464,9 +464,11 @@ try {
             $password = $input['password'] ?? '';
             $rut = $input['rut'] ?? null;
             $telefono = $input['telefono'] ?? null;
+            $empresaRazonSocial = $input['empresa_razon_social'] ?? null;
+            $empresaRut = $input['empresa_rut'] ?? null;
 
             try {
-                $sessionData = AuthService::registerUser($nombre, $apellido, $email, $password, $rut, $telefono);
+                $sessionData = AuthService::registerUser($nombre, $apellido, $email, $password, $rut, $telefono, $empresaRazonSocial, $empresaRut);
                 jsonResponse(true, $sessionData);
             } catch (Exception $e) {
                 jsonResponse(false, null, $e->getMessage(), 400);

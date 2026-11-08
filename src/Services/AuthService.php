@@ -101,12 +101,14 @@ class AuthService {
     /**
      * Registro con correo y contraseña
      */
-    public static function registerUser($nombre, $apellido, $email, $password, $rut = null, $telefono = null) {
+    public static function registerUser($nombre, $apellido, $email, $password, $rut = null, $telefono = null, $empresaRazonSocial = null, $empresaRut = null) {
         $email = strtolower(trim($email));
         $nombre = trim($nombre);
         $apellido = trim($apellido);
         $rut = $rut ? trim($rut) : null;
         $telefono = $telefono ? trim($telefono) : null;
+        $empresaRazonSocial = $empresaRazonSocial ? trim($empresaRazonSocial) : null;
+        $empresaRut = $empresaRut ? trim($empresaRut) : null;
 
         if (empty($nombre) || empty($apellido) || empty($email) || empty($password)) {
             throw new Exception("Por favor completa los campos obligatorios (Nombre, Apellidos, Correo y Contraseña).");
@@ -130,15 +132,39 @@ class AuthService {
 
         $passwordHash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 11]);
 
+        $tipoPersona = (!empty($empresaRazonSocial) || !empty($empresaRut)) ? 'JURIDICA' : 'NATURAL';
+
         $stmt = self::getDb()->prepare("
-            INSERT INTO users (nombre, apellido, email, rut, telefono, password_hash, auth_provider, created_at, updated_at, ultimo_login)
-            VALUES (?, ?, ?, ?, ?, ?, 'LOCAL', datetime('now'), datetime('now'), datetime('now'))
+            INSERT INTO users (nombre, apellido, email, rut, telefono, password_hash, tipo_persona, empresa_razon_social, empresa_rut, auth_provider, created_at, updated_at, ultimo_login)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'LOCAL', datetime('now'), datetime('now'), datetime('now'))
         ");
-        $stmt->execute([$nombre, $apellido, $email, $rut, $telefono, $passwordHash]);
+        $stmt->execute([$nombre, $apellido, $email, $rut, $telefono, $passwordHash, $tipoPersona, $empresaRazonSocial, $empresaRut]);
         $userId = self::getDb()->lastInsertId();
 
         // Vincular contratos preexistentes donde figure este correo
         self::linkExistingDocumentsToUser($userId, $email);
+
+        // Auto-crear empresa B2B con bolsa prepagada inicial de bienvenida
+        try {
+            require_once __DIR__ . '/B2BService.php';
+            require_once __DIR__ . '/MailService.php';
+
+            $razon = $empresaRazonSocial ?: ($nombre . ' ' . $apellido . ' SpA');
+            $rutEmp = $empresaRut ?: ($rut ?: '78.089.686-8');
+
+            $comp = B2BService::getOrCreateCompany($userId, [
+                'rut' => $rutEmp,
+                'razon_social' => $razon,
+                'rep_legal_nombre' => $nombre . ' ' . $apellido,
+                'rep_legal_rut' => $rut ?: '17.297.004-4',
+                'rep_legal_email' => $email
+            ]);
+
+            // Enviar correo de bienvenida institucional con enlace al manual PDF
+            MailService::sendB2BWelcome($email, $nombre . ' ' . $apellido, $comp['razon_social'], $comp['rut']);
+        } catch (Exception $eB2b) {
+            error_log("Error en auto-registro B2B: " . $eB2b->getMessage());
+        }
 
         $stmtUser = self::getDb()->prepare("SELECT * FROM users WHERE id = ?");
         $stmtUser->execute([$userId]);

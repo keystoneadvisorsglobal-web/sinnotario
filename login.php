@@ -340,13 +340,33 @@ if (empty($googleClientId)) {
 
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                         <div class="form-floating-custom">
-                            <label for="regRut">RUT (Opcional)</label>
+                            <label for="regRut">RUT Personal (Opcional)</label>
                             <input type="text" id="regRut" placeholder="12.345.678-9" maxlength="12">
                         </div>
                         <div class="form-floating-custom">
                             <label for="regTelefono">WhatsApp (Opcional)</label>
                             <input type="text" id="regTelefono" placeholder="+56 9 1234 5678">
                         </div>
+                    </div>
+
+                    <!-- Campos Corporativos para Empresas B2B -->
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:12px; margin-bottom:14px;">
+                        <span style="font-size:0.75rem; font-weight:800; color:#0A1C33; text-transform:uppercase; display:block; margin-bottom:6px;">
+                            🏢 ¿Representas a una Empresa? (Opcional)
+                        </span>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div class="form-floating-custom" style="margin-bottom:0;">
+                                <label for="regEmpresaNombre" style="font-size:0.75rem;">Razón Social Empresa</label>
+                                <input type="text" id="regEmpresaNombre" placeholder="Ej. Constructora del Norte SpA">
+                            </div>
+                            <div class="form-floating-custom" style="margin-bottom:0;">
+                                <label for="regEmpresaRut" style="font-size:0.75rem;">RUT Empresa</label>
+                                <input type="text" id="regEmpresaRut" placeholder="78.089.686-8">
+                            </div>
+                        </div>
+                        <small style="color:#64748B; font-size:0.72rem; display:block; margin-top:4px;">
+                            Activa acceso inmediato a la Suite B2B, expediente digital y bolsas de prepago.
+                        </small>
                     </div>
 
                     <div class="form-floating-custom">
@@ -444,6 +464,8 @@ if (empty($googleClientId)) {
             const email = document.getElementById('regEmail').value.trim();
             const rut = document.getElementById('regRut').value.trim();
             const telefono = document.getElementById('regTelefono').value.trim();
+            const empresaRazon = document.getElementById('regEmpresaNombre') ? document.getElementById('regEmpresaNombre').value.trim() : '';
+            const empresaRut = document.getElementById('regEmpresaRut') ? document.getElementById('regEmpresaRut').value.trim() : '';
             const password = document.getElementById('regPassword').value;
 
             btn.disabled = true;
@@ -453,7 +475,11 @@ if (empty($googleClientId)) {
                 const res = await fetch('api/index.php?action=auth_register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre, apellido, email, rut, telefono, password })
+                    body: JSON.stringify({
+                        nombre, apellido, email, rut, telefono, password,
+                        empresa_razon_social: empresaRazon,
+                        empresa_rut: empresaRut
+                    })
                 });
                 const data = await res.json();
 

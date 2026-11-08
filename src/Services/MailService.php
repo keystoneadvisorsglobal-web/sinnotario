@@ -107,6 +107,55 @@ class MailService {
     }
 
     /**
+     * Enviar correo de bienvenida institucional para Empresas B2B con enlace al instructivo
+     */
+    public static function sendB2BWelcome($toEmail, $nombreRep, $razonSocial, $rutEmpresa) {
+        $subject = "¡Bienvenido a SinNotario Empresas! — Suite B2B Activada";
+        
+        $body = '
+            <div style="text-align:center; margin-bottom:24px;">
+                <span style="background:#DCFCE7; color:#15803D; font-size:12px; font-weight:800; padding:4px 12px; border-radius:20px; text-transform:uppercase;">
+                    ✓ Cuenta Corporativa Prepago Activada
+                </span>
+            </div>
+            <p style="font-size:16px; color:#1E293B; margin-bottom:12px;">
+                Estimado(a) <strong>' . htmlspecialchars($nombreRep) . '</strong>,
+            </p>
+            <p style="font-size:14px; color:#475569; line-height:1.6; margin-bottom:16px;">
+                Le damos una cordial bienvenida a la <strong>Suite Corporativa B2B de SinNotario.cl</strong> para <strong>' . htmlspecialchars($razonSocial) . '</strong> (RUT: ' . htmlspecialchars($rutEmpresa) . ').
+            </p>
+            <p style="font-size:14px; color:#475569; line-height:1.6; margin-bottom:20px;">
+                Su empresa ya puede autogestionar la emisión y firma masiva de contratos bajo la <strong>Ley N° 19.799</strong> y la <strong>Ley N° 21.327 (Dirección del Trabajo)</strong>, sin amarras ni contratos forzosos mensuales: adquiere bolsas de firmas prepagadas con descuento y úsalas a tu propio ritmo.
+            </p>
+            
+            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:18px; margin:20px 0;">
+                <h4 style="margin:0 0 10px; color:#0F2A4A; font-size:14px; font-weight:800;">🚀 ¿Cómo comenzar a operar?</h4>
+                <ul style="margin:0; padding-left:20px; font-size:13px; color:#475569; line-height:1.7;">
+                    <li><strong>1. Carga Masiva:</strong> Sube tu planilla Excel/CSV y valida RUTs en 1 clic.</li>
+                    <li><strong>2. Plantillas Propias:</strong> Pega tu propio formato contractual con variables <code>{{NOMBRE}}</code>, <code>{{CARGO}}</code>, etc.</li>
+                    <li><strong>3. Firma Paralela:</strong> Firma todo el lote con una sola ClaveÚnica.</li>
+                    <li><strong>4. Libro Digital DT:</strong> Descarga la nómina codificada para el portal Mi DT.</li>
+                </ul>
+            </div>
+
+            <div style="text-align:center; margin:30px 0; display:flex; gap:12px; justify-content:center;">
+                <a href="https://sinnotario.cl/empresas.php" style="background:#0F2A4A; color:#FFFFFF; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:700; font-size:14px; display:inline-block;">
+                    Ir a Mi Portal Empresas
+                </a>
+                <a href="https://sinnotario.cl/docs/manual-operativo-empresas.php" style="background:#D4AF37; color:#0A1C33; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:800; font-size:14px; display:inline-block;">
+                    📖 Descargar Instructivo Operativo (PDF)
+                </a>
+            </div>
+
+            <p style="font-size:12px; color:#64748B; line-height:1.5; margin-top:20px; border-top:1px solid #E2E8F0; padding-top:14px;">
+                💡 <em>Soporte Corporativo:</em> Si necesitas asistencia para integrar la API o habilitar el WhatsApp oficial de tu empresa, puedes escribirnos directamente a <a href="mailto:contacto@sinnotario.cl" style="color:#0066CC;">contacto@sinnotario.cl</a> o vía WhatsApp al +56 9 8418 0479.
+            </p>
+        ';
+
+        return self::send($toEmail, $subject, $body);
+    }
+
+    /**
      * Plantilla base corporativa HTML responsiva
      */
     private static function wrapTemplate($title, $contentHtml) {
