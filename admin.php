@@ -141,6 +141,7 @@ if (isset($_POST['save_pricing_settings'])) {
         'mp_mode',
         'mp_public_key_production', 'mp_access_token_production',
         'mp_public_key_sandbox', 'mp_access_token_sandbox',
+        'mp_webhook_secret',
         'mp_public_key', 'mp_access_token' // retrocompatibilidad
     ];
     $stmtMp = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
@@ -1234,7 +1235,7 @@ $allTemplates = $stmtTemplates->fetchAll();
                             </div>
 
                             <!-- Bloque 2: Credenciales de Sandbox / Pruebas -->
-                            <div style="border:1px solid #E2E8F0; border-radius:8px; padding:1rem; background:#FAF5FF;">
+                            <div style="border:1px solid #E2E8F0; border-radius:8px; padding:1rem; margin-bottom:1rem; background:#FAF5FF;">
                                 <div style="font-size:0.85rem; font-weight:800; color:#7E22CE; margin-bottom:0.75rem; display:flex; align-items:center; gap:6px;">
                                     <i class="fas fa-flask"></i> Credenciales de Sandbox (Pruebas)
                                 </div>
@@ -1247,6 +1248,19 @@ $allTemplates = $stmtTemplates->fetchAll();
                                         <label style="font-size:0.8rem; font-weight:600; color:#334155;">Access Token (Sandbox / Prueba)</label>
                                         <input type="password" name="mp_access_token_sandbox" class="form-control" placeholder="APP_USR-xxxxxxxxxxxx-xxxxxx-xxxxxxxxxxxxxxxx-xxxxxxxx" value="<?= htmlspecialchars($sysSettings['mp_access_token_sandbox'] ?? ($sysSettings['mp_access_token'] ?? '')) ?>">
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Firma Secreta del Webhook (Integridad Criptográfica) -->
+                            <div style="background:#F1F5F9; border:1px solid #CBD5E1; border-radius:8px; padding:0.85rem 1rem;">
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label style="font-size:0.8rem; font-weight:700; color:#1E293B; display:flex; align-items:center; gap:6px;">
+                                        <i class="fas fa-key" style="color:#0284C7;"></i> Firma Secreta del Webhook (Signature Secret)
+                                    </label>
+                                    <input type="password" name="mp_webhook_secret" class="form-control" placeholder="Ej: e0898228fa71d7600d2477e72c03b5a8..." value="<?= htmlspecialchars($sysSettings['mp_webhook_secret'] ?? '') ?>" style="margin-top:4px;">
+                                    <small style="color:#64748B; font-size:0.73rem; display:block; margin-top:3px;">
+                                        URL del Webhook: <code style="background:#E2E8F0; padding:2px 6px; border-radius:4px; color:#0F2A4A;">https://sinnotario.cl/api/index.php?action=mp_webhook</code>
+                                    </small>
                                 </div>
                             </div>
                         </div>
