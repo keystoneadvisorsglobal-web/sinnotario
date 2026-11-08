@@ -874,7 +874,7 @@ if (!$currentUser) {
             </div>
 
             <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:0.85rem; display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; font-size:0.85rem;">
-                <span style="color:#64748B;"><i class="fas fa-receipt"></i> Emisión automática de Factura Exenta / Boleta Electrónica.</span>
+                <span style="color:#64748B;"><i class="fas fa-file-invoice-dollar" style="color:#059669;"></i> Emisión automática de Factura Electrónica afecta a IVA (DTE 33).</span>
                 <span style="font-weight:800; color:#0F2A4A;" id="checkoutTotalDisplay">$207.655 CLP (IVA incl.)</span>
             </div>
 
