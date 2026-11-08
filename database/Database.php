@@ -202,12 +202,12 @@ class Database {
                 firmas_totales_plan INTEGER DEFAULT 50, -- cupo mensual contratado
                 firmas_utilizadas INTEGER DEFAULT 0, -- consumo acumulado
                 costo_mensual_uf DECIMAL(6,2) DEFAULT 2.50, -- valor mensual en UF o CLP
-                costo_firma_extra_clp INTEGER DEFAULT 2490, -- valor por firma extra
+                costo_firma_extra_clp INTEGER DEFAULT 4990, -- valor por firma extra
                 modalidad_cobro VARCHAR(20) DEFAULT 'PREPAGO', -- PREPAGO, POSTPAGO
-                saldo_firmas_prepago INTEGER DEFAULT 50, -- Bolsa de firmas prepagadas
-                umbral_max_postpago INTEGER DEFAULT 200, -- Límite máximo de crédito para emisión continua
+                saldo_firmas_prepago INTEGER DEFAULT 0, -- Bolsa de firmas prepagadas
+                umbral_max_postpago INTEGER DEFAULT 0, -- Límite máximo de crédito para emisión continua (0 por defecto)
                 gasto_acumulado_periodo INTEGER DEFAULT 0, -- Monto CLP acumulado para factura mensual DTE 33
-                tarifa_tramo_clp INTEGER DEFAULT 2490, -- Precio unitario contratado
+                tarifa_tramo_clp INTEGER DEFAULT 7990, -- Precio unitario base inicial (igual a precio_base_subir_pdf)
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL

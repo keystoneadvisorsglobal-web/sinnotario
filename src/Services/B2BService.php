@@ -56,6 +56,12 @@ class B2BService {
         $company = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$company) {
+            // Obtener el precio base configurado para carga de PDF propio como tarifa estándar por defecto
+            $stmtBaseTarifa = $pdo->prepare("SELECT value FROM system_settings WHERE key = 'precio_base_subir_pdf'");
+            $stmtBaseTarifa->execute();
+            $baseTarifaVal = $stmtBaseTarifa->fetchColumn();
+            $tarifaInicialClp = ($baseTarifaVal !== false && is_numeric($baseTarifaVal)) ? (int)$baseTarifaVal : 7990;
+
             $stmtIns = $pdo->prepare("
                 INSERT INTO companies (
                     user_id, rut, razon_social, giro, direccion, comuna, ciudad,
@@ -63,7 +69,7 @@ class B2BService {
                     whatsapp_phone, whatsapp_instance_id,
                     plan_nombre, plan_estado, firmas_totales_plan, firmas_utilizadas, costo_mensual_uf, costo_firma_extra_clp,
                     modalidad_cobro, saldo_firmas_prepago, umbral_max_postpago, gasto_acumulado_periodo, tarifa_tramo_clp
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PLAN_INICIAL', 'ACTIVO', 0, 0, 0, 2490, 'PREPAGO', 0, 0, 0, 2490)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PLAN_INICIAL', 'ACTIVO', 0, 0, 0, ?, 'PREPAGO', 0, 0, 0, ?)
             ");
             $stmtIns->execute([
                 $userId,
@@ -77,7 +83,9 @@ class B2BService {
                 $companyData['rep_legal_rut'] ?? $rut,
                 $companyData['rep_legal_email'] ?? 'contacto@empresa.cl',
                 $companyData['whatsapp_phone'] ?? '+56984180479',
-                'sinnotario-b2b-' . substr(md5(uniqid()), 0, 8)
+                'sinnotario-b2b-' . substr(md5(uniqid()), 0, 8),
+                $tarifaInicialClp,
+                $tarifaInicialClp
             ]);
             $companyId = $pdo->lastInsertId();
             $stmt = $pdo->prepare("SELECT * FROM companies WHERE id = ?");
