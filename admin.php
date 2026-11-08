@@ -70,6 +70,21 @@ $stmtBillingLogs = $pdo->query("
 ");
 $allBillingLogs = $stmtBillingLogs ? $stmtBillingLogs->fetchAll(PDO::FETCH_ASSOC) : [];
 
+// Consultas Órdenes y Pagos Online (Mercado Pago & Khipu)
+$stmtOrders = $pdo->query("
+    SELECT p.*,
+           c.razon_social as empresa_razon, c.rut as empresa_rut,
+           u.nombre as usuario_nombre, u.apellido as usuario_apellido, u.email as usuario_email,
+           d.codigo_verificacion as doc_codigo, d.titulo as doc_titulo
+    FROM payment_orders p
+    LEFT JOIN companies c ON p.company_id = c.id
+    LEFT JOIN users u ON p.user_id = u.id
+    LEFT JOIN documents d ON p.document_id = d.id
+    ORDER BY p.id DESC
+    LIMIT 150
+");
+$allPaymentOrders = $stmtOrders ? $stmtOrders->fetchAll(PDO::FETCH_ASSOC) : [];
+
 $totalEmitidos = count($documents);
 $totalMonto = array_sum(array_column($documents, 'monto_pagado'));
 $stmtTplCount = $pdo->query("SELECT COUNT(*) FROM templates");
@@ -415,6 +430,7 @@ $allTemplates = $stmtTemplates->fetchAll();
                 <a href="#dashboard" class="admin-nav-item active" data-tab="dashboard"><i class="fas fa-chart-line"></i> Dashboard General</a>
                 <a href="#empresas" class="admin-nav-item" data-tab="empresas" style="color:#D4AF37; font-weight:800;"><i class="fas fa-building"></i> Empresas & B2B</a>
                 <a href="#clientes" class="admin-nav-item" data-tab="clientes" style="color:#38BDF8; font-weight:700;"><i class="fas fa-users"></i> Clientes Persona</a>
+                <a href="#pagos" class="admin-nav-item" data-tab="pagos" style="color:#10B981; font-weight:800;"><i class="fas fa-cash-register"></i> Pagos & Conciliación</a>
                 <a href="#precios" class="admin-nav-item" data-tab="precios" style="color:var(--accent); font-weight:700;"><i class="fas fa-tags"></i> Precios & Tarifas</a>
                 <a href="#documentos" class="admin-nav-item" data-tab="documentos"><i class="fas fa-file-contract"></i> Monitor Contratos</a>
                 <a href="#whatsapp" class="admin-nav-item" data-tab="whatsapp"><i class="fab fa-whatsapp"></i> Instancias WhatsApp</a>
@@ -929,6 +945,150 @@ $allTemplates = $stmtTemplates->fetchAll();
                             <?php endif; ?>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 1D. SECCIÓN: PAGOS & CONCILIACIÓN BANCARIA -->
+            <!-- ========================================== -->
+            <div id="section_pagos" class="admin-section">
+                <!-- Accesos Directos a Portales Oficiales para Cuadre -->
+                <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:var(--shadow-sm);">
+                    <div>
+                        <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary); margin:0;">
+                            <i class="fas fa-university" style="color:#10B981;"></i> Conciliación y Acceso Directo a Portales de Recaudación
+                        </h3>
+                        <p style="font-size:0.83rem; color:#64748B; margin:4px 0 0;">
+                            Contrasta las órdenes de SinNotario en tiempo real contra los paneles de liquidación bancaria de Mercado Pago y Khipu.
+                        </p>
+                    </div>
+                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                        <a href="https://www.mercadopago.cl/activities" target="_blank" class="btn-cta" style="background:#009EE3; color:#FFF !important; padding:8px 14px; font-size:0.85rem;">
+                            <i class="fas fa-external-link-alt"></i> Panel Mercado Pago (Actividad & Cartola)
+                        </a>
+                        <a href="https://khipu.com/merchant" target="_blank" class="btn-cta" style="background:#6366F1; color:#FFF !important; padding:8px 14px; font-size:0.85rem;">
+                            <i class="fas fa-external-link-alt"></i> Panel Khipu (Transferencias Cobradas)
+                        </a>
+                    </div>
+                </div>
+
+                <!-- KPIs de Recaudación -->
+                <?php
+                $totalOrdenes = count($allPaymentOrders);
+                $aprobadas = array_filter($allPaymentOrders, function($o) { return $o['estado'] === 'APROBADO'; });
+                $pendientes = array_filter($allPaymentOrders, function($o) { return $o['estado'] === 'PENDIENTE'; });
+                $totalRecaudado = array_sum(array_column($aprobadas, 'monto_total'));
+                ?>
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div style="font-size:0.8rem; font-weight:600; color:#64748B; text-transform:uppercase;">Total Transacciones</div>
+                        <div class="kpi-val" style="color:var(--primary);"><?= $totalOrdenes ?></div>
+                        <span style="font-size:0.75rem; color:#64748B;">Órdenes iniciadas</span>
+                    </div>
+                    <div class="kpi-card">
+                        <div style="font-size:0.8rem; font-weight:600; color:#64748B; text-transform:uppercase;">Pagos Aprobados</div>
+                        <div class="kpi-val" style="color:#059669;"><?= count($aprobadas) ?></div>
+                        <span style="font-size:0.75rem; color:#059669;"><i class="fas fa-check-circle"></i> Acreditados con éxito</span>
+                    </div>
+                    <div class="kpi-card">
+                        <div style="font-size:0.8rem; font-weight:600; color:#64748B; text-transform:uppercase;">Pagos Pendientes</div>
+                        <div class="kpi-val" style="color:#D97706;"><?= count($pendientes) ?></div>
+                        <span style="font-size:0.75rem; color:#D97706;"><i class="fas fa-clock"></i> En proceso / carrito</span>
+                    </div>
+                    <div class="kpi-card">
+                        <div style="font-size:0.8rem; font-weight:600; color:#64748B; text-transform:uppercase;">Total Recaudado (IVA incl.)</div>
+                        <div class="kpi-val" style="color:#10B981;">$<?= number_format($totalRecaudado, 0, '', '.') ?></div>
+                        <span style="font-size:0.75rem; color:#10B981;"><i class="fas fa-coins"></i> Liquidado en pasarelas</span>
+                    </div>
+                </div>
+
+                <!-- Tabla Detallada de Transacciones -->
+                <div class="table-wrap">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
+                        <div>
+                            <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary); margin:0;">
+                                <i class="fas fa-receipt" style="color:#10B981;"></i> Libro Mayor de Pagos y Conciliación
+                            </h3>
+                            <p style="font-size:0.83rem; color:#64748B; margin:4px 0 0;">
+                                Trazabilidad por ID de pasarela, referencia externa, cliente pagador y comprobante tributario.
+                            </p>
+                        </div>
+                        <input type="text" id="filterPaymentsInput" placeholder="Buscar por referencia, cliente o RUT..." style="padding:8px 14px; border:1px solid #CBD5E1; border-radius:6px; font-size:0.85rem; width:280px;">
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:0.88rem;" id="tablePayments">
+                            <thead>
+                                <tr style="background:#F8FAFC; color:#64748B; text-align:left;">
+                                    <th style="padding:0.75rem;">ID</th>
+                                    <th style="padding:0.75rem;">Referencia / Gateway</th>
+                                    <th style="padding:0.75rem;">Tipo / Concepto</th>
+                                    <th style="padding:0.75rem;">Cliente / Empresa</th>
+                                    <th style="padding:0.75rem;">Monto Neto</th>
+                                    <th style="padding:0.75rem;">Total Pagado</th>
+                                    <th style="padding:0.75rem; text-align:center;">Estado</th>
+                                    <th style="padding:0.75rem;">Fecha & Hora</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($allPaymentOrders)): ?>
+                                    <tr>
+                                        <td colspan="8" style="padding:2.5rem; text-align:center; color:#94A3B8;">
+                                            <i class="fas fa-cash-register fa-2x" style="margin-bottom:0.5rem; opacity:0.5;"></i><br>
+                                            No se han registrado órdenes de pago online aún.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($allPaymentOrders as $ord): ?>
+                                        <tr style="border-bottom:1px solid #E2E8F0;">
+                                            <td style="padding:0.75rem; font-weight:700;">#<?= $ord['id'] ?></td>
+                                            <td style="padding:0.75rem;">
+                                                <div style="font-family:monospace; font-size:0.82rem; font-weight:700; color:#0F2A4A;"><?= htmlspecialchars($ord['external_reference']) ?></div>
+                                                <span style="font-size:0.72rem; font-weight:800; padding:2px 6px; border-radius:4px; <?= $ord['gateway'] === 'KHIPU' ? 'background:#EEF2FF; color:#4338CA;' : 'background:#F0F9FF; color:#0369A1;' ?>">
+                                                    <?= $ord['gateway'] === 'KHIPU' ? 'KHIPU' : 'MERCADO PAGO' ?>
+                                                    <?= !empty($ord['mp_payment_id']) ? " (ID: {$ord['mp_payment_id']})" : '' ?>
+                                                </span>
+                                            </td>
+                                            <td style="padding:0.75rem;">
+                                                <?php if ($ord['payment_type'] === 'B2B_PACK'): ?>
+                                                    <span style="font-weight:700; color:#D4AF37;">📦 Bolsa B2B: <?= htmlspecialchars($ord['pack_key']) ?></span>
+                                                <?php else: ?>
+                                                    <span style="font-weight:700; color:#0284C7;">📄 Trámite: <?= htmlspecialchars($ord['doc_codigo'] ?: 'Documento') ?></span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td style="padding:0.75rem;">
+                                                <?php if (!empty($ord['empresa_razon'])): ?>
+                                                    <div style="font-weight:700; color:var(--primary);"><?= htmlspecialchars($ord['empresa_razon']) ?></div>
+                                                    <div style="font-size:0.75rem; color:#64748B;">RUT: <?= htmlspecialchars($ord['empresa_rut']) ?></div>
+                                                <?php else: ?>
+                                                    <div style="font-weight:700; color:var(--primary);"><?= htmlspecialchars(($ord['usuario_nombre'] ?? '') . ' ' . ($ord['usuario_apellido'] ?? '')) ?></div>
+                                                    <div style="font-size:0.75rem; color:#64748B;"><?= htmlspecialchars($ord['usuario_email'] ?? '-') ?></div>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td style="padding:0.75rem; font-family:monospace;">$<?= number_format($ord['monto_neto'], 0, '', '.') ?></td>
+                                            <td style="padding:0.75rem; font-weight:800; color:#059669; font-family:monospace;">$<?= number_format($ord['monto_total'], 0, '', '.') ?></td>
+                                            <td style="padding:0.75rem; text-align:center;">
+                                                <?php if ($ord['estado'] === 'APROBADO'): ?>
+                                                    <span style="background:#DCFCE7; color:#15803D; font-weight:800; font-size:0.75rem; padding:3px 8px; border-radius:4px;">
+                                                        <i class="fas fa-check"></i> APROBADO
+                                                    </span>
+                                                <?php elseif ($ord['estado'] === 'PENDIENTE'): ?>
+                                                    <span style="background:#FEF3C7; color:#B45309; font-weight:800; font-size:0.75rem; padding:3px 8px; border-radius:4px;">
+                                                        <i class="fas fa-clock"></i> PENDIENTE
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span style="background:#FEE2E2; color:#B91C1C; font-weight:800; font-size:0.75rem; padding:3px 8px; border-radius:4px;">
+                                                        <?= htmlspecialchars($ord['estado']) ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td style="padding:0.75rem; font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($ord['created_at']) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -1615,6 +1775,10 @@ $allTemplates = $stmtTemplates->fetchAll();
                 title: 'Directorio de Clientes Persona Natural & Particulares',
                 desc: 'Gestión y trazabilidad de usuarios individuales, trámites personales en bóveda y recaudación retail.'
             },
+            'pagos': {
+                title: 'Libro Mayor de Pagos, Recaudación y Conciliación Bancaria',
+                desc: 'Trazabilidad de pagos online, cruce con Mercado Pago / Khipu y control de ingresos B2B y Retail.'
+            },
             'precios': {
                 title: 'Gestor de Tarifas y Precios de Firma',
                 desc: 'Configuración comercial de precios base por documento y tarifa por firmante adicional.'
@@ -1695,6 +1859,19 @@ $allTemplates = $stmtTemplates->fetchAll();
             filterPersonasInput.addEventListener('input', (e) => {
                 const term = e.target.value.toLowerCase().trim();
                 const rows = document.querySelectorAll('.persona-row');
+                rows.forEach(r => {
+                    const text = r.innerText.toLowerCase();
+                    r.style.display = text.includes(term) ? '' : 'none';
+                });
+            });
+        }
+
+        // Filtrado en vivo de tabla de pagos online
+        const filterPaymentsInput = document.getElementById('filterPaymentsInput');
+        if (filterPaymentsInput) {
+            filterPaymentsInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('#tablePayments tbody tr');
                 rows.forEach(r => {
                     const text = r.innerText.toLowerCase();
                     r.style.display = text.includes(term) ? '' : 'none';
