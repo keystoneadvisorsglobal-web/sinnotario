@@ -1452,3 +1452,14 @@
   2) **Conmutación a Producción:** Activación formal de `mp_mode = 'production'` y `mp_enabled = '1'`.
   3) **Prueba en Vivo (Smoke Test Real):** Generación exitosa de orden oficial con respuesta HTTP 200 OK y URL oficial de cobro real (`https://www.mercadopago.cl/checkout/v1/redirect?pref_id=3823282051-...`).
 - **Estado Final:** ✅ Éxito Total / 100% Operativo y en Vivo para recaudación real con Webpay, Crédito y Débito.
+
+### Registro de Despliegue: SOL-0091
+- **Fecha y Hora:** 2026-11-08 15:22:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0091`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Configuración y aseguramiento criptográfico del **Webhook Oficial de Mercado Pago Producción**:
+  1) **Firma Secreta:** Registro de `mp_webhook_secret_production` y actualización de `mp_webhook_secret` con la clave secreta de producción (`2fd7fd0ddee87376b33b0329a2cc182d884762b1ed60826f422f333fc2c93956`).
+  2) **Endpoint Oficial:** Vinculación confirmada hacia `https://sinnotario.cl/api/index.php?action=mp_webhook` para procesamiento asíncrono de eventos de pago en tiempo real con validación de cabecera HMAC SHA-256.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo y Blindado.
