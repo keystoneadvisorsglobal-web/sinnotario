@@ -173,9 +173,47 @@ class WhatsAppService {
 
     /**
      * Envía mensaje de texto por WhatsApp a través de una instancia específica
+     * y registra automáticamente en la bitácora whatsapp_logs
      */
-    public function sendTextMessage(string $phoneNumber, string $message, string $instanceName = 'keystone-general'): array {
-        return $this->sendTestMessage($instanceName, $phoneNumber, $message);
+    public function sendTextMessage(
+        string $phoneNumber, 
+        string $message, 
+        string $instanceName = 'keystone-general',
+        ?int $documentId = null,
+        ?string $destinatarioNombre = null,
+        string $tipoMensaje = 'NOTIFICACION_FIRMA',
+        ?int $companyId = null
+    ): array {
+        $result = $this->sendTestMessage($instanceName, $phoneNumber, $message);
+        
+        // Registrar en bitácora de mensajes whatsapp_logs
+        try {
+            require_once __DIR__ . '/../../database/Database.php';
+            $pdo = Database::getInstance();
+            $stmt = $pdo->prepare("
+                INSERT INTO whatsapp_logs (
+                    document_id, company_id, instance_name, destinatario_telefono,
+                    destinatario_nombre, tipo_mensaje, mensaje, estado, gateway_response
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $estado = (!empty($result['success'])) ? 'ENVIADO' : 'FALLIDO';
+            $respJson = json_encode($result, JSON_UNESCAPED_UNICODE);
+            $stmt->execute([
+                $documentId,
+                $companyId,
+                $instanceName,
+                $phoneNumber,
+                $destinatarioNombre,
+                $tipoMensaje,
+                $message,
+                $estado,
+                $respJson
+            ]);
+        } catch (\Throwable $eLog) {
+            error_log("Error guardando whatsapp_log: " . $eLog->getMessage());
+        }
+
+        return $result;
     }
 
     /**

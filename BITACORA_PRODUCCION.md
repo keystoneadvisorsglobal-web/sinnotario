@@ -1,5 +1,26 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-09 09:47 UTC-3] - SOL-0104
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0104`
+- **Alcance de los Cambios:**
+  - **Bitácora Integral de Mensajería WhatsApp Gateway (`whatsapp_logs`) y Blindaje Anti-Envíos Accidentales:**
+    1. **Tabla de Auditoría de Mensajes (`database/Database.php` y SQLite Producción):**
+       - Creación de la tabla `whatsapp_logs` con columnas: `id`, `document_id`, `company_id`, `instance_name`, `destinatario_telefono`, `destinatario_nombre`, `tipo_mensaje`, `mensaje`, `estado`, `gateway_response` y `created_at`.
+       - Índices optimizados en fecha y teléfono para consultas de alta velocidad.
+    2. **Instrumentación del Servicio (`src/Services/WhatsAppService.php`):**
+       - Actualización de `sendTextMessage()` para capturar metadatos del cliente, documento asociado y persistir cada despacho de forma atómica sin interrumpir la operación si el gateway presenta contingencias.
+       - Sincronización en `MercadoPagoService.php` (notificaciones de confirmación de pago) y `B2BService.php` (notificaciones masivas laborales).
+    3. **Consola Administrativa (`admin.php#whatsapp`):**
+       - Nueva tabla y métricas de trazabilidad bajo la pestaña de WhatsApp Gateway: lista de mensajes despachados, fecha exacta, nombre del compareciente, teléfono con enlace directo `wa.me`, folio del trámite, mensaje transmitido y badge de estado (`ENVIADO` o `FALLIDO`).
+    4. **Limpieza Preventiva de Valores de Muestra:**
+       - Se vaciaron los atributos `value` en campos de teléfono de [`redactar.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/redactar.php) y [`subir-documento.php`](file:///Users/rodrigo/Documents/Antigravity/Keystone%20Advisors/SinNotario/subir-documento.php), dejándolos solo como `placeholder` sugerido. De esta forma, si el usuario olvida ingresar su teléfono, el formulario exige su llenado explícito en vez de despachar mensajes a números de terceros al azar.
+- **Pruebas Validadas:**
+  - Verificación sintáctica PHP Lint (`php -l`): 0 errores en todos los archivos modificados.
+  - Smoke test en producción: sesión administrativa validada e inspección de la nueva tabla en `admin.php#whatsapp` reflejando el registro #1 de la prueba con Juan Andrés Pérez González (+56991234567).
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-09 09:39 UTC-3] - SOL-0103
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

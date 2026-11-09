@@ -425,7 +425,7 @@ $defaultRetailGateway = $mpRetailActive ? 'MERCADO_PAGO' : ($khipuRetailActive ?
                         </div>
                         <div class="form-group">
                             <label>Teléfono WhatsApp *</label>
-                            <input type="tel" id="f_parte_a_tel" class="form-control" placeholder="+56 9 9123 4567" value="+56 9 9123 4567">
+                            <input type="tel" id="f_parte_a_tel" class="form-control" placeholder="+56 9 1234 5678" value="">
                         </div>
                     </div>
 
@@ -534,7 +534,7 @@ $defaultRetailGateway = $mpRetailActive ? 'MERCADO_PAGO' : ($khipuRetailActive ?
                             </div>
                             <div class="form-group">
                                 <label>WhatsApp de la Contraparte *</label>
-                                <input type="tel" id="f_parte_b_tel" class="form-control" placeholder="+56 9 8765 4321" value="+56 9 8765 4321">
+                                <input type="tel" id="f_parte_b_tel" class="form-control" placeholder="+56 9 8765 4321" value="">
                             </div>
                         </div>
                     </div>

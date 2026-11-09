@@ -769,7 +769,7 @@ class MercadoPagoService {
                 }
 
                 $msgWs = "Hola *{$nombre}*, en SinNotario.cl confirmamos el pago de tu trámite: *{$docTitle}* (Folio: *{$vCode}*).\n\nPuedes continuar con la firma digital de inmediato en este enlace seguro:\n👉 {$signingUrl}\n\n_Tu documento cuenta con respaldo criptográfico bajo Ley N° 19.799._";
-                $ws->sendTextMessage($cleanTel, $msgWs);
+                $ws->sendTextMessage($cleanTel, $msgWs, 'keystone-general', (int)$docId, $nombre, 'CONFIRMACION_PAGO_FIRMA');
             }
         }
     }

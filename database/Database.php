@@ -384,6 +384,23 @@ class Database {
                 hash_estado VARCHAR(64),
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE
+            );",
+
+            // Bitácora de Mensajería WhatsApp Gateway
+            "CREATE TABLE IF NOT EXISTS whatsapp_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                document_id INTEGER NULL,
+                company_id INTEGER NULL,
+                instance_name VARCHAR(100) NOT NULL,
+                destinatario_telefono VARCHAR(30) NOT NULL,
+                destinatario_nombre VARCHAR(150) NULL,
+                tipo_mensaje VARCHAR(50) NOT NULL,
+                mensaje TEXT NOT NULL,
+                estado VARCHAR(30) DEFAULT 'ENVIADO',
+                gateway_response TEXT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE SET NULL,
+                FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL
             );"
         ];
 

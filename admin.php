@@ -94,6 +94,23 @@ $totalTemplates = (int)$stmtTplCount->fetchColumn();
 $stmtTemplates = $pdo->query("SELECT * FROM templates ORDER BY id ASC");
 $allTemplates = $stmtTemplates->fetchAll();
 
+// Historial y Logs de WhatsApp Gateway (SOL-0104)
+$stmtWaLogs = $pdo->query("
+    SELECT w.*, d.codigo_verificacion as doc_codigo, d.titulo as doc_titulo, c.razon_social as empresa_razon
+    FROM whatsapp_logs w
+    LEFT JOIN documents d ON w.document_id = d.id
+    LEFT JOIN companies c ON w.company_id = c.id
+    ORDER BY w.id DESC
+    LIMIT 100
+");
+$allWaLogs = $stmtWaLogs ? $stmtWaLogs->fetchAll(PDO::FETCH_ASSOC) : [];
+$totalWaEnviados = 0;
+$totalWaFallidos = 0;
+foreach ($allWaLogs as $wLog) {
+    if ($wLog['estado'] === 'ENVIADO') $totalWaEnviados++;
+    else $totalWaFallidos++;
+}
+
 // Estado de Cloudflare R2
 $r2 = new StorageR2Adapter();
 $r2Ok = !empty($r2->accountId) && !empty($r2->apiToken);
@@ -1693,6 +1710,109 @@ $allTemplates = $stmtTemplates->fetchAll();
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Bitácora de Mensajería Despachada (SOL-0104) -->
+                    <div style="margin-top: 2rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <h4 style="font-size:1.05rem; font-weight:700; color:var(--primary); margin:0;">
+                                    <i class="fas fa-list-check" style="color:var(--accent); margin-right:6px;"></i> Registro y Trazabilidad de Mensajería WhatsApp
+                                </h4>
+                                <p style="font-size:0.8rem; color:#64748B; margin:0.2rem 0 0;">
+                                    Historial en tiempo real de notificaciones enviadas a clientes y comparecientes con su número, documento y estado de entrega.
+                                </p>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <span class="badge badge-pagado" style="font-size:0.8rem; padding:5px 10px;">
+                                    <i class="fas fa-paper-plane" style="margin-right:4px;"></i> <?= $totalWaEnviados ?> Enviados
+                                </span>
+                                <?php if ($totalWaFallidos > 0): ?>
+                                    <span class="badge badge-offline" style="font-size:0.8rem; padding:5px 10px;">
+                                        <i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i> <?= $totalWaFallidos ?> Fallidos
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <?php if (empty($allWaLogs)): ?>
+                            <div style="background:#F8FAFC; border:1px dashed #CBD5E1; border-radius:8px; padding:2rem; text-align:center; color:#64748B; font-size:0.9rem;">
+                                <i class="fab fa-whatsapp" style="font-size:2rem; color:#CBD5E1; margin-bottom:0.5rem; display:block;"></i>
+                                Aún no se registran despachos de mensajes en la bitácora de WhatsApp Gateway.
+                            </div>
+                        <?php else: ?>
+                            <div style="overflow-x:auto;">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Fecha y Hora</th>
+                                            <th>Destinatario / Cliente</th>
+                                            <th>Teléfono WhatsApp</th>
+                                            <th>Trámite / Folio</th>
+                                            <th>Tipo / Instancia</th>
+                                            <th>Mensaje Enviado</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($allWaLogs as $wLog): ?>
+                                            <tr>
+                                                <td style="font-weight:700; color:#64748B;">#<?= $wLog['id'] ?></td>
+                                                <td style="font-size:0.82rem; white-space:nowrap; color:#475569;">
+                                                    <i class="far fa-clock" style="margin-right:4px;"></i> <?= date('d/m/Y H:i:s', strtotime($wLog['created_at'])) ?>
+                                                </td>
+                                                <td>
+                                                    <strong style="color:var(--primary); font-size:0.88rem;">
+                                                        <?= htmlspecialchars($wLog['destinatario_nombre'] ?: 'Cliente SinNotario') ?>
+                                                    </strong>
+                                                    <?php if (!empty($wLog['empresa_razon'])): ?>
+                                                        <br><small style="color:#64748B;"><i class="fas fa-building"></i> <?= htmlspecialchars($wLog['empresa_razon']) ?></small>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', $wLog['destinatario_telefono']) ?>" target="_blank" style="color:#059669; font-weight:700; text-decoration:none; font-size:0.85rem; display:inline-flex; align-items:center; gap:4px;">
+                                                        <i class="fab fa-whatsapp"></i> +<?= htmlspecialchars($wLog['destinatario_telefono']) ?>
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <?php if (!empty($wLog['doc_codigo'])): ?>
+                                                        <span style="font-weight:700; color:var(--primary); font-size:0.85rem;">
+                                                            <?= htmlspecialchars($wLog['doc_codigo']) ?>
+                                                        </span>
+                                                        <br><small style="color:#64748B;"><?= htmlspecialchars($wLog['doc_titulo'] ?: 'Trámite Digital') ?></small>
+                                                    <?php else: ?>
+                                                        <span style="color:#94A3B8; font-size:0.82rem;">—</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td style="font-size:0.8rem;">
+                                                    <span style="display:inline-block; background:#EFF6FF; color:#1D4ED8; padding:2px 6px; border-radius:4px; font-weight:600;">
+                                                        <?= htmlspecialchars($wLog['tipo_mensaje']) ?>
+                                                    </span>
+                                                    <br><small style="color:#94A3B8;"><?= htmlspecialchars($wLog['instance_name']) ?></small>
+                                                </td>
+                                                <td style="font-size:0.8rem; color:#334155; max-width:320px; white-space:normal; line-height:1.4;">
+                                                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:6px 10px; font-family:monospace; font-size:0.75rem; word-break:break-word; max-height:80px; overflow-y:auto;">
+                                                        <?= nl2br(htmlspecialchars($wLog['mensaje'])) ?>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <?php if ($wLog['estado'] === 'ENVIADO'): ?>
+                                                        <span class="badge badge-pagado">
+                                                            <i class="fas fa-check-double" style="margin-right:4px;"></i> Enviado
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="badge badge-offline">
+                                                            <i class="fas fa-times-circle" style="margin-right:4px;"></i> Fallido
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

@@ -506,7 +506,7 @@ $defaultSubirGateway = $mpSubirActive ? 'MERCADO_PAGO' : ($khipuSubirActive ? 'K
                                 </div>
                                 <div class="form-group">
                                     <label>Teléfono WhatsApp *</label>
-                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 1234 5678" value="+56 9 1234 5678">
+                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 1234 5678" value="">
                                 </div>
                             </div>
                         </div>
@@ -574,7 +574,7 @@ $defaultSubirGateway = $mpSubirActive ? 'MERCADO_PAGO' : ($khipuSubirActive ? 'K
                                 </div>
                                 <div class="form-group">
                                     <label>Teléfono WhatsApp *</label>
-                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 8765 4321" value="+56 9 8765 4321">
+                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 8765 4321" value="">
                                 </div>
                             </div>
                         </div>

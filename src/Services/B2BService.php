@@ -946,13 +946,13 @@ class B2BService {
 
             // Despacho de notificación WhatsApp si la empresa tiene WhatsApp Oficial conectado
             if (!empty($waInstance) && !empty($tel)) {
-                $signUrl = "https://sinnotario.cl/verificar.php?code={$verifCode}&token={$tokenColab}";
+                $signUrl = "https://sinnotario.cl/firmar.php?code={$verifCode}&token={$tokenColab}";
                 $waMsg = "Hola {$nombre}. {$company['razon_social']} ha emitido el documento corporativo oficial: *{$titulo}*.\n\n" .
                          "Conforme a la normativa laboral, puedes revisar el PDF certificado y estampar tu firma de recepción conforme aquí:\n" .
                          "👉 {$signUrl}\n\n" .
                          "_Documento seguro certificado por SinNotario.cl bajo Ley N° 19.799._";
                 try {
-                    $wa->sendTestMessage($waInstance, $tel, $waMsg);
+                    $wa->sendTextMessage($tel, $waMsg, $waInstance, (int)$docId, $nombre, 'B2B_NOTIFICACION_LABORAL', (int)$companyId);
                 } catch (Exception $eWa) {
                     error_log("Error enviando WhatsApp a {$tel}: " . $eWa->getMessage());
                 }
