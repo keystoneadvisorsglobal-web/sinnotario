@@ -1,5 +1,42 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-09 09:39 UTC-3] - SOL-0103
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0103`
+- **Alcance de los Cambios:**
+  - **Reemplazo del Validador Forense por Portal Dedicado de Firma (`firmar.php`) Post-Pago:**
+    1. **Eliminación de la Fricción Post-Pago:**
+       - Se erradica la experiencia confusa donde el pagador retornaba a `verificar.php` y se le solicitaba validar documento o se le mostraba "borrador activo".
+       - Se creó `firmar.php` como la pantalla oficial de aterrizaje post-pago, mostrando un banner verde de confirmación y la lista clara de comparecientes con sus roles y estados de firma.
+    2. **Firma Electrónica y Enlaces Compartibles:**
+       - Cada firmante dispone de su botón `[Firmar Ahora]` que despliega el modal de suscripción bajo la Ley N° 19.799 con ClaveÚnica o OTP por correo.
+       - Botón `[Compartir Link WhatsApp]` para que el solicitante envíe de inmediato el enlace de firma a los demás comparecientes.
+    3. **Endpoint API de Firma de Compareciente (`sign_document_signer`):**
+       - Registra la firma del compareciente, y una vez completadas todas las firmas requeridas, transiciona el documento a `COMPLETADO` y re-sella el PDF oficial en Cloudflare R2 vía `DocumentPdfService::generateAndVaultDocument()`.
+    4. **Actualización de Pasarelas (`MercadoPagoService.php`):**
+       - Las URLs de retorno (`success_url`, `pending_url`, `failure_url`, `back_urls`) y los enlaces de reanudación enviados por correo y WhatsApp ahora apuntan a `https://sinnotario.cl/firmar.php?code=...`.
+- **Pruebas Validadas:**
+  - Verificación de sintaxis remota con `php -l`: 0 errores en `firmar.php`, `api/index.php` y `src/Services/MercadoPagoService.php`.
+  - Smoke test HTTP 200 en `https://sinnotario.cl/firmar.php?code=SN-73A9-1635`.
+  - Renderizado correcto del compareciente Juan Andrés Pérez González con su botón de firma interactivo.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+### [2026-11-09 09:05 UTC-3] - SOL-0102
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0102`
+- **Alcance de los Cambios:**
+  - **Soporte Dual Orders API y Corrección de WhatsAppService en Acreditación Automática:**
+    1. Implementación del método faltante `sendTextMessage()` en `src/Services/WhatsAppService.php` y protección con `\Throwable` para evitar rollbacks transaccionales.
+    2. Adaptación del webhook `mp_webhook` en `api/index.php` para procesar notificaciones tanto de `order` (Orders API) como de `payment` (IPN).
+    3. Soporte de conciliación de contingencia en caliente en retornos con `collection_id`.
+    4. Acreditación de la orden #29 (pago #188625710458) a `PAGADO` y documento #16 a `PENDIENTE_FIRMA`.
+- **Pruebas Validadas:**
+  - Verificación sintáctica PHP Lint 0 errores.
+  - Reconciliación exitosa en base de datos de producción.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción.
+
 ### [2026-11-09 00:00 UTC-3] - SOL-0093
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

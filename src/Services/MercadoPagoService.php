@@ -432,9 +432,9 @@ class MercadoPagoService {
                 ]
             ],
             'back_urls' => [
-                'success' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=success&external_ref={$externalReference}",
-                'pending' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=pending&external_ref={$externalReference}",
-                'failure' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=failure&external_ref={$externalReference}"
+                'success' => "{$siteUrl}/firmar.php?code={$verifCode}&payment_status=success&external_ref={$externalReference}",
+                'pending' => "{$siteUrl}/firmar.php?code={$verifCode}&payment_status=pending&external_ref={$externalReference}",
+                'failure' => "{$siteUrl}/firmar.php?code={$verifCode}&payment_status=failure&external_ref={$externalReference}"
             ],
             'auto_return' => 'approved',
             'external_reference' => $externalReference,
@@ -563,9 +563,9 @@ class MercadoPagoService {
             'config' => [
                 'statement_descriptor' => 'SINNOTARIO',
                 'online' => [
-                    'success_url' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=success&external_ref={$externalReference}",
-                    'pending_url' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=pending&external_ref={$externalReference}",
-                    'failure_url' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=failure&external_ref={$externalReference}",
+                    'success_url' => "{$siteUrl}/firmar.php?code={$verifCode}&payment_status=success&external_ref={$externalReference}",
+                    'pending_url' => "{$siteUrl}/firmar.php?code={$verifCode}&payment_status=pending&external_ref={$externalReference}",
+                    'failure_url' => "{$siteUrl}/firmar.php?code={$verifCode}&payment_status=failure&external_ref={$externalReference}",
                     'auto_return' => 'approved'
                 ]
             ]
@@ -720,7 +720,7 @@ class MercadoPagoService {
         $vCode = $doc['codigo_verificacion'];
         $docTitle = $doc['titulo'] ?: 'Documento Legal';
         $siteUrl = 'https://sinnotario.cl';
-        $signingUrl = "{$siteUrl}/verificar.php?code={$vCode}&payment_status=success";
+        $signingUrl = "{$siteUrl}/firmar.php?code={$vCode}&payment_status=success";
 
         require_once __DIR__ . '/MailService.php';
         require_once __DIR__ . '/WhatsAppService.php';
