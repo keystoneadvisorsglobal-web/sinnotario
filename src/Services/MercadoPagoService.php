@@ -113,7 +113,7 @@ class MercadoPagoService {
     /**
      * Crea una preferencia de pago para comprar una Bolsa Prepagada B2B
      */
-    public function createB2BPackPreference(int $companyId, string $packKey, array $packData, array $companyData, int $userId): array {
+    public function createB2BPackPreference(int $companyId, string $packKey, array $packData, array $companyData, ?int $userId = null): array {
         $externalReference = "B2B_PACK_{$companyId}_{$packKey}_" . time();
         $totalConIva = (int)round($packData['total'] * 1.19); // Valores B2B son + IVA
 
@@ -137,6 +137,8 @@ class MercadoPagoService {
                 $phoneNumber = $phoneDigits;
             }
         }
+
+        $pdo = Database::getInstance();
 
         // Historial del cliente para preferencias de pago
         $stmtHistory = $pdo->prepare("SELECT COUNT(*) as total_orders, MAX(created_at) as last_date FROM payment_orders WHERE company_id = ? AND estado IN ('APROBADO', 'PAGADO')");
@@ -197,6 +199,8 @@ class MercadoPagoService {
 
         // Registrar orden previa en base de datos
         $pdo = Database::getInstance();
+        $validUserId = ($userId && $userId > 0) ? $userId : null;
+
         $stmtOrder = $pdo->prepare("
             INSERT INTO payment_orders (
                 external_reference, payment_type, company_id, user_id,
@@ -206,7 +210,7 @@ class MercadoPagoService {
         $stmtOrder->execute([
             $externalReference,
             $companyId,
-            $userId,
+            $validUserId,
             $packKey,
             $packData['total'],
             $totalConIva,
@@ -445,6 +449,8 @@ class MercadoPagoService {
         ];
 
         $pdo = Database::getInstance();
+        $validUserId = ($userId && $userId > 0) ? $userId : null;
+
         $stmtOrder = $pdo->prepare("
             INSERT INTO payment_orders (
                 external_reference, payment_type, document_id, user_id,
@@ -454,7 +460,7 @@ class MercadoPagoService {
         $stmtOrder->execute([
             $externalReference,
             $docId,
-            $userId,
+            $validUserId,
             (int)round($montoTotal / 1.19),
             $montoTotal,
             json_encode($preferenceData['metadata'], JSON_UNESCAPED_UNICODE)

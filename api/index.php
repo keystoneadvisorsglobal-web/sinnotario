@@ -900,7 +900,15 @@ try {
                 jsonResponse(false, null, 'Bolsa seleccionada no válida', 400);
             }
 
-            $sessionUser = $_SESSION['user_id'] ?? ($company['user_id'] ?? 0);
+            $rawUserId = $_SESSION['user_id'] ?? ($company['user_id'] ?? null);
+            $sessionUser = null;
+            if (!empty($rawUserId)) {
+                $stmtCheckUser = $pdo->prepare("SELECT id FROM users WHERE id = ?");
+                $stmtCheckUser->execute([(int)$rawUserId]);
+                if ($stmtCheckUser->fetchColumn()) {
+                    $sessionUser = (int)$rawUserId;
+                }
+            }
 
             if ($gateway === 'KHIPU') {
                 require_once __DIR__ . '/../src/Services/KhipuService.php';

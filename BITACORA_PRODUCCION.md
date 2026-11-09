@@ -1537,3 +1537,15 @@
   3) **KPIs Financieros:** Nuevas métricas en cabecera: 'Recaudación Pagada (Percibida)', 'Conciliadas en Banco' y 'Pendientes de Pago'.
   4) **Migración Segura:** Órdenes históricas en SQLite actualizadas a `PAGADO`; verificación sintáctica PHP Lint 0 errores y validación HTTP 200 OK en producción.
 - **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción.
+
+### Registro de Despliegue: SOL-0101
+- **Fecha y Hora:** 2026-11-09 02:44:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0101`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Corrección de integridad referencial SQLite en checkout de pagos:
+  1) **Diagnóstico:** Se identificó que al intentar iniciar el checkout de bolsas B2B o documentos persona con usuario no autenticado o con id `0`, la sentencia `INSERT INTO payment_orders` fallaba con `SQLSTATE[23000]: FOREIGN KEY constraint failed` debido a que SQLite exige `NULL` en lugar de `0` para claves foráneas opcionales con `ON DELETE SET NULL`.
+  2) **Corrección:** Normalización estricta de `$userId` en `MercadoPagoService::createB2BPackPreference`, `MercadoPagoService::createRetailDocumentPreference` y `api/index.php?action=b2b_recharge_bag` convirtiendo cualquier valor no válido a `null`.
+  3) **Smoke Tests:** Se probaron con éxito las llamadas POST tanto para empresa 1 (`order_id: 26`), empresa 2 (`order_id: 27`) como persona natural (`order_id: 28`), todas retornando HTTP 200 OK con sus URLs de redirección a Mercado Pago.
+- **Estado Final:** ✅ Éxito Total / Error 500 Resuelto y Desplegado en Producción.
