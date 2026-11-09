@@ -385,6 +385,7 @@ $allTemplates = $stmtTemplates->fetchAll();
         .badge-borrador { background: #EFF6FF; color: #1D4ED8; }
         .badge-firmado { background: #ECFDF5; color: #047857; }
         .badge-pendiente { background: #FEF3C7; color: #92400E; }
+        .badge-pendiente-firma { background: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; }
         .badge-pagado { background: #DEF7EC; color: #03543F; }
         .badge-online { background: #DEF7EC; color: #03543F; }
         .badge-offline { background: #FDE8E8; color: #9B1C1C; }
@@ -944,7 +945,15 @@ $allTemplates = $stmtTemplates->fetchAll();
                                     <tr>
                                         <td><strong><?= htmlspecialchars($d['codigo_verificacion']) ?></strong></td>
                                         <td><?= htmlspecialchars($d['titulo']) ?></td>
-                                        <td><span class="badge badge-borrador"><?= htmlspecialchars($d['estado']) ?></span></td>
+                                        <td>
+                                            <?php if ($d['estado'] === 'PENDIENTE_FIRMA' || $d['estado'] === 'EN_FIRMA'): ?>
+                                                <span class="badge badge-pendiente-firma"><i class="fas fa-file-signature"></i> PENDIENTE DE FIRMA</span>
+                                            <?php elseif ($d['estado'] === 'FIRMADO' || $d['estado'] === 'COMPLETADO'): ?>
+                                                <span class="badge badge-firmado"><i class="fas fa-check-double"></i> <?= htmlspecialchars($d['estado']) ?></span>
+                                            <?php else: ?>
+                                                <span class="badge badge-borrador"><?= htmlspecialchars($d['estado']) ?></span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><strong>$<?= number_format($d['monto_pagado'], 0, ',', '.') ?> CLP</strong></td>
                                         <td>
                                             <span class="badge <?= $d['estado_pago'] === 'PAGADO' ? 'badge-pagado' : 'badge-pendiente' ?>">
@@ -1524,7 +1533,15 @@ $allTemplates = $stmtTemplates->fetchAll();
                                     <tr class="contract-row">
                                         <td><strong style="color:var(--primary);"><?= htmlspecialchars($d['codigo_verificacion']) ?></strong></td>
                                         <td><?= htmlspecialchars($d['titulo']) ?></td>
-                                        <td><span class="badge badge-borrador"><?= htmlspecialchars($d['estado']) ?></span></td>
+                                        <td>
+                                            <?php if ($d['estado'] === 'PENDIENTE_FIRMA' || $d['estado'] === 'EN_FIRMA'): ?>
+                                                <span class="badge badge-pendiente-firma"><i class="fas fa-file-signature"></i> PENDIENTE DE FIRMA</span>
+                                            <?php elseif ($d['estado'] === 'FIRMADO' || $d['estado'] === 'COMPLETADO'): ?>
+                                                <span class="badge badge-firmado"><i class="fas fa-check-double"></i> <?= htmlspecialchars($d['estado']) ?></span>
+                                            <?php else: ?>
+                                                <span class="badge badge-borrador"><?= htmlspecialchars($d['estado']) ?></span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td>
                                             <?php if (empty($docSigners)): ?>
                                                 <span style="color:#94A3B8; font-size:0.75rem;">Sin firmantes</span>

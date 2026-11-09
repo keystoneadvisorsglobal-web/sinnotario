@@ -44,6 +44,17 @@ class MercadoPagoService {
     }
 
     /**
+     * Consulta el estado y detalle de un pago en la API v1 de Mercado Pago
+     */
+    public function getPayment(int $paymentId): array {
+        $res = $this->request("/v1/payments/{$paymentId}", 'GET');
+        if (!$res['success']) {
+            throw new Exception("Error consultando pago #{$paymentId} en Mercado Pago: " . ($res['error'] ?? 'Desconocido'));
+        }
+        return $res['data'] ?? [];
+    }
+
+    /**
      * Petición HTTP a la API v1 de Mercado Pago
      */
     private function request(string $endpoint, string $method = 'GET', array $data = []): array {
@@ -432,15 +443,17 @@ class MercadoPagoService {
                 ]);
             }
 
-            // Si es trámite particular (DOCUMENT_RETAIL), pasar documento a EN_FIRMA o PAGADO
+            // Si es trámite particular (DOCUMENT_RETAIL), pasar documento a EN_FIRMA y estado_pago a PAGADO
             if ($order['payment_type'] === 'DOCUMENT_RETAIL' && !empty($order['document_id'])) {
                 $stmtDoc = $pdo->prepare("
                     UPDATE documents
-                    SET estado = CASE WHEN estado = 'BORRADOR' THEN 'EN_FIRMA' ELSE estado END,
+                    SET estado = 'PENDIENTE_FIRMA',
+                        estado_pago = 'PAGADO',
+                        monto_pagado = ?,
                         updated_at = datetime('now')
                     WHERE id = ?
                 ");
-                $stmtDoc->execute([$order['document_id']]);
+                $stmtDoc->execute([$order['monto_total'], $order['document_id']]);
             }
 
             $pdo->commit();
