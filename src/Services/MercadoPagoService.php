@@ -165,6 +165,42 @@ class MercadoPagoService {
             ];
         }
 
+        // 1. Intentar creación nativa vía Orders API (/v1/orders) oficial de la aplicación
+        $orderPayload = [
+            'type' => 'online',
+            'processing_mode' => 'manual',
+            'external_reference' => $externalReference,
+            'total_amount' => (string)$totalConIva,
+            'items' => [
+                [
+                    'title' => "SinNotario - {$packData['nombre']}",
+                    'unit_price' => (string)$totalConIva,
+                    'quantity' => 1
+                ]
+            ],
+            'payer' => [
+                'email' => $companyData['email'] ?: 'contacto@keystoneadvisors.cl'
+            ]
+        ];
+
+        $resOrder = $this->request('/v1/orders', 'POST', $orderPayload);
+        if ($resOrder['success'] && !empty($resOrder['data']['checkout_url'])) {
+            $orderMPId = $resOrder['data']['id'] ?? '';
+            $stmtUpd = $pdo->prepare("UPDATE payment_orders SET preference_id = ? WHERE id = ?");
+            $stmtUpd->execute([$orderMPId, $orderId]);
+
+            return [
+                'success' => true,
+                'configured' => true,
+                'order_id' => $orderId,
+                'preference_id' => $orderMPId,
+                'init_point' => $resOrder['data']['checkout_url'],
+                'external_reference' => $externalReference,
+                'monto_total' => $totalConIva
+            ];
+        }
+
+        // 2. Fallback clásico vía Preferences API (/checkout/preferences)
         $res = $this->request('/checkout/preferences', 'POST', $preferenceData);
         if (!$res['success']) {
             return $res;
@@ -259,6 +295,42 @@ class MercadoPagoService {
             ];
         }
 
+        // 1. Intentar creación nativa vía Orders API (/v1/orders) oficial de la aplicación
+        $orderPayload = [
+            'type' => 'online',
+            'processing_mode' => 'manual',
+            'external_reference' => $externalReference,
+            'total_amount' => (string)$montoTotal,
+            'items' => [
+                [
+                    'title' => "SinNotario - {$docTitle}",
+                    'unit_price' => (string)$montoTotal,
+                    'quantity' => 1
+                ]
+            ],
+            'payer' => [
+                'email' => $payerData['email'] ?: 'contacto@keystoneadvisors.cl'
+            ]
+        ];
+
+        $resOrder = $this->request('/v1/orders', 'POST', $orderPayload);
+        if ($resOrder['success'] && !empty($resOrder['data']['checkout_url'])) {
+            $orderMPId = $resOrder['data']['id'] ?? '';
+            $stmtUpd = $pdo->prepare("UPDATE payment_orders SET preference_id = ? WHERE id = ?");
+            $stmtUpd->execute([$orderMPId, $orderId]);
+
+            return [
+                'success' => true,
+                'configured' => true,
+                'order_id' => $orderId,
+                'preference_id' => $orderMPId,
+                'init_point' => $resOrder['data']['checkout_url'],
+                'external_reference' => $externalReference,
+                'monto_total' => $montoTotal
+            ];
+        }
+
+        // 2. Fallback clásico vía Preferences API (/checkout/preferences)
         $res = $this->request('/checkout/preferences', 'POST', $preferenceData);
         if (!$res['success']) {
             return $res;
