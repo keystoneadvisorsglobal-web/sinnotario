@@ -454,6 +454,13 @@ class MercadoPagoService {
                     WHERE id = ?
                 ");
                 $stmtDoc->execute([$order['monto_total'], $order['document_id']]);
+
+                // Notificación automática de Rescate y Enlace de Firma (Email + WhatsApp)
+                try {
+                    self::sendPaymentConfirmationAndSigningLinks((int)$order['document_id'], $order);
+                } catch (Exception $eNotif) {
+                    error_log("Error enviando notificaciones post-pago: " . $eNotif->getMessage());
+                }
             }
 
             $pdo->commit();
@@ -461,6 +468,78 @@ class MercadoPagoService {
         } catch (Exception $e) {
             $pdo->rollBack();
             throw $e;
+        }
+    }
+
+    /**
+     * Envío automático de comprobante de pago y enlace de firma digital a los firmantes (Email + WhatsApp)
+     */
+    private static function sendPaymentConfirmationAndSigningLinks(int $docId, array $order): void {
+        $pdo = Database::getInstance();
+        $stmtDoc = $pdo->prepare("SELECT * FROM documents WHERE id = ?");
+        $stmtDoc->execute([$docId]);
+        $doc = $stmtDoc->fetch(PDO::FETCH_ASSOC);
+        if (!$doc) return;
+
+        $stmtSigners = $pdo->prepare("SELECT * FROM document_signers WHERE document_id = ? ORDER BY id ASC");
+        $stmtSigners->execute([$docId]);
+        $signers = $stmtSigners->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($signers)) return;
+
+        $vCode = $doc['codigo_verificacion'];
+        $docTitle = $doc['titulo'] ?: 'Documento Legal';
+        $siteUrl = 'https://sinnotario.cl';
+        $signingUrl = "{$siteUrl}/verificar.php?code={$vCode}&payment_status=success";
+
+        require_once __DIR__ . '/MailService.php';
+        require_once __DIR__ . '/WhatsAppService.php';
+
+        $ws = new WhatsAppService();
+
+        foreach ($signers as $sig) {
+            $email = trim($sig['email'] ?? '');
+            $tel = trim($sig['telefono'] ?? '');
+            $nombre = trim($sig['nombre_completo'] ?? 'Estimado(a)');
+
+            // 1. Envío por Correo Electrónico
+            if (!empty($email)) {
+                $asunto = "✅ Pago Confirmado: Enlace para firmar tu {$docTitle} ({$vCode})";
+                $htmlBody = "
+                    <div style='font-family:Arial,sans-serif; color:#333333; line-height:1.6;'>
+                        <h2 style='color:#0F2A4A; margin-bottom:10px;'>¡Pago acreditado exitosamente!</h2>
+                        <p>Hola <strong>{$nombre}</strong>,</p>
+                        <p>Confirmamos la recepción del pago por <strong>$" . number_format($order['monto_total'], 0, ',', '.') . " CLP</strong> para la certificación y firma digital de tu trámite: <strong>{$docTitle}</strong> (Código: <strong>{$vCode}</strong>).</p>
+                        
+                        <div style='background:#F8FAFC; border-left:4px solid #10B981; padding:15px; margin:20px 0; border-radius:6px;'>
+                            <p style='margin:0; font-size:15px; font-weight:bold; color:#0F2A4A;'>¿Cerraste la ventana o se te apagó el dispositivo?</p>
+                            <p style='margin:5px 0 0; font-size:14px; color:#475569;'>No te preocupes. Tu trámite está 100% asegurado en nuestra plataforma. Puedes reanudar y estampar tu firma electrónica en cualquier momento haciendo clic en el siguiente botón:</p>
+                        </div>
+
+                        <div style='text-align:center; margin:25px 0;'>
+                            <a href='{$signingUrl}' style='background:#0F2A4A; color:#FFFFFF; text-decoration:none; padding:12px 28px; border-radius:6px; font-weight:bold; display:inline-block; font-size:16px;'>
+                                ✍️ Continuar y Firmar Documento
+                            </a>
+                        </div>
+
+                        <p style='font-size:13px; color:#64748B;'>También puedes verificar y dar seguimiento ingresando con tu código de validación <strong>{$vCode}</strong> en <a href='{$siteUrl}/verificar.php' style='color:#0F2A4A;'>sinnotario.cl/verificar.php</a>.</p>
+                        <hr style='border:none; border-top:1px solid #E2E8F0; margin:20px 0;'>
+                        <p style='font-size:12px; color:#94A3B8;'>SinNotario.cl &bull; Keystone Advisors SpA &bull; Certificación bajo Ley N° 19.799</p>
+                    </div>
+                ";
+                MailService::send($email, $asunto, $htmlBody);
+            }
+
+            // 2. Envío por WhatsApp
+            if (!empty($tel)) {
+                // Formatear teléfono internacional: si no tiene +, limpiar caracteres
+                $cleanTel = preg_replace('/[^0-9]/', '', $tel);
+                if (strlen($cleanTel) === 9 && substr($cleanTel, 0, 1) === '9') {
+                    $cleanTel = '56' . $cleanTel;
+                }
+
+                $msgWs = "Hola *{$nombre}*, en SinNotario.cl confirmamos el pago de tu trámite: *{$docTitle}* (Folio: *{$vCode}*).\n\nPuedes continuar con la firma digital de inmediato en este enlace seguro:\n👉 {$signingUrl}\n\n_Tu documento cuenta con respaldo criptográfico bajo Ley N° 19.799._";
+                $ws->sendTextMessage($cleanTel, $msgWs);
+            }
         }
     }
 }

@@ -11,6 +11,7 @@ require_once __DIR__ . '/database/Database.php';
 
 $code = isset($_GET['code']) ? trim($_GET['code']) : (isset($_GET['doc']) ? trim($_GET['doc']) : '');
 $hashParam = isset($_GET['hash']) ? trim($_GET['hash']) : '';
+$paymentStatus = isset($_GET['payment_status']) ? trim($_GET['payment_status']) : '';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -377,6 +378,30 @@ $hashParam = isset($_GET['hash']) ? trim($_GET['hash']) : '';
 
     <!-- Main Container -->
     <main class="verif-container">
+        <!-- Banner de Retorno Exitoso de Pago / Reanudación de Firma -->
+        <?php if ($paymentStatus === 'success'): ?>
+            <div style="background:#F0FDF4; border:2px solid #86EFAC; border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; box-shadow:0 4px 12px rgba(16,185,129,0.1);">
+                <div style="display:flex; align-items:center; gap:1rem;">
+                    <div style="background:#10B981; color:#FFFFFF; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0;">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size:1.1rem; font-weight:800; color:#065F46; margin:0;">
+                            ¡Pago Acreditado Exitosamente!
+                        </h3>
+                        <p style="font-size:0.86rem; color:#047857; margin:4px 0 0;">
+                            Tu trámite está listo y asegurado bajo la Ley N° 19.799. Ya puedes continuar con la firma electrónica de los comparecientes.
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <a href="#firmantes-seccion" onclick="document.getElementById('formVerifyCode').dispatchEvent(new Event('submit'));" class="btn-cta" style="background:#0F2A4A; color:#FFFFFF !important; padding:10px 20px; font-size:0.92rem; font-weight:700; border-radius:8px;">
+                        ✍️ Proceder a Firmar
+                    </a>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <div class="verif-methods-card">
             <!-- Tabs -->
             <div class="tab-nav">

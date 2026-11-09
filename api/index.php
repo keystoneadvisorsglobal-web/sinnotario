@@ -110,13 +110,17 @@ try {
                 jsonResponse(false, null, 'Documento no encontrado', 404);
             }
 
-            // Obtener firmante principal o datos del pagador
-            $stmtPayer = $pdo->prepare("SELECT nombre_completo, email, rut FROM document_signers WHERE document_id = ? ORDER BY id ASC LIMIT 1");
+            // Obtener firmante principal o datos del pagador (incluyendo teléfono y tipo de documento / pasaporte)
+            $stmtPayer = $pdo->prepare("SELECT nombre_completo, email, rut, telefono, tipo_documento, numero_identificacion, pais_emisor FROM document_signers WHERE document_id = ? ORDER BY id ASC LIMIT 1");
             $stmtPayer->execute([$docId]);
             $payer = $stmtPayer->fetch(PDO::FETCH_ASSOC) ?: [
                 'nombre_completo' => 'Cliente SinNotario',
                 'email' => 'contacto@sinnotario.cl',
-                'rut' => '11111111-1'
+                'rut' => '11111111-1',
+                'telefono' => '',
+                'tipo_documento' => 'RUT',
+                'numero_identificacion' => '',
+                'pais_emisor' => 'Chile'
             ];
 
             $montoTotal = (int)($doc['monto_pagado'] ?? 4990);
@@ -127,7 +131,10 @@ try {
             $payerData = [
                 'nombre' => $payer['nombre_completo'],
                 'email' => $payer['email'],
-                'rut' => $payer['rut']
+                'rut' => $payer['rut'] ?: ($payer['numero_identificacion'] ?? '11111111-1'),
+                'telefono' => $payer['telefono'] ?? '',
+                'tipo_documento' => $payer['tipo_documento'] ?? 'RUT',
+                'pais_emisor' => $payer['pais_emisor'] ?? 'Chile'
             ];
 
             if ($gateway === 'KHIPU') {
@@ -932,7 +939,22 @@ try {
             $id = $_GET['id'] ?? ($_GET['data.id'] ?? ($data['data']['id'] ?? null));
 
             if ($topic === 'payment' && $id) {
-                error_log("MP Webhook recibido para pago #{$id}");
+                require_once __DIR__ . '/../src/Services/MercadoPagoService.php';
+                try {
+                    $mp = new MercadoPagoService();
+                    // Consultar detalles oficiales del pago en la API de Mercado Pago
+                    $payInfo = $mp->getPayment((int)$id);
+                    if (!empty($payInfo['external_reference']) && ($payInfo['status'] ?? '') === 'approved') {
+                        MercadoPagoService::processApprovedPayment(
+                            $payInfo['external_reference'],
+                            (string)$id,
+                            $payInfo
+                        );
+                        error_log("MP Webhook: Pago #{$id} acreditado exitosamente para ref {$payInfo['external_reference']}");
+                    }
+                } catch (Exception $e) {
+                    error_log("MP Webhook Error procesando pago #{$id}: " . $e->getMessage());
+                }
             }
             jsonResponse(true, ['status' => 'received']);
             break;
