@@ -55,6 +55,18 @@ class MercadoPagoService {
     }
 
     /**
+     * Consulta y sincroniza el estado de una Orden en Orders API (/v1/orders/{id})
+     * Implementa la buena práctica de Backup de Notificaciones ante eventual retraso del Webhook
+     */
+    public function getOrder(string $orderId): array {
+        $res = $this->request("/v1/orders/{$orderId}", 'GET');
+        if (!$res['success']) {
+            return ['success' => false, 'error' => $res['error'] ?? 'No se pudo obtener la orden'];
+        }
+        return ['success' => true, 'data' => $res['data'] ?? []];
+    }
+
+    /**
      * Petición HTTP a la API v1 de Mercado Pago
      */
     private function request(string $endpoint, string $method = 'GET', array $data = []): array {
@@ -107,23 +119,62 @@ class MercadoPagoService {
 
         $siteUrl = 'https://sinnotario.cl';
 
+        // Desglosar nombres del pagador y teléfono
+        $fullName = trim($companyData['rep_legal_nombre'] ?? $companyData['razon_social'] ?? 'Representante Legal');
+        $nameParts = preg_split('/\s+/', $fullName, 2);
+        $firstName = $nameParts[0] ?? 'Representante';
+        $lastName = $nameParts[1] ?? 'Legal';
+        $cleanRut = preg_replace('/[^0-9kK]/', '', $companyData['rut'] ?? '');
+
+        $phoneRaw = $companyData['telefono'] ?? ($companyData['rep_legal_telefono'] ?? '');
+        $phoneDigits = preg_replace('/\D/', '', $phoneRaw);
+        $areaCode = '56';
+        $phoneNumber = '999999999';
+        if (!empty($phoneDigits)) {
+            if (strlen($phoneDigits) >= 9) {
+                $phoneNumber = substr($phoneDigits, -9);
+            } else {
+                $phoneNumber = $phoneDigits;
+            }
+        }
+
+        // Historial del cliente para preferencias de pago
+        $stmtHistory = $pdo->prepare("SELECT COUNT(*) as total_orders, MAX(created_at) as last_date FROM payment_orders WHERE company_id = ? AND estado IN ('APROBADO', 'PAGADO')");
+        $stmtHistory->execute([$companyId]);
+        $history = $stmtHistory->fetch(PDO::FETCH_ASSOC) ?: ['total_orders' => 0, 'last_date' => null];
+        $isFirstPurchase = ((int)($history['total_orders'] ?? 0)) === 0;
+
         $preferenceData = [
             'items' => [
                 [
                     'id' => $packKey,
                     'title' => "SinNotario - {$packData['nombre']} ({$packData['firmas']} firmas)",
                     'description' => "Bolsa prepagada de certificación digital Ley N° 19.799 para {$companyData['razon_social']}",
+                    'category_id' => 'services',
                     'quantity' => 1,
                     'currency_id' => 'CLP',
                     'unit_price' => $totalConIva
                 ]
             ],
             'payer' => [
-                'name' => $companyData['rep_legal_nombre'] ?: 'Representante Legal',
-                'email' => $companyData['rep_legal_email'] ?: 'contacto@empresa.cl',
+                'name' => $firstName,
+                'surname' => $lastName,
+                'email' => $companyData['rep_legal_email'] ?: ($companyData['email'] ?: 'contacto@empresa.cl'),
+                'phone' => [
+                    'area_code' => $areaCode,
+                    'number' => $phoneNumber
+                ],
                 'identification' => [
                     'type' => 'RUT',
-                    'number' => preg_replace('/[^0-9kK]/', '', $companyData['rut'] ?? '')
+                    'number' => $cleanRut ?: '111111111'
+                ]
+            ],
+            'additional_info' => [
+                'payer' => [
+                    'is_first_purchase_online' => $isFirstPurchase,
+                    'authentication_type' => 'native',
+                    'registration_date' => date('Y-m-d\TH:i:s.000P', strtotime($companyData['created_at'] ?? 'now')),
+                    'last_purchase' => !empty($history['last_date']) ? date('Y-m-d\TH:i:s.000P', strtotime($history['last_date'])) : null
                 ]
             ],
             'back_urls' => [
@@ -184,6 +235,25 @@ class MercadoPagoService {
         $lastName = $nameParts[1] ?? 'Legal';
         $cleanRut = preg_replace('/[^0-9kK]/', '', $companyData['rut'] ?? '');
 
+        // Obtener teléfono de la empresa o usuario
+        $phoneRaw = $companyData['telefono'] ?? ($companyData['rep_legal_telefono'] ?? '');
+        $phoneDigits = preg_replace('/\D/', '', $phoneRaw);
+        $areaCode = '56';
+        $phoneNumber = '999999999';
+        if (!empty($phoneDigits)) {
+            if (strlen($phoneDigits) >= 9) {
+                $phoneNumber = substr($phoneDigits, -9);
+            } else {
+                $phoneNumber = $phoneDigits;
+            }
+        }
+
+        // Historial del pagador para additional_info (Anti-fraude y Scoring MP)
+        $stmtHistory = $pdo->prepare("SELECT COUNT(*) as total_orders, MAX(created_at) as last_date FROM payment_orders WHERE company_id = ? AND estado IN ('APROBADO', 'PAGADO')");
+        $stmtHistory->execute([$companyId]);
+        $history = $stmtHistory->fetch(PDO::FETCH_ASSOC) ?: ['total_orders' => 0, 'last_date' => null];
+        $isFirstPurchase = ((int)($history['total_orders'] ?? 0)) === 0;
+
         $orderPayload = [
             'type' => 'online',
             'processing_mode' => 'manual',
@@ -191,6 +261,7 @@ class MercadoPagoService {
             'total_amount' => (string)$totalConIva,
             'items' => [
                 [
+                    'external_code' => "PACK-{$packKey}",
                     'title' => "SinNotario - {$packData['nombre']}",
                     'description' => "Bolsa prepagada de certificación digital Ley 19.799 ({$packData['firmas']} firmas)",
                     'category_id' => 'services',
@@ -202,6 +273,10 @@ class MercadoPagoService {
                 'email' => $companyData['rep_legal_email'] ?: ($companyData['email'] ?: 'contacto@keystoneadvisors.cl'),
                 'first_name' => $firstName,
                 'last_name' => $lastName,
+                'phone' => [
+                    'area_code' => $areaCode,
+                    'number' => $phoneNumber
+                ],
                 'identification' => [
                     'type' => 'RUT',
                     'number' => $cleanRut ?: '111111111'
@@ -265,23 +340,91 @@ class MercadoPagoService {
         $externalReference = "RETAIL_DOC_{$docId}_" . time();
         $siteUrl = 'https://sinnotario.cl';
 
+        // Desglosar nombres del pagador y documento de identidad (RUT o Pasaporte)
+        $fullName = trim($payerData['nombre'] ?? 'Cliente SinNotario');
+        $nameParts = preg_split('/\s+/', $fullName, 2);
+        $firstName = $nameParts[0] ?? 'Cliente';
+        $lastName = $nameParts[1] ?? 'SinNotario';
+
+        $idType = !empty($payerData['tipo_documento']) ? strtoupper($payerData['tipo_documento']) : 'RUT';
+        $idNum = !empty($payerData['numero_documento']) ? $payerData['numero_documento'] : ($payerData['rut'] ?? '');
+        $idNumClean = preg_replace('/[^a-zA-Z0-9]/', '', $idNum);
+        if (empty($idNumClean)) {
+            $idNumClean = '111111111';
+        }
+
+        // Obtener teléfono del pagador (WhatsApp / Móvil con código de país)
+        $phoneRaw = $payerData['telefono'] ?? ($payerData['phone'] ?? '');
+        $phoneDigits = preg_replace('/\D/', '', $phoneRaw);
+        $areaCode = '56';
+        $phoneNumber = '999999999';
+        if (!empty($phoneDigits)) {
+            if (strlen($phoneDigits) >= 9) {
+                $phoneNumber = substr($phoneDigits, -9);
+                if (strlen($phoneDigits) > 9) {
+                    $areaCode = substr($phoneDigits, 0, strlen($phoneDigits) - 9);
+                }
+            } else {
+                $phoneNumber = $phoneDigits;
+            }
+        }
+
+        $payerEmail = $payerData['email'] ?: 'contacto@sinnotario.cl';
+
+        // Determinar historial del cliente para additional_info
+        $pdo = Database::getInstance();
+        $stmtHistory = $pdo->prepare("
+            SELECT COUNT(*) as total_orders, MAX(created_at) as last_date 
+            FROM payment_orders 
+            WHERE (user_id = ? AND user_id IS NOT NULL) 
+               OR metadata_json LIKE ?
+        ");
+        $stmtHistory->execute([$userId, '%' . $payerEmail . '%']);
+        $history = $stmtHistory->fetch(PDO::FETCH_ASSOC) ?: ['total_orders' => 0, 'last_date' => null];
+        $isFirstPurchase = ((int)($history['total_orders'] ?? 0)) === 0;
+
+        // Tipo de autenticación (Google OAuth vs formulario nativo)
+        $authType = 'native';
+        if ($userId) {
+            $stmtUser = $pdo->prepare("SELECT google_id FROM users WHERE id = ?");
+            $stmtUser->execute([$userId]);
+            $uRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+            if (!empty($uRow['google_id'])) {
+                $authType = 'gmail';
+            }
+        }
+
         $preferenceData = [
             'items' => [
                 [
                     'id' => "DOC-{$docId}",
                     'title' => "SinNotario - {$docTitle}",
                     'description' => "Certificación digital de documento privado Ley N° 19.799 (Cód: {$verifCode})",
+                    'category_id' => 'services',
                     'quantity' => 1,
                     'currency_id' => 'CLP',
                     'unit_price' => $montoTotal
                 ]
             ],
             'payer' => [
-                'name' => $payerData['nombre'] ?: 'Cliente SinNotario',
-                'email' => $payerData['email'] ?: 'contacto@sinnotario.cl',
+                'name' => $firstName,
+                'surname' => $lastName,
+                'email' => $payerEmail,
+                'phone' => [
+                    'area_code' => $areaCode,
+                    'number' => $phoneNumber
+                ],
                 'identification' => [
-                    'type' => 'RUT',
-                    'number' => preg_replace('/[^0-9kK]/', '', $payerData['rut'] ?? '')
+                    'type' => ($idType === 'PASAPORTE') ? 'PASAPORTE' : 'RUT',
+                    'number' => $idNumClean
+                ]
+            ],
+            'additional_info' => [
+                'payer' => [
+                    'is_first_purchase_online' => $isFirstPurchase,
+                    'authentication_type' => $authType,
+                    'registration_date' => date('Y-m-d\TH:i:s.000P'),
+                    'last_purchase' => !empty($history['last_date']) ? date('Y-m-d\TH:i:s.000P', strtotime($history['last_date'])) : null
                 ]
             ],
             'back_urls' => [
@@ -344,6 +487,45 @@ class MercadoPagoService {
             $idNumClean = '111111111';
         }
 
+        // Obtener teléfono del pagador (WhatsApp / Móvil con código de país)
+        $phoneRaw = $payerData['telefono'] ?? ($payerData['phone'] ?? '');
+        $phoneDigits = preg_replace('/\D/', '', $phoneRaw);
+        $areaCode = '56';
+        $phoneNumber = '999999999';
+        if (!empty($phoneDigits)) {
+            if (strlen($phoneDigits) >= 9) {
+                $phoneNumber = substr($phoneDigits, -9);
+                if (strlen($phoneDigits) > 9) {
+                    $areaCode = substr($phoneDigits, 0, strlen($phoneDigits) - 9);
+                }
+            } else {
+                $phoneNumber = $phoneDigits;
+            }
+        }
+
+        // Determinar historial del cliente para additional_info (Anti-fraude y scoring MP)
+        $payerEmail = $payerData['email'] ?: 'contacto@keystoneadvisors.cl';
+        $stmtHistory = $pdo->prepare("
+            SELECT COUNT(*) as total_orders, MAX(created_at) as last_date 
+            FROM payment_orders 
+            WHERE (user_id = ? AND user_id IS NOT NULL) 
+               OR metadata_json LIKE ?
+        ");
+        $stmtHistory->execute([$userId, '%' . $payerEmail . '%']);
+        $history = $stmtHistory->fetch(PDO::FETCH_ASSOC) ?: ['total_orders' => 0, 'last_date' => null];
+        $isFirstPurchase = ((int)($history['total_orders'] ?? 0)) === 0;
+
+        // Tipo de autenticación (Google OAuth vs formulario nativo)
+        $authType = 'native';
+        if ($userId) {
+            $stmtUser = $pdo->prepare("SELECT google_id FROM users WHERE id = ?");
+            $stmtUser->execute([$userId]);
+            $uRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+            if (!empty($uRow['google_id'])) {
+                $authType = 'gmail';
+            }
+        }
+
         $orderPayload = [
             'type' => 'online',
             'processing_mode' => 'manual',
@@ -351,6 +533,7 @@ class MercadoPagoService {
             'total_amount' => (string)$montoTotal,
             'items' => [
                 [
+                    'external_code' => "DOC-{$docId}",
                     'title' => "SinNotario - {$docTitle}",
                     'description' => "Certificación digital de documento privado Ley 19.799 (Cód: {$verifCode})",
                     'category_id' => 'services',
@@ -359,9 +542,13 @@ class MercadoPagoService {
                 ]
             ],
             'payer' => [
-                'email' => $payerData['email'] ?: 'contacto@keystoneadvisors.cl',
+                'email' => $payerEmail,
                 'first_name' => $firstName,
                 'last_name' => $lastName,
+                'phone' => [
+                    'area_code' => $areaCode,
+                    'number' => $phoneNumber
+                ],
                 'identification' => [
                     'type' => ($idType === 'PASAPORTE') ? 'PASAPORTE' : 'RUT',
                     'number' => $idNumClean

@@ -1510,3 +1510,17 @@
   2) **Recomendaciones de Calidad:** Enriquecimiento de `payer` con `first_name`, `last_name` e `identification` (`RUT` o `PASAPORTE` para extranjeros con normalización de caracteres alfanuméricos) (+15 pts); e inclusión de `category_id = 'services'` y `description` detallada en cada ítem (+7 pts).
   3) **Pruebas y Verificación Remota:** Verificación sintáctica PHP Lint 0 errores en hostinger y ejecución de prueba unitaria remota generando la orden oficial de prueba `ORDTST01M6Z9ZB6E6G99M3H0B6SVYKEY` con respuesta exitosa de Mercado Pago.
 - **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y listo para verificación de calidad en Developers.
+
+### Registro de Despliegue: SOL-0099
+- **Fecha y Hora:** 2026-11-09 02:04:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0099`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Implementación de las 4 Buenas Prácticas Avanzadas de Mercado Pago Developers:
+  1) **Teléfono del Pagador (`payer.phone`):** Envío estructurado de código de país (`area_code: "56"`) y número de teléfono móvil para los motores de scoring anti-fraude tanto en trámite particular como en bolsas B2B.
+  2) **Código Externo del Ítem (`items[].external_code`):** Inclusión de códigos únicos `DOC-{id}` y `PACK-{key}` en cada línea de compra.
+  3) **Información Adicional del Cliente (`additional_info.payer`):** Indicador de primera compra online (`is_first_purchase_online`), método de autenticación (`gmail` vs `native`) y fecha de última compra previa calculada desde SQLite.
+  4) **Lógica de Respaldo de Notificaciones (`getOrder`):** Implementación de consulta directa `GET /v1/orders/{id}` en `MercadoPagoService.php` y sincronización automática en `verificar.php` y `empresas.php` en caso de latencia o corte momentáneo de red en el Webhook.
+  5) **Verificación:** Ejecución remota de smoke test generando la orden `ORDTST01M6ZB01FJ83A5BRGR3SWEKG5F` y comprobando `getOrder` con status `created` (OK).
+- **Estado Final:** ✅ Éxito Total / 100% Operativo y Desplegado en Producción.
