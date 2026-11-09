@@ -178,6 +178,18 @@ if (isset($_POST['save_integrations_settings'])) {
     $msgIntegrationsSuccess = '¡Configuración de pasarelas de pago, webhooks y credenciales actualizada exitosamente!';
 }
 
+// Acción administrativa: Conciliar pago manualmente o marcar conciliado bancario
+$msgPaymentAction = '';
+if (isset($_POST['action_payment_reconcile'])) {
+    $orderIdToReconcile = (int)($_POST['order_id'] ?? 0);
+    $newStatus = trim($_POST['new_status'] ?? 'CONCILIADO');
+    if ($orderIdToReconcile > 0 && in_array($newStatus, ['PAGADO', 'CONCILIADO', 'PENDIENTE'])) {
+        $stmtReconcile = $pdo->prepare("UPDATE payment_orders SET estado = ?, updated_at = datetime('now') WHERE id = ?");
+        $stmtReconcile->execute([$newStatus, $orderIdToReconcile]);
+        $msgPaymentAction = "Orden #{$orderIdToReconcile} actualizada exitosamente a estado: {$newStatus}";
+    }
+}
+
 // Procesar acciones de gestión B2B desde Consola Administrativa
 $msgB2BSuccess = '';
 if (isset($_POST['admin_b2b_action'])) {
@@ -988,18 +1000,25 @@ $allTemplates = $stmtTemplates->fetchAll();
             <!-- ========================================== -->
             <div id="section_pagos" class="admin-section">
                 <!-- Accesos Directos a Portales Oficiales para Cuadre -->
+                <?php if (!empty($msgPaymentAction)): ?>
+                    <div style="background:#ECFDF5; border:1px solid #10B981; color:#065F46; padding:0.9rem 1.25rem; border-radius:10px; margin-bottom:1.5rem; display:flex; align-items:center; gap:0.75rem;">
+                        <i class="fas fa-check-circle fa-lg"></i>
+                        <div><?= htmlspecialchars($msgPaymentAction) ?></div>
+                    </div>
+                <?php endif; ?>
+
                 <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:var(--shadow-sm);">
                     <div>
                         <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary); margin:0;">
-                            <i class="fas fa-university" style="color:#10B981;"></i> Conciliación y Acceso Directo a Portales de Recaudación
+                            <i class="fas fa-university" style="color:#10B981;"></i> Conciliación Bancaria y Recaudación de Fondos
                         </h3>
                         <p style="font-size:0.83rem; color:#64748B; margin:4px 0 0;">
-                            Contrasta las órdenes de SinNotario en tiempo real contra los paneles de liquidación bancaria de Mercado Pago y Khipu.
+                            Contrasta las órdenes pagadas en SinNotario contra las liquidaciones y transferencias en la cuenta corriente de Keystone Advisors SpA.
                         </p>
                     </div>
                     <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
                         <a href="https://www.mercadopago.cl/activities" target="_blank" class="btn-cta" style="background:#009EE3; color:#FFF !important; padding:8px 14px; font-size:0.85rem;">
-                            <i class="fas fa-external-link-alt"></i> Panel Mercado Pago (Actividad & Cartola)
+                            <i class="fas fa-external-link-alt"></i> Panel Mercado Pago (Cartola & Retiros)
                         </a>
                         <a href="https://khipu.com/merchant" target="_blank" class="btn-cta" style="background:#6366F1; color:#FFF !important; padding:8px 14px; font-size:0.85rem;">
                             <i class="fas fa-external-link-alt"></i> Panel Khipu (Transferencias Cobradas)
@@ -1007,33 +1026,34 @@ $allTemplates = $stmtTemplates->fetchAll();
                     </div>
                 </div>
 
-                <!-- KPIs de Recaudación -->
+                <!-- KPIs de Recaudación y Conciliación Financiera -->
                 <?php
                 $totalOrdenes = count($allPaymentOrders);
-                $aprobadas = array_filter($allPaymentOrders, function($o) { return $o['estado'] === 'APROBADO'; });
+                $pagadas = array_filter($allPaymentOrders, function($o) { return in_array($o['estado'], ['PAGADO', 'APROBADO', 'CONCILIADO']); });
+                $conciliadas = array_filter($allPaymentOrders, function($o) { return $o['estado'] === 'CONCILIADO'; });
                 $pendientes = array_filter($allPaymentOrders, function($o) { return $o['estado'] === 'PENDIENTE'; });
-                $totalRecaudado = array_sum(array_column($aprobadas, 'monto_total'));
+                $totalRecaudado = array_sum(array_column($pagadas, 'monto_total'));
                 ?>
                 <div class="kpi-grid">
                     <div class="kpi-card">
-                        <div style="font-size:0.8rem; font-weight:600; color:#64748B; text-transform:uppercase;">Total Transacciones</div>
+                        <div style="font-size:0.8rem; font-weight:600; color:#64748B; text-transform:uppercase;">Total Órdenes Emitidas</div>
                         <div class="kpi-val" style="color:var(--primary);"><?= $totalOrdenes ?></div>
-                        <span style="font-size:0.75rem; color:#64748B;">Órdenes iniciadas</span>
+                        <span style="font-size:0.75rem; color:#64748B;">Intenciones de cobro</span>
                     </div>
                     <div class="kpi-card">
-                        <div style="font-size:0.8rem; font-weight:600; color:#64748B; text-transform:uppercase;">Pagos Aprobados</div>
-                        <div class="kpi-val" style="color:#059669;"><?= count($aprobadas) ?></div>
-                        <span style="font-size:0.75rem; color:#059669;"><i class="fas fa-check-circle"></i> Acreditados con éxito</span>
+                        <div style="font-size:0.8rem; font-weight:600; color:#64748B; text-transform:uppercase;">Recaudación Pagada (Percibida)</div>
+                        <div class="kpi-val" style="color:#059669;">$<?= number_format($totalRecaudado, 0, '', '.') ?></div>
+                        <span style="font-size:0.75rem; color:#059669;"><i class="fas fa-check-circle"></i> <?= count($pagadas) ?> órdenes cobradas con éxito</span>
                     </div>
                     <div class="kpi-card">
-                        <div style="font-size:0.8rem; font-weight:600; color:#64748B; text-transform:uppercase;">Pagos Pendientes</div>
+                        <div style="font-size:0.8rem; font-weight:600; color:#64748B; text-transform:uppercase;">Conciliadas en Banco</div>
+                        <div class="kpi-val" style="color:#2563EB;"><?= count($conciliadas) ?></div>
+                        <span style="font-size:0.75rem; color:#2563EB;"><i class="fas fa-receipt"></i> Cuadradas con cartola</span>
+                    </div>
+                    <div class="kpi-card">
+                        <div style="font-size:0.8rem; font-weight:600; color:#64748B; text-transform:uppercase;">Pendientes de Pago</div>
                         <div class="kpi-val" style="color:#D97706;"><?= count($pendientes) ?></div>
-                        <span style="font-size:0.75rem; color:#D97706;"><i class="fas fa-clock"></i> En proceso / carrito</span>
-                    </div>
-                    <div class="kpi-card">
-                        <div style="font-size:0.8rem; font-weight:600; color:#64748B; text-transform:uppercase;">Total Recaudado (IVA incl.)</div>
-                        <div class="kpi-val" style="color:#10B981;">$<?= number_format($totalRecaudado, 0, '', '.') ?></div>
-                        <span style="font-size:0.75rem; color:#10B981;"><i class="fas fa-coins"></i> Liquidado en pasarelas</span>
+                        <span style="font-size:0.75rem; color:#D97706;"><i class="fas fa-clock"></i> Esperando abono o checkout</span>
                     </div>
                 </div>
 
@@ -1045,7 +1065,7 @@ $allTemplates = $stmtTemplates->fetchAll();
                                 <i class="fas fa-receipt" style="color:#10B981;"></i> Libro Mayor de Pagos y Conciliación
                             </h3>
                             <p style="font-size:0.83rem; color:#64748B; margin:4px 0 0;">
-                                Trazabilidad por ID de pasarela, referencia externa, cliente pagador y comprobante tributario.
+                                Registro financiero de transacciones con estado de cobro y validación de cuadre bancario.
                             </p>
                         </div>
                         <input type="text" id="filterPaymentsInput" placeholder="Buscar por referencia, cliente o RUT..." style="padding:8px 14px; border:1px solid #CBD5E1; border-radius:6px; font-size:0.85rem; width:280px;">
@@ -1056,19 +1076,20 @@ $allTemplates = $stmtTemplates->fetchAll();
                             <thead>
                                 <tr style="background:#F8FAFC; color:#64748B; text-align:left;">
                                     <th style="padding:0.75rem;">ID</th>
-                                    <th style="padding:0.75rem;">Referencia / Gateway</th>
+                                    <th style="padding:0.75rem;">Referencia / Pasarela</th>
                                     <th style="padding:0.75rem;">Tipo / Concepto</th>
                                     <th style="padding:0.75rem;">Cliente / Empresa</th>
                                     <th style="padding:0.75rem;">Monto Neto</th>
                                     <th style="padding:0.75rem;">Total Pagado</th>
-                                    <th style="padding:0.75rem; text-align:center;">Estado</th>
+                                    <th style="padding:0.75rem; text-align:center;">Estado Financiero</th>
                                     <th style="padding:0.75rem;">Fecha & Hora</th>
+                                    <th style="padding:0.75rem; text-align:center;">Conciliación</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (empty($allPaymentOrders)): ?>
                                     <tr>
-                                        <td colspan="8" style="padding:2.5rem; text-align:center; color:#94A3B8;">
+                                        <td colspan="9" style="padding:2.5rem; text-align:center; color:#94A3B8;">
                                             <i class="fas fa-cash-register fa-2x" style="margin-bottom:0.5rem; opacity:0.5;"></i><br>
                                             No se han registrado órdenes de pago online aún.
                                         </td>
@@ -1103,13 +1124,17 @@ $allTemplates = $stmtTemplates->fetchAll();
                                             <td style="padding:0.75rem; font-family:monospace;">$<?= number_format($ord['monto_neto'], 0, '', '.') ?></td>
                                             <td style="padding:0.75rem; font-weight:800; color:#059669; font-family:monospace;">$<?= number_format($ord['monto_total'], 0, '', '.') ?></td>
                                             <td style="padding:0.75rem; text-align:center;">
-                                                <?php if ($ord['estado'] === 'APROBADO'): ?>
-                                                    <span style="background:#DCFCE7; color:#15803D; font-weight:800; font-size:0.75rem; padding:3px 8px; border-radius:4px;">
-                                                        <i class="fas fa-check"></i> APROBADO
+                                                <?php if ($ord['estado'] === 'CONCILIADO'): ?>
+                                                    <span style="background:#EFF6FF; color:#1D4ED8; font-weight:800; font-size:0.75rem; padding:3px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;">
+                                                        <i class="fas fa-check-double"></i> CONCILIADO
+                                                    </span>
+                                                <?php elseif ($ord['estado'] === 'PAGADO' || $ord['estado'] === 'APROBADO'): ?>
+                                                    <span style="background:#DCFCE7; color:#15803D; font-weight:800; font-size:0.75rem; padding:3px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;">
+                                                        <i class="fas fa-check-circle"></i> PAGADO
                                                     </span>
                                                 <?php elseif ($ord['estado'] === 'PENDIENTE'): ?>
-                                                    <span style="background:#FEF3C7; color:#B45309; font-weight:800; font-size:0.75rem; padding:3px 8px; border-radius:4px;">
-                                                        <i class="fas fa-clock"></i> PENDIENTE
+                                                    <span style="background:#FEF3C7; color:#B45309; font-weight:800; font-size:0.75rem; padding:3px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;">
+                                                        <i class="fas fa-clock"></i> PENDIENTE DE PAGO
                                                     </span>
                                                 <?php else: ?>
                                                     <span style="background:#FEE2E2; color:#B91C1C; font-weight:800; font-size:0.75rem; padding:3px 8px; border-radius:4px;">
@@ -1118,6 +1143,29 @@ $allTemplates = $stmtTemplates->fetchAll();
                                                 <?php endif; ?>
                                             </td>
                                             <td style="padding:0.75rem; font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($ord['created_at']) ?></td>
+                                            <td style="padding:0.75rem; text-align:center;">
+                                                <?php if ($ord['estado'] === 'CONCILIADO'): ?>
+                                                    <form method="POST" style="display:inline;" onsubmit="return confirm('¿Volver orden a estado PAGADO (sin conciliar)?');">
+                                                        <input type="hidden" name="action_payment_reconcile" value="1">
+                                                        <input type="hidden" name="order_id" value="<?= $ord['id'] ?>">
+                                                        <input type="hidden" name="new_status" value="PAGADO">
+                                                        <button type="submit" title="Desmarcar conciliación" style="background:none; border:none; color:#64748B; cursor:pointer; font-size:0.8rem; text-decoration:underline;">
+                                                            Revertir
+                                                        </button>
+                                                    </form>
+                                                <?php elseif ($ord['estado'] === 'PAGADO' || $ord['estado'] === 'APROBADO'): ?>
+                                                    <form method="POST" style="display:inline;">
+                                                        <input type="hidden" name="action_payment_reconcile" value="1">
+                                                        <input type="hidden" name="order_id" value="<?= $ord['id'] ?>">
+                                                        <input type="hidden" name="new_status" value="CONCILIADO">
+                                                        <button type="submit" title="Confirmar cuadre en cartola bancaria" style="background:#2563EB; color:#FFF; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:700; cursor:pointer;">
+                                                            <i class="fas fa-check"></i> Conciliar
+                                                        </button>
+                                                    </form>
+                                                <?php else: ?>
+                                                    <span style="color:#94A3B8; font-size:0.75rem;">—</span>
+                                                <?php endif; ?>
+                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>

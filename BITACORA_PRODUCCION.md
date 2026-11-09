@@ -1524,3 +1524,16 @@
   4) **Lógica de Respaldo de Notificaciones (`getOrder`):** Implementación de consulta directa `GET /v1/orders/{id}` en `MercadoPagoService.php` y sincronización automática en `verificar.php` y `empresas.php` en caso de latencia o corte momentáneo de red en el Webhook.
   5) **Verificación:** Ejecución remota de smoke test generando la orden `ORDTST01M6ZB01FJ83A5BRGR3SWEKG5F` y comprobando `getOrder` con status `created` (OK).
 - **Estado Final:** ✅ Éxito Total / 100% Operativo y Desplegado en Producción.
+
+### Registro de Despliegue: SOL-0100
+- **Fecha y Hora:** 2026-11-09 02:08:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0100`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Adopción de nomenclatura financiera y contable en el Libro Mayor de Pagos y Conciliación (`admin.php#pagos`):
+  1) **Reemplazo de Términos:** Sustitución de estados técnicos de API (`APROBADO`) por estados financieros reales: `PAGADO` (fondos cobrados y percibidos), `PENDIENTE DE PAGO` (órdenes por pagar) y `CONCILIADO` (fondos contrastados con cartola bancaria).
+  2) **Módulo Interactivo de Conciliación Bancaria:** Incorporación de botón de un clic `Conciliar` / `Revertir` en la tabla de pagos para que el administrador cuadre manualmente las órdenes de Mercado Pago o Khipu contra los depósitos en la cuenta corriente de Keystone Advisors SpA.
+  3) **KPIs Financieros:** Nuevas métricas en cabecera: 'Recaudación Pagada (Percibida)', 'Conciliadas en Banco' y 'Pendientes de Pago'.
+  4) **Migración Segura:** Órdenes históricas en SQLite actualizadas a `PAGADO`; verificación sintáctica PHP Lint 0 errores y validación HTTP 200 OK en producción.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción.

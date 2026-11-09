@@ -618,16 +618,16 @@ class MercadoPagoService {
             throw new Exception("Orden de pago no encontrada: {$externalRef}");
         }
 
-        if ($order['estado'] === 'APROBADO') {
+        if ($order['estado'] === 'PAGADO' || $order['estado'] === 'CONCILIADO' || $order['estado'] === 'APROBADO') {
             return ['success' => true, 'already_processed' => true, 'order' => $order];
         }
 
         $pdo->beginTransaction();
         try {
-            // Actualizar estado de orden
+            // Actualizar estado de orden a PAGADO (nomenclatura financiera oficial)
             $stmtUpd = $pdo->prepare("
                 UPDATE payment_orders
-                SET estado = 'APROBADO', mp_payment_id = ?, raw_response = ?, updated_at = datetime('now')
+                SET estado = 'PAGADO', mp_payment_id = ?, raw_response = ?, updated_at = datetime('now')
                 WHERE id = ?
             ");
             $stmtUpd->execute([$paymentId, json_encode($rawPayload, JSON_UNESCAPED_UNICODE), $order['id']]);
