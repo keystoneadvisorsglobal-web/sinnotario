@@ -177,6 +177,13 @@ class MercadoPagoService {
         }
 
         // 1. Intentar creación nativa vía Orders API (/v1/orders) oficial de la aplicación
+        // Desglosar nombres del pagador
+        $fullName = trim($companyData['rep_legal_nombre'] ?? $companyData['razon_social'] ?? 'Representante Legal');
+        $nameParts = preg_split('/\s+/', $fullName, 2);
+        $firstName = $nameParts[0] ?? 'Representante';
+        $lastName = $nameParts[1] ?? 'Legal';
+        $cleanRut = preg_replace('/[^0-9kK]/', '', $companyData['rut'] ?? '');
+
         $orderPayload = [
             'type' => 'online',
             'processing_mode' => 'manual',
@@ -185,14 +192,23 @@ class MercadoPagoService {
             'items' => [
                 [
                     'title' => "SinNotario - {$packData['nombre']}",
+                    'description' => "Bolsa prepagada de certificación digital Ley 19.799 ({$packData['firmas']} firmas)",
+                    'category_id' => 'services',
                     'unit_price' => (string)$totalConIva,
                     'quantity' => 1
                 ]
             ],
             'payer' => [
-                'email' => $companyData['email'] ?: 'contacto@keystoneadvisors.cl'
+                'email' => $companyData['rep_legal_email'] ?: ($companyData['email'] ?: 'contacto@keystoneadvisors.cl'),
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'identification' => [
+                    'type' => 'RUT',
+                    'number' => $cleanRut ?: '111111111'
+                ]
             ],
             'config' => [
+                'statement_descriptor' => 'SINNOTARIO',
                 'online' => [
                     'success_url' => "{$siteUrl}/empresas.php?payment_status=success&external_ref={$externalReference}",
                     'pending_url' => "{$siteUrl}/empresas.php?payment_status=pending&external_ref={$externalReference}",
@@ -315,6 +331,19 @@ class MercadoPagoService {
         }
 
         // 1. Intentar creación nativa vía Orders API (/v1/orders) oficial de la aplicación
+        // Desglosar nombres del pagador y documento de identidad (RUT o Pasaporte)
+        $fullName = trim($payerData['nombre'] ?? 'Cliente SinNotario');
+        $nameParts = preg_split('/\s+/', $fullName, 2);
+        $firstName = $nameParts[0] ?? 'Cliente';
+        $lastName = $nameParts[1] ?? 'SinNotario';
+
+        $idType = !empty($payerData['tipo_documento']) ? strtoupper($payerData['tipo_documento']) : 'RUT';
+        $idNum = !empty($payerData['numero_documento']) ? $payerData['numero_documento'] : ($payerData['rut'] ?? '');
+        $idNumClean = preg_replace('/[^a-zA-Z0-9]/', '', $idNum);
+        if (empty($idNumClean)) {
+            $idNumClean = '111111111';
+        }
+
         $orderPayload = [
             'type' => 'online',
             'processing_mode' => 'manual',
@@ -323,14 +352,23 @@ class MercadoPagoService {
             'items' => [
                 [
                     'title' => "SinNotario - {$docTitle}",
+                    'description' => "Certificación digital de documento privado Ley 19.799 (Cód: {$verifCode})",
+                    'category_id' => 'services',
                     'unit_price' => (string)$montoTotal,
                     'quantity' => 1
                 ]
             ],
             'payer' => [
-                'email' => $payerData['email'] ?: 'contacto@keystoneadvisors.cl'
+                'email' => $payerData['email'] ?: 'contacto@keystoneadvisors.cl',
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'identification' => [
+                    'type' => ($idType === 'PASAPORTE') ? 'PASAPORTE' : 'RUT',
+                    'number' => $idNumClean
+                ]
             ],
             'config' => [
+                'statement_descriptor' => 'SINNOTARIO',
                 'online' => [
                     'success_url' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=success&external_ref={$externalReference}",
                     'pending_url' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=pending&external_ref={$externalReference}",

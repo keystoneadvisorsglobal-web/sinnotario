@@ -1498,3 +1498,15 @@
   2) **Nuevo Menú Dedicado de Infraestructura (`#integraciones`):** 'Pasarelas & Integraciones' (icono morado en la barra lateral) centraliza el 100% de la configuración técnica: Conmutador y credenciales de Mercado Pago (Producción y Sandbox), Firma Secreta del Webhook con URL oficial, Pasarela Khipu (Producción y Sandbox), Google OAuth Client ID y Servidor SMTP Titan Mail.
   3) **Procesadores Independientes:** Separación en dos controladores POST (`save_pricing_settings` y `save_integrations_settings`) para evitar sobreescrituras accidentales de credenciales al ajustar precios.
 - **Estado Final:** ✅ Éxito Total / 100% Operativo y desplegado en Producción.
+
+### Registro de Despliegue: SOL-0098
+- **Fecha y Hora:** 2026-11-09 01:45:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0098`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Optimización y homologación de calidad en la integración con **Mercado Pago Checkout Pro (Orders API)**:
+  1) **Requisitos Mandatorios Developers:** Configuración explícita de `config.statement_descriptor = 'SINNOTARIO'` para que aparezca en el resumen de la tarjeta bancaria del pagador reduciendo contracargos (+12 pts), junto a `config.online.success_url`, `pending_url`, `failure_url` con `auto_return: 'approved'` (+12 pts).
+  2) **Recomendaciones de Calidad:** Enriquecimiento de `payer` con `first_name`, `last_name` e `identification` (`RUT` o `PASAPORTE` para extranjeros con normalización de caracteres alfanuméricos) (+15 pts); e inclusión de `category_id = 'services'` y `description` detallada en cada ítem (+7 pts).
+  3) **Pruebas y Verificación Remota:** Verificación sintáctica PHP Lint 0 errores en hostinger y ejecución de prueba unitaria remota generando la orden oficial de prueba `ORDTST01M6Z9ZB6E6G99M3H0B6SVYKEY` con respuesta exitosa de Mercado Pago.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y listo para verificación de calidad en Developers.
