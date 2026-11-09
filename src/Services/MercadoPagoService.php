@@ -180,6 +180,14 @@ class MercadoPagoService {
             ],
             'payer' => [
                 'email' => $companyData['email'] ?: 'contacto@keystoneadvisors.cl'
+            ],
+            'config' => [
+                'online' => [
+                    'success_url' => "{$siteUrl}/empresas.php?payment_status=success&external_ref={$externalReference}",
+                    'pending_url' => "{$siteUrl}/empresas.php?payment_status=pending&external_ref={$externalReference}",
+                    'failure_url' => "{$siteUrl}/empresas.php?payment_status=failure&external_ref={$externalReference}",
+                    'auto_return' => 'approved'
+                ]
             ]
         ];
 
@@ -310,6 +318,14 @@ class MercadoPagoService {
             ],
             'payer' => [
                 'email' => $payerData['email'] ?: 'contacto@keystoneadvisors.cl'
+            ],
+            'config' => [
+                'online' => [
+                    'success_url' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=success&external_ref={$externalReference}",
+                    'pending_url' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=pending&external_ref={$externalReference}",
+                    'failure_url' => "{$siteUrl}/verificar.php?code={$verifCode}&payment_status=failure&external_ref={$externalReference}",
+                    'auto_return' => 'approved'
+                ]
             ]
         ];
 
@@ -414,6 +430,17 @@ class MercadoPagoService {
                     $nuevoSaldo,
                     "Pago acreditado vía Mercado Pago (ID: {$paymentId}, Ref: {$externalRef})"
                 ]);
+            }
+
+            // Si es trámite particular (DOCUMENT_RETAIL), pasar documento a EN_FIRMA o PAGADO
+            if ($order['payment_type'] === 'DOCUMENT_RETAIL' && !empty($order['document_id'])) {
+                $stmtDoc = $pdo->prepare("
+                    UPDATE documents
+                    SET estado = CASE WHEN estado = 'BORRADOR' THEN 'EN_FIRMA' ELSE estado END,
+                        updated_at = datetime('now')
+                    WHERE id = ?
+                ");
+                $stmtDoc->execute([$order['document_id']]);
             }
 
             $pdo->commit();
