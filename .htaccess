@@ -1,5 +1,17 @@
 # SinNotario.cl - Reglas de Seguridad y Blindaje Web (LiteSpeed / Apache)
 
+# 0. Redirecciones 301 de URLs antiguas indexadas en Google (Sitio WordPress legado)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    RewriteRule ^ingreso-clientes/?$ /login.php [R=301,L,NC]
+    RewriteRule ^mi-cuenta/?$ /mi-cuenta.php [R=301,L,NC]
+    RewriteRule ^carrito/?$ / [R=301,L,NC]
+    RewriteRule ^servicios/?$ /#tramites [R=301,L,NC]
+    RewriteRule ^preguntas-frecuentes/?$ /#faq [R=301,L,NC]
+</IfModule>
+
 # 1. BLOQUEO CRÍTICO: Denegar acceso HTTP directo a toda base de datos SQLite y archivos de entorno
 <Files ~ "\.(sqlite|sqlite3|db|env|log|bak|tar|gz|zip|sql)$">
     Require all denied

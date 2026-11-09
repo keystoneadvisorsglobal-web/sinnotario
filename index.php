@@ -28,7 +28,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 </head>
 <body>
 
-    <!-- Header / Navbar Limpio -->
+    <!-- Header / Navbar Limpio y Elegante -->
     <header class="site-header">
         <div class="nav-container">
             <a href="index.php" class="brand-logo">
@@ -37,20 +37,20 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 
             <ul class="nav-links">
                 <li><a href="index.php" class="<?= $page === 'home' ? 'active' : '' ?>">Trámites</a></li>
-                <li><a href="subir-documento.php" style="color: var(--accent); font-weight: 800;"><i class="fas fa-file-upload"></i> Subir tu Documento</a></li>
-                <li><a href="verificar.php">Verificar Documento</a></li>
-                <li><a href="#empresas">Solución Empresas</a></li>
+                <li><a href="subir-documento.php" style="color: #0369A1; font-weight: 700;"><i class="fas fa-file-upload"></i> Subir Documento</a></li>
+                <li><a href="verificar.php">Verificar</a></li>
+                <li><a href="#empresas">Empresas</a></li>
                 <li><a href="https://wa.me/56984180479?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
             </ul>
 
-            <div style="display:flex; align-items:center; gap:12px;">
+            <div style="display:flex; align-items:center; gap:10px;">
                 <?php if ($currentUser): ?>
-                    <a href="mi-cuenta.php" class="btn-cta" style="background:#0F2A4A; color:#FFFFFF; display:inline-flex; align-items:center; gap:8px;">
-                        <i class="fas fa-user-circle"></i> Mi Bóveda (<?= htmlspecialchars($currentUser['nombre']) ?>)
+                    <a href="mi-cuenta.php" class="btn-cta" style="background:#0F2A4A; color:#FFFFFF; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="fas fa-user-circle"></i> Mi Bóveda
                     </a>
                 <?php else: ?>
-                    <a href="login.php" style="color:#0F2A4A; font-weight:700; text-decoration:none; font-size:0.9rem; padding:0.5rem 0.8rem; border-radius:6px; border:1px solid #CBD5E1; display:inline-flex; align-items:center; gap:6px;">
-                        <i class="fas fa-lock"></i> Mi Cuenta
+                    <a href="login.php" style="color:#334155; font-weight:600; text-decoration:none; font-size:0.86rem; padding:0.45rem 0.85rem; border-radius:6px; border:1px solid #CBD5E1; display:inline-flex; align-items:center; gap:6px; background:#FFFFFF;">
+                        <i class="fas fa-lock" style="color:#64748B;"></i> Mi Cuenta
                     </a>
                     <a href="#tramites" class="btn-cta">
                         <i class="fas fa-file-signature"></i> Iniciar Trámite

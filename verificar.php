@@ -351,9 +351,9 @@ $hashParam = isset($_GET['hash']) ? trim($_GET['hash']) : '';
             </a>
             <ul class="nav-links">
                 <li><a href="index.php">Trámites</a></li>
-                <li><a href="subir-documento.php" style="color: var(--accent); font-weight: 800;"><i class="fas fa-file-upload"></i> Subir tu Documento</a></li>
-                <li><a href="verificar.php" style="color: var(--accent); font-weight: 700;">Verificar Documento</a></li>
-                <li><a href="index.php#empresas">Solución Empresas</a></li>
+                <li><a href="subir-documento.php" style="color:#0369A1; font-weight:700;"><i class="fas fa-file-upload"></i> Subir Documento</a></li>
+                <li><a href="verificar.php" class="active">Verificar</a></li>
+                <li><a href="index.php#empresas">Empresas</a></li>
                 <li><a href="https://wa.me/56984180479?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
             </ul>
             <div>

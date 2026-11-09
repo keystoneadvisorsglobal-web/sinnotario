@@ -1,6 +1,29 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
-### [2026-11-08 01:48 UTC-3] - SOL-0076
+### [2026-11-09 00:00 UTC-3] - SOL-0093
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0093`
+- **Alcance de los Cambios:**
+  - **Rediseño Estilizado de Cabecera (Navbar) y Redirecciones 301 de URLs de WordPress Legado:**
+    1. **Refactorización Visual y Armonía del Navbar (`assets/css/style.css`):**
+       - Reducción del logotipo corporativo de 82px a 48px de altura con transición suave al pasar el cursor (`transform: scale(1.02)`), logrando una cabecera compacta y elegante (~65px de alto total).
+       - Padding del contenedor `.nav-container` ajustado a `0.65rem 1.5rem` con sombra perimetral sutil (`box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04)`).
+       - Enlaces de navegación con tipografía refinada (0.88rem, `font-weight: 600`, color `#475569`, padding `0.4rem 0.6rem`, bordes redondeados y efecto hover suave).
+       - Badge de WhatsApp estilizado tipo píldora (`#F0FDF4`, borde `#DCFCE7`, color `#16A34A`, padding `0.35rem 0.75rem`) que elimina el aspecto invasivo previo.
+       - Botones CTA de acción (`.btn-cta` y `Mi Cuenta`) alineados y proporcionados a 0.86rem.
+    2. **Simplificación Textual de Menús (`index.php`, `verificar.php`, `subir-documento.php`):**
+       - Textos depurados y compactos: "Trámites", "Subir Documento", "Verificar", "Empresas", "Mi Cuenta", "Iniciar Trámite".
+    3. **Reglas de Redirección 301 en `.htaccess` (Solución a URLs de WordPress Indexadas en Google):**
+       - Redirección permanente (HTTP 301) de `/ingreso-clientes` hacia `https://sinnotario.cl/login.php`, resolviendo la página de error 404 del skater.
+       - Redirecciones adicionales para `/mi-cuenta`, `/carrito` y `/servicios`.
+- **Pruebas Validadas:**
+  - Verificación remota PHP Lint (`php -l`): 0 errores en `index.php`, `verificar.php` y `subir-documento.php`.
+  - Smoke test HTTP 200 en `https://sinnotario.cl/`.
+  - Prueba de redirección en vivo: `curl -sI -k https://sinnotario.cl/ingreso-clientes` retorna `HTTP/2 301` con destino `https://sinnotario.cl/login.php`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+### [2026-11-08 23:45 UTC-3] - SOL-0092
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
 - **Identificador de Solución:** `SOL-0076`
