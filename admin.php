@@ -212,6 +212,20 @@ if (isset($_POST['action_payment_reconcile'])) {
     }
 }
 
+// Acción administrativa: Despachar rescate de carrito / intento de pago pendiente (SOL-0108)
+if (isset($_POST['action_send_rescue'])) {
+    $orderIdRescue = (int)($_POST['order_id'] ?? 0);
+    if ($orderIdRescue > 0) {
+        require_once __DIR__ . '/src/Services/MercadoPagoService.php';
+        $resRescue = MercadoPagoService::sendPendingOrderRescue($orderIdRescue);
+        if (!empty($resRescue['success'])) {
+            $msgPaymentAction = "¡Rescate despachado exitosamente para la orden #{$orderIdRescue}! (Destinatario: {$resRescue['destinatario']})";
+        } else {
+            $msgPaymentAction = "Error despachando rescate: " . ($resRescue['error'] ?? 'No se pudo enviar');
+        }
+    }
+}
+
 // Procesar acciones de gestión B2B desde Consola Administrativa
 $msgB2BSuccess = '';
 if (isset($_POST['admin_b2b_action'])) {
@@ -1185,7 +1199,19 @@ $allTemplates = $stmtTemplates->fetchAll();
                                                         </button>
                                                     </form>
                                                 <?php else: ?>
-                                                    <span style="color:#94A3B8; font-size:0.75rem;">—</span>
+                                                    <!-- Botón de Rescate para Órdenes Pendientes (SOL-0108) -->
+                                                    <form method="POST" style="display:inline;" onsubmit="return confirm('¿Enviar recordatorio de rescate de compra por WhatsApp y Correo al cliente?');">
+                                                        <input type="hidden" name="action_send_rescue" value="1">
+                                                        <input type="hidden" name="order_id" value="<?= $ord['id'] ?>">
+                                                        <button type="submit" title="Enviar enlace de rescate por Email y WhatsApp" style="background:#F59E0B; color:#FFF; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                                                            <i class="fas fa-life-ring"></i> Rescatar
+                                                        </button>
+                                                    </form>
+                                                    <?php if (!empty($ord['rescue_sent_at'])): ?>
+                                                        <div style="font-size:0.7rem; color:#059669; margin-top:2px;" title="<?= htmlspecialchars($ord['rescue_sent_at']) ?>">
+                                                            <i class="fas fa-paper-plane"></i> Enviado
+                                                        </div>
+                                                    <?php endif; ?>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>

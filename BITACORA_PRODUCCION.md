@@ -1,5 +1,29 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-09 13:24 UTC-3] - SOL-0108
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0108`
+- **Alcance de los Cambios:**
+  - **Motor de Rescate Comercial de Intentos de Compra y Carritos Abandonados (B2B y Personas):**
+    1. **Columna de Control en Base de Datos:**
+       - Adición del campo `rescue_sent_at DATETIME NULL` en `payment_orders` para registrar la fecha/hora exacta en que se despachó el rescate comercial al cliente y evitar envíos duplicados.
+    2. **Despacho Automático y Personalizado (`sendPendingOrderRescue` en `MercadoPagoService.php`):**
+       - **Empresas (B2B):** Detecta la bolsa intentada (50, 200 o 500 firmas), monto neto/total, nombre del representante y empresa. Envía correo institucional (Titan Mail) y WhatsApp oficial con enlace seguro directo para reanudar el pago y ofrecimiento de Factura Directa / Transferencia.
+       - **Personas Naturales (DOCUMENT_RETAIL):** Detecta el folio (`SN-XXXX-XXXX`), título del contrato redactado o subido y monto. Envía recordatorio por Email y WhatsApp informando que el borrador sigue guardado y permitiendo reanudar la transacción sin redactar de nuevo.
+    3. **Consola Administrativa (`admin.php#pagos`):**
+       - En la tabla de *Registro Financiero de Pagos y Conciliación*, cada orden con estado `PENDIENTE DE PAGO` cuenta ahora con el botón interactivo:
+         ```html
+         [🛟 Rescatar]
+         ```
+       - Al presionarlo, despacha de inmediato el mensaje por WhatsApp y el correo de rescate al cliente, actualizando el estado visual con la marca `✓ Enviado` y fecha/hora.
+    4. **Validación en Vivo:**
+       - Ejecución de prueba sobre la orden #32 de **$1.184.050 CLP** (Pack 500 Firmas) a nombre de *Keystone Solutions*: entrega confirmada en Evolution API y registrada en `whatsapp_logs` (#6).
+- **Pruebas Validadas:**
+  - Verificación sintáctica PHP Lint (`php -l`): 0 errores en `database/Database.php`, `src/Services/MercadoPagoService.php` y `admin.php`.
+  - Despacho y recepción confirmada del mensaje de rescate en el WhatsApp del usuario.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-09 13:14 UTC-3] - SOL-0107
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

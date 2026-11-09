@@ -153,6 +153,7 @@ class Database {
                 mp_payment_id VARCHAR(100),
                 metadata_json TEXT,
                 raw_response TEXT,
+                rescue_sent_at DATETIME NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL,

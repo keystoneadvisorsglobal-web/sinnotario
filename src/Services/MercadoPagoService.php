@@ -851,5 +851,191 @@ class MercadoPagoService {
             $ws->sendTextMessage($cleanTel, $msgWs, 'keystone-general', null, $repNombre, 'B2B_CONFIRMACION_RECARGA', $companyId);
         }
     }
+
+    /**
+     * Rescate de Intentos de Compra y Carritos Pendientes (SOL-0108)
+     * Envía recordatorio por Email y WhatsApp para reanudar el pago pendiente.
+     */
+    public static function sendPendingOrderRescue(int $orderId): array {
+        $pdo = Database::getInstance();
+        $stmtOrder = $pdo->prepare("SELECT * FROM payment_orders WHERE id = ?");
+        $stmtOrder->execute([$orderId]);
+        $order = $stmtOrder->fetch(PDO::FETCH_ASSOC);
+
+        if (!$order || $order['estado'] !== 'PENDIENTE') {
+            return ['success' => false, 'error' => 'La orden no existe o ya no está en estado pendiente'];
+        }
+
+        require_once __DIR__ . '/MailService.php';
+        require_once __DIR__ . '/WhatsAppService.php';
+
+        $ws = new WhatsAppService();
+        $siteUrl = 'https://sinnotario.cl';
+        $montoFmt = '$' . number_format($order['monto_total'], 0, ',', '.');
+        $resumeUrl = '';
+        $destinatarioNombre = '';
+        $destinatarioEmail = '';
+        $destinatarioTel = '';
+        $itemDesc = '';
+        $companyId = !empty($order['company_id']) ? (int)$order['company_id'] : null;
+
+        // Deserializar raw_response o preference_id para obtener el checkout_url directo de Mercado Pago
+        $rawRes = !empty($order['raw_response']) ? json_decode($order['raw_response'], true) : [];
+        $checkoutUrl = $rawRes['checkout_url'] ?? ($rawRes['data']['checkout_url'] ?? null);
+
+        if ($order['payment_type'] === 'B2B_PACK') {
+            // Caso Empresa B2B
+            $stmtC = $pdo->prepare("SELECT * FROM companies WHERE id = ?");
+            $stmtC->execute([$companyId]);
+            $comp = $stmtC->fetch(PDO::FETCH_ASSOC);
+
+            if ($comp) {
+                $destinatarioNombre = $comp['rep_legal_nombre'] ?: $comp['razon_social'];
+                $destinatarioEmail = trim($comp['rep_legal_email'] ?? '');
+                $destinatarioTel = trim($comp['whatsapp_phone'] ?? '');
+            }
+
+            // Fallback al usuario dueño si la empresa no tiene datos
+            if (empty($destinatarioEmail) && !empty($order['user_id'])) {
+                $stmtU = $pdo->prepare("SELECT email, telefono, nombre, apellido FROM users WHERE id = ?");
+                $stmtU->execute([$order['user_id']]);
+                $u = $stmtU->fetch(PDO::FETCH_ASSOC);
+                if ($u) {
+                    if (empty($destinatarioNombre)) $destinatarioNombre = trim("{$u['nombre']} {$u['apellido']}");
+                    $destinatarioEmail = trim($u['email'] ?? '');
+                    if (empty($destinatarioTel)) $destinatarioTel = trim($u['telefono'] ?? '');
+                }
+            }
+
+            $packs = [
+                'PACK_50' => 'Bolsa de 50 Firmas',
+                'PACK_200' => 'Bolsa de 200 Firmas',
+                'PACK_500' => 'Bolsa Enterprise de 500 Firmas'
+            ];
+            $packName = $packs[$order['pack_key']] ?? "Bolsa de Firmas ({$order['pack_key']})";
+            $itemDesc = "la recarga de {$packName} para " . ($comp['razon_social'] ?? 'tu empresa');
+            $resumeUrl = $checkoutUrl ?: "{$siteUrl}/empresas.php";
+
+            // 1. Envío Correo B2B Rescate
+            if (!empty($destinatarioEmail)) {
+                $asunto = "⏳ Rescata tu compra: Completa la activación de {$packName} en SinNotario.cl";
+                $htmlBody = "
+                    <div style='font-family:Arial,sans-serif; color:#333333; line-height:1.6;'>
+                        <h2 style='color:#0F2A4A; margin-bottom:10px;'>¿Tuviste problemas para completar tu pago?</h2>
+                        <p>Hola <strong>{$destinatarioNombre}</strong>,</p>
+                        <p>Notamos que iniciaste el proceso de compra de <strong>{$packName}</strong> por un monto de <strong>{$montoFmt} CLP</strong> para tu empresa.</p>
+                        
+                        <div style='background:#FFFBEB; border-left:4px solid #F59E0B; padding:15px; margin:20px 0; border-radius:6px;'>
+                            <p style='margin:0; font-size:15px; font-weight:bold; color:#92400E;'>Tu orden sigue reservada y lista para reanudar</p>
+                            <p style='margin:5px 0 0; font-size:14px; color:#78350F;'>Puedes retomar tu pago de forma 100% segura mediante Webpay, Débito, Tarjeta de Crédito en cuotas o Transferencia bancaria.</p>
+                        </div>
+
+                        <div style='text-align:center; margin:25px 0;'>
+                            <a href='{$resumeUrl}' style='background:#0F2A4A; color:#FFFFFF; text-decoration:none; padding:13px 30px; border-radius:6px; font-weight:bold; display:inline-block; font-size:16px;'>
+                                💳 Completar y Activar Firmas Ahora
+                            </a>
+                        </div>
+
+                        <p style='font-size:13px; color:#64748B;'>Si necesitas asistencia personalizada o prefieres pagar mediante Factura / Transferencia Directa, responde a este correo o contáctanos por WhatsApp al +56 9 8418 0479.</p>
+                        <hr style='border:none; border-top:1px solid #E2E8F0; margin:20px 0;'>
+                        <p style='font-size:12px; color:#94A3B8;'>SinNotario.cl &bull; Keystone Advisors SpA &bull; Certificación Digital Ley N° 19.799</p>
+                    </div>
+                ";
+                MailService::send($destinatarioEmail, $asunto, $htmlBody);
+            }
+
+            // 2. Envío WhatsApp B2B Rescate
+            if (!empty($destinatarioTel)) {
+                $cleanTel = preg_replace('/[^0-9]/', '', $destinatarioTel);
+                if (strlen($cleanTel) === 9 && substr($cleanTel, 0, 1) === '9') {
+                    $cleanTel = '56' . $cleanTel;
+                }
+                $msgWs = "Hola *{$destinatarioNombre}*, vimos que iniciaste la compra de *{$packName}* ({$montoFmt} CLP) en SinNotario.cl.\n\n" .
+                         "¿Tuviste algún inconveniente con el banco o la pasarela? Tu orden sigue reservada y puedes completar el pago de forma segura aquí:\n" .
+                         "👉 {$resumeUrl}\n\n" .
+                         "Si prefieres pagar vía transferencia directa o necesitas factura anticipada, cuéntanos por aquí.";
+
+                $ws->sendTextMessage($cleanTel, $msgWs, 'keystone-general', null, $destinatarioNombre, 'RESCATE_COMPRA_PENDIENTE_B2B', $companyId);
+            }
+
+        } else {
+            // Caso Persona Natural (DOCUMENT_RETAIL)
+            $docId = (int)$order['document_id'];
+            $stmtDoc = $pdo->prepare("SELECT * FROM documents WHERE id = ?");
+            $stmtDoc->execute([$docId]);
+            $doc = $stmtDoc->fetch(PDO::FETCH_ASSOC);
+
+            if ($doc) {
+                $stmtSig = $pdo->prepare("SELECT * FROM document_signers WHERE document_id = ? ORDER BY id ASC LIMIT 1");
+                $stmtSig->execute([$docId]);
+                $sig = $stmtSig->fetch(PDO::FETCH_ASSOC);
+
+                if ($sig) {
+                    $destinatarioNombre = trim($sig['nombre_completo'] ?? 'Cliente');
+                    $destinatarioEmail = trim($sig['email'] ?? '');
+                    $destinatarioTel = trim($sig['telefono'] ?? '');
+                }
+
+                $docTitle = $doc['titulo'] ?: 'Documento Legal';
+                $vCode = $doc['codigo_verificacion'];
+                $itemDesc = "la certificación de tu trámite: {$docTitle} (Folio: {$vCode})";
+                $resumeUrl = $checkoutUrl ?: "{$siteUrl}/redactar.php?slug={$doc['template_id']}";
+
+                // 1. Envío Correo Rescate Persona
+                if (!empty($destinatarioEmail)) {
+                    $asunto = "⏳ Rescata tu trámite: Completa la certificación de tu {$docTitle}";
+                    $htmlBody = "
+                        <div style='font-family:Arial,sans-serif; color:#333333; line-height:1.6;'>
+                            <h2 style='color:#0F2A4A; margin-bottom:10px;'>¿Se cerró la ventana o no pudiste pagar?</h2>
+                            <p>Hola <strong>{$destinatarioNombre}</strong>,</p>
+                            <p>Tu borrador de <strong>{$docTitle}</strong> (Folio: <strong>{$vCode}</strong>) ya está redactado y resguardado en SinNotario.cl.</p>
+                            
+                            <div style='background:#FFFBEB; border-left:4px solid #F59E0B; padding:15px; margin:20px 0; border-radius:6px;'>
+                                <p style='margin:0; font-size:15px; font-weight:bold; color:#92400E;'>No necesitas redactar todo de nuevo</p>
+                                <p style='margin:5px 0 0; font-size:14px; color:#78350F;'>Puedes retomar tu pago de <strong>{$montoFmt} CLP</strong> en cualquier momento para habilitar de inmediato las firmas digitales con plena validez legal (Ley N° 19.799).</p>
+                            </div>
+
+                            <div style='text-align:center; margin:25px 0;'>
+                                <a href='{$resumeUrl}' style='background:#0F2A4A; color:#FFFFFF; text-decoration:none; padding:13px 30px; border-radius:6px; font-weight:bold; display:inline-block; font-size:16px;'>
+                                    ✍️ Reanudar Pago y Firmar
+                                </a>
+                            </div>
+
+                            <p style='font-size:13px; color:#64748B;'>También puedes verificar tu documento con el código <strong>{$vCode}</strong> en <a href='{$siteUrl}/verificar.php' style='color:#0F2A4A;'>sinnotario.cl/verificar.php</a>.</p>
+                        </div>
+                    ";
+                    MailService::send($destinatarioEmail, $asunto, $htmlBody);
+                }
+
+                // 2. Envío WhatsApp Rescate Persona
+                if (!empty($destinatarioTel)) {
+                    $cleanTel = preg_replace('/[^0-9]/', '', $destinatarioTel);
+                    if (strlen($cleanTel) === 9 && substr($cleanTel, 0, 1) === '9') {
+                        $cleanTel = '56' . $cleanTel;
+                    }
+                    $msgWs = "Hola *{$destinatarioNombre}*, vimos que iniciaste la certificación de tu *{$docTitle}* (Folio: *{$vCode}*) en SinNotario.cl.\n\n" .
+                             "Tu borrador está 100% guardado. Puedes reanudar y completar tu pago ({$montoFmt} CLP) aquí para continuar con las firmas electrónicas:\n" .
+                             "👉 {$resumeUrl}\n\n" .
+                             "_Plena validez legal bajo Ley N° 19.799._";
+
+                    $ws->sendTextMessage($cleanTel, $msgWs, 'keystone-general', $docId, $destinatarioNombre, 'RESCATE_COMPRA_PENDIENTE_RETAIL');
+                }
+            }
+        }
+
+        // Marcar fecha de rescate en la orden
+        $stmtUpd = $pdo->prepare("UPDATE payment_orders SET rescue_sent_at = datetime('now') WHERE id = ?");
+        $stmtUpd->execute([$orderId]);
+
+        return [
+            'success' => true,
+            'order_id' => $orderId,
+            'destinatario' => $destinatarioNombre,
+            'email' => $destinatarioEmail,
+            'telefono' => $destinatarioTel,
+            'monto' => $order['monto_total'],
+            'resume_url' => $resumeUrl
+        ];
+    }
 }
 
