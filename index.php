@@ -22,6 +22,23 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
+
+    <!-- OpenGraph / Previsualización WhatsApp y Redes Sociales -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SinNotario.cl">
+    <meta property="og:title" content="SinNotario.cl | Contratos Legales y Firma Digital sin Notaría">
+    <meta property="og:description" content="Genera, firma y valida contratos de arriendo Ley 21.461, promesas, finiquitos laborales y declaraciones juradas 100% online con plena validez legal (Ley 19.799).">
+    <meta property="og:image" content="https://sinnotario.cl/assets/logos/sinnotario-og-banner.png">
+    <meta property="og:image:secure_url" content="https://sinnotario.cl/assets/logos/sinnotario-og-banner.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:url" content="https://sinnotario.cl/">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SinNotario.cl | Contratos Legales y Firma Digital sin Notaría">
+    <meta name="twitter:description" content="Genera, firma y valida contratos 100% online bajo Ley 19.799.">
+    <meta name="twitter:image" content="https://sinnotario.cl/assets/logos/sinnotario-og-banner.png">
     
     <!-- FontAwesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

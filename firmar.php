@@ -99,10 +99,29 @@ if (!empty($code)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firma Electrónica Avanzada | SinNotario.cl</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/sinnotario-logo.png">
+    <title><?= !empty($document['titulo']) ? htmlspecialchars($document['titulo']) . ' — Firma Digital | SinNotario.cl' : 'Firma Electrónica | SinNotario.cl' ?></title>
+    
+    <!-- Metadatos OpenGraph para Previsualización en WhatsApp / Redes Sociales -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SinNotario.cl">
+    <meta property="og:title" content="<?= !empty($document['titulo']) ? '✍️ Firma Digital: ' . htmlspecialchars($document['titulo']) : '✍️ Firma Electrónica Segura | SinNotario.cl' ?>">
+    <meta property="og:description" content="Trámite oficial bajo la Ley N° 19.799. Ingresa de forma segura para estampar tu firma electrónica o revisar el documento con validez legal.">
+    <meta property="og:image" content="https://sinnotario.cl/assets/logos/sinnotario-og-banner.png">
+    <meta property="og:image:secure_url" content="https://sinnotario.cl/assets/logos/sinnotario-og-banner.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="SinNotario.cl — Tu Firma Electrónica con Respaldo Criptográfico">
+    <meta property="og:url" content="https://sinnotario.cl/firmar.php?code=<?= htmlspecialchars($code) ?>">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= !empty($document['titulo']) ? '✍️ Firma Digital: ' . htmlspecialchars($document['titulo']) : '✍️ Firma Electrónica | SinNotario.cl' ?>">
+    <meta name="twitter:description" content="Trámite oficial bajo la Ley N° 19.799. Firma electrónica con plena validez legal.">
+    <meta name="twitter:image" content="https://sinnotario.cl/assets/logos/sinnotario-og-banner.png">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/style.css?v=20261109_1">
+    <link rel="stylesheet" href="assets/css/style.css?v=20261109_2">
     <style>
         :root {
             --firm-navy: #0F2A4A;

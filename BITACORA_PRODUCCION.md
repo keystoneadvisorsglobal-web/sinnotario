@@ -1,5 +1,27 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-09 12:19 UTC-3] - SOL-0105
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0105`
+- **Alcance de los Cambios:**
+  - **Banner OpenGraph HD y Bypass de Candado para Previsualización de Enlaces en WhatsApp:**
+    1. **Banner de Alta Definición para Redes Sociales (`assets/logos/sinnotario-og-banner.png`):**
+       - Creación y despliegue de imagen institucional en proporción estándar 1.91:1 (1200x630 píxeles), con fondo blanco puro nítido, logotipo corporativo de alta resolución y ribetes en azul marino (`#0F2A4A`) y dorado legal (`#D4AF37`).
+       - Resuelve el pixelado y estiramiento que sufría el favicon de 200x100 al ser escalado por WhatsApp.
+    2. **Bypass de Previsualización en `config/gate.php`:**
+       - Se adaptó la pasarela de pre-lanzamiento para que identifique a los bots de crawling de previsualización (`WhatsApp`, `facebookexternalhit`, `Facebot`, `Twitterbot`, `TelegramBot`, `LinkedInBot`) y les entregue las metaetiquetas sin bloquearlos con la pantalla de contraseña interna.
+       - Esto permite que el título oficial del documento y la imagen se rendericen con nitidez sin comprometer el acceso a los usuarios no autorizados.
+    3. **Metadatos OpenGraph y Twitter Cards Dinámicos (`firmar.php` e `index.php`):**
+       - `og:title`: Título personalizado del documento (ej. *"✍️ Firma Digital: Declaración Jurada Simple de Residencia"*).
+       - `og:description`: Explicación institucional con base en Ley N° 19.799.
+       - `og:image`: Enlace absoluto seguro `https://sinnotario.cl/assets/logos/sinnotario-og-banner.png` con especificación de dimensiones (1200x630).
+- **Pruebas Validadas:**
+  - Verificación sintáctica PHP Lint (`php -l`): 0 errores en `config/gate.php`, `firmar.php` e `index.php`.
+  - Smoke test simulando bot de WhatsApp con `curl -A "WhatsApp/2.21.12.21 A"`: Retorna HTTP 200 con `og:title` dinámico y `og:image` de 1200x630.
+  - Disponibilidad pública de la imagen validada con `HTTP/2 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-09 09:47 UTC-3] - SOL-0104
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

@@ -53,6 +53,21 @@ if (!empty($_SESSION['sinnotario_preview_auth'])) {
     return;
 }
 
+// Permitir a crawlers de previsualización (WhatsApp, Facebook, Twitter, Telegram, LinkedIn, Slack)
+// obtener las etiquetas OpenGraph y el título oficial sin ser bloqueados por la pantalla de mantención
+$ua = strtolower($_SERVER['HTTP_USER_AGENT'] ?? '');
+if (
+    strpos($ua, 'whatsapp') !== false ||
+    strpos($ua, 'facebookexternalhit') !== false ||
+    strpos($ua, 'facebot') !== false ||
+    strpos($ua, 'twitterbot') !== false ||
+    strpos($ua, 'telegrambot') !== false ||
+    strpos($ua, 'linkedinbot') !== false ||
+    strpos($ua, 'slackbot') !== false
+) {
+    return;
+}
+
 // Si no está autenticado, interceptar y mostrar la pantalla elegante de mantención y acceso exclusivo
 ?>
 <!DOCTYPE html>
