@@ -11,26 +11,41 @@ require_once __DIR__ . '/database/Database.php';
 
 $code = isset($_GET['code']) ? trim($_GET['code']) : (isset($_GET['doc']) ? trim($_GET['doc']) : '');
 $hashParam = isset($_GET['hash']) ? trim($_GET['hash']) : '';
-$paymentStatus = isset($_GET['payment_status']) ? trim($_GET['payment_status']) : '';
+$paymentStatus = isset($_GET['payment_status']) ? trim($_GET['payment_status']) : (isset($_GET['collection_status']) ? trim($_GET['collection_status']) : '');
+if ($paymentStatus === 'approved') {
+    $paymentStatus = 'success';
+}
 $externalRef = isset($_GET['external_ref']) ? trim($_GET['external_ref']) : '';
 $orderIdParam = isset($_GET['order_id']) ? trim($_GET['order_id']) : '';
+$collectionIdParam = isset($_GET['collection_id']) ? trim($_GET['collection_id']) : (isset($_GET['payment_id']) ? trim($_GET['payment_id']) : '');
 
-// Sincronización y Backup de Notificaciones: si el usuario retorna con payment_status=success o con order_id / external_ref
-if ($externalRef || $orderIdParam) {
+// Sincronización y Backup de Notificaciones: si el usuario retorna tras pagar
+if ($externalRef || $orderIdParam || $collectionIdParam) {
     try {
         require_once __DIR__ . '/src/Services/MercadoPagoService.php';
         $mpSync = new MercadoPagoService();
+        $payIdToProcess = $collectionIdParam ?: ($orderIdParam ?: null);
+
         if ($orderIdParam) {
             $orderData = $mpSync->getOrder($orderIdParam);
-            if (!empty($orderData['success']) && ($orderData['data']['status'] ?? '') === 'processed') {
+            if (!empty($orderData['success']) && in_array($orderData['data']['status'] ?? '', ['processed', 'approved'])) {
                 $extRefOrder = $orderData['data']['external_reference'] ?? $externalRef;
                 if ($extRefOrder) {
-                    MercadoPagoService::processApprovedPayment($extRefOrder, $orderIdParam, $orderData['data']);
+                    MercadoPagoService::processApprovedPayment($extRefOrder, $payIdToProcess, $orderData['data']);
+                    $paymentStatus = 'success';
+                }
+            }
+        } elseif ($collectionIdParam) {
+            $payInfo = $mpSync->getPayment((int)$collectionIdParam);
+            if (!empty($payInfo['status']) && $payInfo['status'] === 'approved') {
+                $extRefPay = $payInfo['external_reference'] ?? $externalRef;
+                if ($extRefPay) {
+                    MercadoPagoService::processApprovedPayment($extRefPay, (string)$collectionIdParam, $payInfo);
                     $paymentStatus = 'success';
                 }
             }
         } elseif ($externalRef && $paymentStatus === 'success') {
-            MercadoPagoService::processApprovedPayment($externalRef, $orderIdParam ?: null);
+            MercadoPagoService::processApprovedPayment($externalRef, $payIdToProcess);
         }
     } catch (\Throwable $e) {
         error_log("Error en sincronización backup de verificar.php: " . $e->getMessage());

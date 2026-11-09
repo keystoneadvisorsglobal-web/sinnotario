@@ -939,17 +939,35 @@ try {
             }
             break;
 
-        // 22C. Webhook de Notificaciones de Mercado Pago (IPN)
+        // 22C. Webhook de Notificaciones de Mercado Pago (IPN & Orders API)
         case 'mp_webhook':
             $inputRaw = file_get_contents('php://input');
             $data = json_decode($inputRaw, true) ?: [];
-            $topic = $_GET['topic'] ?? ($_GET['type'] ?? ($data['type'] ?? 'payment'));
+            $topic = $_GET['topic'] ?? ($_GET['type'] ?? ($data['type'] ?? ($data['action'] ?? 'payment')));
             $id = $_GET['id'] ?? ($_GET['data.id'] ?? ($data['data']['id'] ?? null));
 
-            if ($topic === 'payment' && $id) {
-                require_once __DIR__ . '/../src/Services/MercadoPagoService.php';
+            require_once __DIR__ . '/../src/Services/MercadoPagoService.php';
+            $mp = new MercadoPagoService();
+
+            // 1. Notificación tipo Orden (Orders API: order.processed / order)
+            if (($topic === 'order' || strpos($topic, 'order') !== false) && $id) {
                 try {
-                    $mp = new MercadoPagoService();
+                    $orderData = $mp->getOrder((string)$id);
+                    if (!empty($orderData['success']) && in_array($orderData['data']['status'] ?? '', ['processed', 'approved'])) {
+                        $extRef = $orderData['data']['external_reference'] ?? '';
+                        if ($extRef) {
+                            MercadoPagoService::processApprovedPayment($extRef, (string)$id, $orderData['data']);
+                            error_log("MP Webhook: Orden #{$id} acreditada exitosamente para ref {$extRef}");
+                        }
+                    }
+                } catch (\Throwable $eOrd) {
+                    error_log("MP Webhook Error procesando orden #{$id}: " . $eOrd->getMessage());
+                }
+            }
+
+            // 2. Notificación tipo Pago (Payment API: payment.created / payment.updated)
+            if (($topic === 'payment' || strpos($topic, 'payment') !== false) && $id) {
+                try {
                     // Consultar detalles oficiales del pago en la API de Mercado Pago
                     $payInfo = $mp->getPayment((int)$id);
                     if (!empty($payInfo['external_reference']) && ($payInfo['status'] ?? '') === 'approved') {
@@ -960,7 +978,7 @@ try {
                         );
                         error_log("MP Webhook: Pago #{$id} acreditado exitosamente para ref {$payInfo['external_reference']}");
                     }
-                } catch (Exception $e) {
+                } catch (\Throwable $e) {
                     error_log("MP Webhook Error procesando pago #{$id}: " . $e->getMessage());
                 }
             }

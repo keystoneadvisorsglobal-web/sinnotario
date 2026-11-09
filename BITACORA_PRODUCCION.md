@@ -1549,3 +1549,17 @@
   2) **Corrección:** Normalización estricta de `$userId` en `MercadoPagoService::createB2BPackPreference`, `MercadoPagoService::createRetailDocumentPreference` y `api/index.php?action=b2b_recharge_bag` convirtiendo cualquier valor no válido a `null`.
   3) **Smoke Tests:** Se probaron con éxito las llamadas POST tanto para empresa 1 (`order_id: 26`), empresa 2 (`order_id: 27`) como persona natural (`order_id: 28`), todas retornando HTTP 200 OK con sus URLs de redirección a Mercado Pago.
 - **Estado Final:** ✅ Éxito Total / Error 500 Resuelto y Desplegado en Producción.
+
+### Registro de Despliegue: SOL-0102
+- **Fecha y Hora:** 2026-11-09 09:30:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0102`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Resolución integral del circuito de conciliación automática y webhooks de Mercado Pago:
+  1) **Causa Raíz Identificada:** Durante la acreditación del pago en `processApprovedPayment`, la invocación a `$ws->sendTextMessage()` arrojaba `Call to undefined method WhatsAppService::sendTextMessage()` (el servicio solo tenía `sendTestMessage`), provocando un `Fatal Error` y el rollback de la transacción de base de datos antes de registrar `PAGADO`.
+  2) **Corrección Backend:** Se implementó `sendTextMessage($phone, $message, $instance)` en `WhatsAppService.php` y se protegió la notificación con `\Throwable` para que nunca aborte el guardado del pago.
+  3) **Soporte Dual en Webhooks (`mp_webhook`):** Soporte en `api/index.php` tanto para eventos `order.processed` (Orders API) como `payment.created` (IPN).
+  4) **Sincronización por Retorno:** `verificar.php` ahora captura `collection_id` (`188625710458`) y valida el pago en caliente contra Mercado Pago si el webhook experimenta demoras.
+  5) **Resultado Operativo:** Orden `#29` (`RETAIL_DOC_16_1794225063`) acreditada en SQLite a `PAGADO` con `mp_payment_id = 188625710458` y Documento `#16` (`SN-73A9-1635`) pasado a `PENDIENTE_FIRMA` y `PAGADO`.
+- **Estado Final:** ✅ Éxito Total / Circuito 100% Funcional y Blindado en Producción.

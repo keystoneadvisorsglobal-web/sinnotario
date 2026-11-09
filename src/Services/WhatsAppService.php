@@ -172,6 +172,13 @@ class WhatsAppService {
     }
 
     /**
+     * Envía mensaje de texto por WhatsApp a través de una instancia específica
+     */
+    public function sendTextMessage(string $phoneNumber, string $message, string $instanceName = 'keystone-general'): array {
+        return $this->sendTestMessage($instanceName, $phoneNumber, $message);
+    }
+
+    /**
      * Envía mensaje de prueba por WhatsApp
      */
     public function sendTestMessage(string $instanceName, string $phoneNumber, string $message): array {

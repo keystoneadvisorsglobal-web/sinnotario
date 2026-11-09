@@ -689,7 +689,7 @@ class MercadoPagoService {
                 // Notificación automática de Rescate y Enlace de Firma (Email + WhatsApp)
                 try {
                     self::sendPaymentConfirmationAndSigningLinks((int)$order['document_id'], $order);
-                } catch (Exception $eNotif) {
+                } catch (\Throwable $eNotif) {
                     error_log("Error enviando notificaciones post-pago: " . $eNotif->getMessage());
                 }
             }
