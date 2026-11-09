@@ -62,6 +62,8 @@ if (!empty($_SESSION['sinnotario_preview_auth'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SinNotario.cl — Plataforma LegalTech en Construcción</title>
     <meta name="robots" content="noindex, nofollow">
+    <!-- Google Search Console Verification -->
+    <meta name="google-site-verification" content="G9FGSpS5XFq1EUAuNHjU851fTtlZTa__hJJ34rW1kyY" />
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>

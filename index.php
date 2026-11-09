@@ -17,6 +17,9 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
     <title>SinNotario.cl | Contratos Legales y Firma Digital sin Notaría</title>
     <meta name="description" content="Genera, firma y valida contratos de arriendo Ley 21.461, promesas, finiquitos laborales y declaraciones juradas 100% online con plena validez legal (Ley 19.799).">
     
+    <!-- Google Search Console Verification -->
+    <meta name="google-site-verification" content="G9FGSpS5XFq1EUAuNHjU851fTtlZTa__hJJ34rW1kyY" />
+    
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     
