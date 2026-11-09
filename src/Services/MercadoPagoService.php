@@ -672,6 +672,13 @@ class MercadoPagoService {
                     $nuevoSaldo,
                     "Pago acreditado vía Mercado Pago (ID: {$paymentId}, Ref: {$externalRef})"
                 ]);
+
+                // Notificación automática por Email y WhatsApp a la Empresa B2B (SOL-0107)
+                try {
+                    self::sendB2BPaymentConfirmation((int)$order['company_id'], $order, $firmasAcreditar, $nuevoSaldo);
+                } catch (\Throwable $eB2BNotif) {
+                    error_log("Error enviando notificaciones B2B post-pago: " . $eB2BNotif->getMessage());
+                }
             }
 
             // Si es trámite particular (DOCUMENT_RETAIL), pasar documento a EN_FIRMA y estado_pago a PAGADO
@@ -771,6 +778,77 @@ class MercadoPagoService {
                 $msgWs = "Hola *{$nombre}*, en SinNotario.cl confirmamos el pago de tu trámite: *{$docTitle}* (Folio: *{$vCode}*).\n\nPuedes continuar con la firma digital de inmediato en este enlace seguro:\n👉 {$signingUrl}\n\n_Tu documento cuenta con respaldo criptográfico bajo Ley N° 19.799._";
                 $ws->sendTextMessage($cleanTel, $msgWs, 'keystone-general', (int)$docId, $nombre, 'CONFIRMACION_PAGO_FIRMA');
             }
+        }
+    }
+
+    /**
+     * Envío automático de confirmación de recarga y activación de bolsa de firmas a Empresa B2B (Email + WhatsApp)
+     */
+    public static function sendB2BPaymentConfirmation(int $companyId, array $order, int $firmasAcreditadas, int $nuevoSaldo): void {
+        $pdo = Database::getInstance();
+        $stmtC = $pdo->prepare("SELECT * FROM companies WHERE id = ?");
+        $stmtC->execute([$companyId]);
+        $comp = $stmtC->fetch(PDO::FETCH_ASSOC);
+        if (!$comp) return;
+
+        $razonSocial = $comp['razon_social'] ?: 'Empresa Cliente';
+        $repNombre = $comp['rep_legal_nombre'] ?: 'Representante Legal';
+        $email = trim($comp['rep_legal_email'] ?? '');
+        $tel = trim($comp['whatsapp_phone'] ?? '');
+        $montoTotalFmt = '$' . number_format($order['monto_total'], 0, ',', '.');
+        $siteUrl = 'https://sinnotario.cl';
+        $b2bUrl = "{$siteUrl}/empresas.php";
+
+        require_once __DIR__ . '/MailService.php';
+        require_once __DIR__ . '/WhatsAppService.php';
+
+        // 1. Envío por Correo Electrónico
+        if (!empty($email)) {
+            $asunto = "✅ Recarga Acreditada: Se han abonado {$firmasAcreditadas} firmas a {$razonSocial}";
+            $htmlBody = "
+                <div style='font-family:Arial,sans-serif; color:#333333; line-height:1.6;'>
+                    <h2 style='color:#0F2A4A; margin-bottom:10px;'>¡Recarga B2B Acreditada Exitosamente!</h2>
+                    <p>Estimado(a) <strong>{$repNombre}</strong>,</p>
+                    <p>Confirmamos la recepción del pago por <strong>{$montoTotalFmt} CLP</strong> para la recarga de firmas digitales de <strong>{$razonSocial}</strong> (RUT: <strong>{$comp['rut']}</strong>).</p>
+                    
+                    <div style='background:#F8FAFC; border-left:4px solid #10B981; padding:15px; margin:20px 0; border-radius:6px;'>
+                        <p style='margin:0; font-size:15px; font-weight:bold; color:#0F2A4A;'>Detalle de la Bolsa de Firmas:</p>
+                        <p style='margin:5px 0 0; font-size:14px; color:#475569;'>
+                            • Firmas Acreditadas: <strong>+{$firmasAcreditadas} firmas</strong><br>
+                            • Saldo Total Disponible: <strong>{$nuevoSaldo} firmas</strong><br>
+                            • Modalidad: <strong>Prepago Corporativo (Ley N° 19.799)</strong>
+                        </p>
+                    </div>
+
+                    <div style='text-align:center; margin:25px 0;'>
+                        <a href='{$b2bUrl}' style='background:#0F2A4A; color:#FFFFFF; text-decoration:none; padding:12px 28px; border-radius:6px; font-weight:bold; display:inline-block; font-size:16px;'>
+                            🚀 Ir al Panel Corporativo de Empresas
+                        </a>
+                    </div>
+
+                    <p style='font-size:13px; color:#64748B;'>Ya puedes emitir contratos masivos vía nómina Excel/CSV y gestionar las carpetas digitales de tus colaboradores.</p>
+                    <hr style='border:none; border-top:1px solid #E2E8F0; margin:20px 0;'>
+                    <p style='font-size:12px; color:#94A3B8;'>SinNotario.cl &bull; Keystone Advisors SpA &bull; Soluciones Corporativas B2B</p>
+                </div>
+            ";
+            MailService::send($email, $asunto, $htmlBody);
+        }
+
+        // 2. Envío por WhatsApp
+        if (!empty($tel)) {
+            $cleanTel = preg_replace('/[^0-9]/', '', $tel);
+            if (strlen($cleanTel) === 9 && substr($cleanTel, 0, 1) === '9') {
+                $cleanTel = '56' . $cleanTel;
+            }
+
+            $ws = new WhatsAppService();
+            $msgWs = "Hola *{$repNombre}*, en SinNotario.cl confirmamos la recarga de tu empresa *{$razonSocial}*.\n\n" .
+                     "✅ *+{$firmasAcreditadas} firmas* acreditadas exitosamente ({$montoTotalFmt} CLP).\n" .
+                     "📊 *Saldo actual disponible:* {$nuevoSaldo} firmas.\n\n" .
+                     "Ya puedes continuar con la emisión masiva en tu panel:\n👉 {$b2bUrl}\n\n" .
+                     "_Certificación digital laboral bajo Ley N° 19.799 y DT._";
+
+            $ws->sendTextMessage($cleanTel, $msgWs, 'keystone-general', null, $repNombre, 'B2B_CONFIRMACION_RECARGA', $companyId);
         }
     }
 }

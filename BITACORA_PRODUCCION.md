@@ -1,5 +1,25 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-09 13:14 UTC-3] - SOL-0107
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0107`
+- **Alcance de los Cambios:**
+  - **Notificación Automática de Acreditación de Recarga de Firmas B2B (Email + WhatsApp):**
+    1. **Diagnóstico Post-Pago B2B:**
+       - La orden de pago #31 (`B2B_PACK_2_PACK_50_1794240275` por $207.655 CLP / 50 firmas) se acreditó con éxito en Mercado Pago (`PAGADO`) y el saldo de la empresa *Keystone Solutions* aumentó correctamente a 50 firmas.
+       - Sin embargo, `sendPaymentConfirmationAndSigningLinks` estaba condicionado únicamente a pagos particulares (`payment_type === 'DOCUMENT_RETAIL'`). No existía un despachador para compras corporativas (`B2B_PACK`).
+    2. **Implementación de `sendB2BPaymentConfirmation()`:**
+       - Despacho de Correo Electrónico formal (Titan Mail) al representante legal (`rep_legal_email`) con desglose de la recarga (+50 firmas), saldo total y enlace al panel corporativo.
+       - Despacho de mensaje WhatsApp oficial con estado de la bolsa y enlace seguro a `empresas.php`.
+       - Registro atómico de trazabilidad en la tabla `whatsapp_logs`.
+    3. **Ajuste de Teléfono de Empresa:**
+       - Se detectó que el número registrado en la empresa era el fijo corporativo sin cuenta de WhatsApp activa. Se homologó al teléfono móvil activo del usuario (`+56930640431`).
+- **Pruebas Validadas:**
+  - Verificación sintáctica PHP Lint (`php -l`): 0 errores en `src/Services/MercadoPagoService.php`.
+  - Re-despacho y entrega confirmada de la orden #31 a `+56930640431`: Evolution API retornó `HTTP 201 Created` y registro #5 en `whatsapp_logs` marcado como `ENVIADO`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-09 12:47 UTC-3] - SOL-0106
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
