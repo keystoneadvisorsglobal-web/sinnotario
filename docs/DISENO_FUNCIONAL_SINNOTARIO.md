@@ -1597,15 +1597,41 @@ Nuestro sistema es totalmente omnicanal y flexible. El compareciente presente en
 
 ---
 
-## 6. Roadmap de Implementación y Fases
+## 6. Arquitectura Financiera, Pasarelas de Pago y Conciliación Bancaria
 
-| Fase | Plazo Estimado | Alcance Principal | Entregables Clave |
-| :--- | :--- | :--- | :--- |
-| **Fase 1: MVP Digital** | Meses 1 a 3 | Plataforma SaaS web, Catálogo base de 20 plantillas, Integración API ClaveÚnica (IDOK), Pasarela de pagos y Notificaciones WhatsApp. | Sitio web funcional, flujo de firma online operativo, verificación por QR. |
-| **Fase 2: Sucursal Piloto** | Meses 4 a 6 | Apertura de la primera oficina física en ubicación comercial estratégica, instalación de tótems, enrolamiento biométrico presencial y servicio de asesoría legal en sala. | Oficina física operativa, módulo de caja y digitación en sucursal, atención presencial. |
-| **Fase 3: Expansión y Red B2B** | Meses 7 a 12 | Nuevos puntos de atención en comunas clave, convenios corporativos con inmobiliarias, corredoras y pymes; franquicias del modelo híbrido. | Integración B2B, portal corporativo, red de sucursales. |
+### 6.1 Pasarelas Integradas
+1. **Mercado Pago Chile (Checkout Pro / Orders API Oficial)**:
+   - Integración nativa con `POST /v1/orders` (`Orders API`).
+   - Identificación de descriptor en resumen de tarjeta: `config.statement_descriptor = 'SINNOTARIO'`.
+   - Medios soportados: Tarjetas de Crédito, Débito / Webpay, Dinero en cuenta de Mercado Pago y Mercado Crédito.
+   - Enriquecimiento anti-fraude: `payer.phone` estructurado, `payer.identification` con RUT y Pasaporte para extranjeros, `items[].category_id = 'services'` y `items[].external_code`.
+   - Respaldo de notificaciones (`getOrder`): consulta de contingencia sincronizada en tiempo real si el Webhook experimenta microcortes de red.
+2. **Khipu (Transferencias Bancarias Simplificadas)**:
+   - Cobro directo cuenta a cuenta con conciliación instantánea para personas y empresas.
+
+### 6.2 Ciclo de Vida del Pago y Nomenclatura Financiera Oficial
+En cumplimiento de las normas de tesorería y buenas prácticas contables, la plataforma opera bajo estados financieros reales:
+* **`PENDIENTE DE PAGO`**: Orden de cobro generada en checkout esperando abono.
+* **`PAGADO`**: Fondos percibidos y acreditados exitosamente por la pasarela de pagos.
+* **`CONCILIADO`**: Transacción auditada y contrastada de forma manual o automática contra la cartola bancaria de la cuenta corriente de Keystone Advisors SpA.
+* **`RECHAZADO / IMPAGO`**: Fondos declinados por el emisor bancario o abandono de sesión.
+* **`REEMBOLSADO`**: Fondos devueltos al cliente (anulación / nota de crédito).
+
+### 6.3 Resiliencia y Continuidad Operativa de Firma Digital
+* **Escenario de Batería Baja / Cierre Involuntario**: Al acreditarse el pago, el sistema despacha en milisegundos un correo transaccional (Titan Mail) y un WhatsApp oficial (Evolution API v2) con el enlace directo persistente a la firma para reanudación inmediata.
+* **Soporte Internacional para Extranjeros**: Captura flexible con selector de país internacional (`+56`, `+54`, `+1`, etc.) y validación de Pasaporte o RUT para no residentes.
 
 ---
 
-> 💡 *Este documento reside en `Keystone Advisors/SinNotario/docs/DISENO_FUNCIONAL_SINNOTARIO.md` y servirá como base directa para la arquitectura del código, la integración de APIs y el diseño de la plataforma.*
+## 7. Roadmap de Implementación y Fases
+
+| Fase | Plazo Estimado | Alcance Principal | Entregables Clave |
+| :--- | :--- | :--- | :--- |
+| **Fase 1: MVP Digital & Finanzas** | Meses 1 a 3 | Plataforma SaaS web, Catálogo de plantillas, Firma Digital Ley 19.799, Bóveda R2, Pasarelas Mercado Pago (Orders API) y Khipu, Libro Mayor y Conciliación Bancaria. | ✅ 100% Operativo y Desplegado en Producción. |
+| **Fase 2: Sucursal Piloto** | Meses 4 a 6 | Apertura de la primera oficina física en ubicación comercial estratégica, instalación de tótems, enrolamiento biométrico presencial y servicio de asesoría legal en sala. | Oficina física operativa, módulo de caja y digitación en sucursal, atención presencial. |
+| **Fase 3: Expansión y Red B2B** | Meses 7 a 12 | Nuevos puntos de atención en comunas clave, convenios corporativos con inmobiliarias, corredoras y pymes; franquicias del modelo híbrido. | Integración B2B masiva, portal corporativo, red de sucursales. |
+
+---
+
+> 💡 *Este documento reside en `Keystone Advisors/SinNotario/docs/DISENO_FUNCIONAL_SINNOTARIO.md` y sirve como especificación maestra de la arquitectura técnica, legal y financiera de la plataforma.*
 
