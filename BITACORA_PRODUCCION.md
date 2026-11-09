@@ -1,5 +1,30 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-09 12:47 UTC-3] - SOL-0106
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0106`
+- **Alcance de los Cambios:**
+  - **Switch Maestro "Modo Pruebas / Sandbox" Exclusivo para Wizards y Blindaje Estricto de Producción:**
+    1. **Panel de Control en Consola Administrativa (`admin.php#integraciones`):**
+       - Nuevo bloque de configuración: *"Modo Pruebas / Sandbox para Wizards"*.
+       - Switch ON/OFF persistido en `system_settings` con clave `wizard_sandbox_mode` y badge dinámico de estado en vivo (*🛡️ PRODUCCIÓN ESTRICTA* vs *🧪 MODO PRUEBAS ACTIVO*).
+    2. **Comportamiento en Producción Estricta (OFF - Por Defecto):**
+       - Todos los campos obligatorios de comparecientes (Nombre, RUT, Correo, Teléfono, Domicilio) se presentan completamente vacíos; los datos de muestra solo existen como `placeholder` informativo en gris tenue.
+       - En `redactar.php` y `subir-documento.php`, la función de avance valida que ningún campo obligatorio quede en blanco, que el correo tenga formato estándar `@` y que el teléfono cuente con mínimo 8-9 dígitos. De lo contrario, resalta el campo con borde rojo, muestra el mensaje de error y enfoca automáticamente con scroll al primer input faltante, imposibilitando que clientes reales avancen sin sus datos.
+    3. **Comportamiento en Modo Pruebas / Sandbox (ON):**
+       - Pre-llena los campos de texto con datos de muestra para agilizar el testeo de los 5 pasos sin tipear a mano.
+       - Habilita en la cabecera del Wizard el botón dorado `[🧪 Rellenar Demo]`.
+       - Relleno seguro de teléfonos asignando el número oficial de Keystone (`+56984180479`) para garantizar que en pruebas internas ningún mensaje de WhatsApp sea despachado a terceros ajenos.
+    4. **Aislamiento Técnico:**
+       - El switch opera exclusivamente sobre los asistentes de redacción y subida de PDF. No modifica pasarelas de pago, no altera la emisión masiva B2B de empresas ni la verificación forense pública.
+- **Pruebas Validadas:**
+  - Verificación sintáctica remota (`php -l`): 0 errores en `admin.php`, `redactar.php` y `subir-documento.php`.
+  - Smoke tests en producción:
+    - Conmutación a `wizard_sandbox_mode = 1`: se comprueba la aparición del botón `[Rellenar Demo]` y el pre-llenado de campos.
+    - Conmutación a `wizard_sandbox_mode = 0`: se comprueba que los inputs quedan limpios (`value=""`) y la validación estricta queda 100% activa.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-09 12:19 UTC-3] - SOL-0105
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

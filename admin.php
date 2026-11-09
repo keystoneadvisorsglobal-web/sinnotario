@@ -192,7 +192,12 @@ if (isset($_POST['save_integrations_settings'])) {
         }
     }
 
-    $msgIntegrationsSuccess = '¡Configuración de pasarelas de pago, webhooks y credenciales actualizada exitosamente!';
+    // Modo Sandbox / Pruebas Exclusivo para Wizards (SOL-0106)
+    $wizardSandbox = isset($_POST['wizard_sandbox_mode']) && $_POST['wizard_sandbox_mode'] === '1' ? '1' : '0';
+    $stmtWizSb = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('wizard_sandbox_mode', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+    $stmtWizSb->execute([$wizardSandbox]);
+
+    $msgIntegrationsSuccess = '¡Configuración de pasarelas de pago, webhooks, credenciales y modo de Wizards actualizada exitosamente!';
 }
 
 // Acción administrativa: Conciliar pago manualmente o marcar conciliado bancario
@@ -1547,6 +1552,44 @@ $allTemplates = $stmtTemplates->fetchAll();
                                 <div class="form-group">
                                     <label style="font-size:0.8rem; font-weight:600; color:#334155;">Nombre del Remitente</label>
                                     <input type="text" name="smtp_name" class="form-control" placeholder="SinNotario.cl" value="<?= htmlspecialchars($sysSettings['smtp_name'] ?? 'SinNotario.cl') ?>">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modo Pruebas / Sandbox para Wizards (SOL-0106) -->
+                        <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
+                            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 1.25rem;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                                    <div>
+                                        <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem; font-size:1rem; margin:0;">
+                                            <i class="fas fa-flask" style="color:#D97706;"></i> Modo Pruebas / Sandbox para Wizards (SOL-0106)
+                                        </label>
+                                        <p style="font-size:0.8rem; color:#64748B; margin:0.3rem 0 0;">
+                                            Control exclusivo para redactar contratos (<code style="font-size:0.75rem;">redactar.php</code>) y subida de PDF (<code style="font-size:0.75rem;">subir-documento.php</code>). No afecta pasarelas, B2B ni verificación.
+                                        </p>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <?php $isWizSandbox = ($sysSettings['wizard_sandbox_mode'] ?? '0') === '1'; ?>
+                                        <span class="badge <?= $isWizSandbox ? 'badge-pendiente' : 'badge-online' ?>" style="font-size:0.8rem; padding:6px 12px;">
+                                            <i class="fas <?= $isWizSandbox ? 'fa-vial' : 'fa-shield-alt' ?>" style="margin-right:5px;"></i>
+                                            <?= $isWizSandbox ? '🧪 MODO PRUEBAS ACTIVO' : '🛡️ PRODUCCIÓN ESTRICTA (VALIDACIÓN ACTIVA)' ?>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top:1rem; display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; align-items:center;">
+                                    <div style="font-size:0.82rem; color:#475569; line-height:1.5;">
+                                        <ul style="margin:0; padding-left:1.2rem;">
+                                            <li><strong>Producción (OFF):</strong> Campos vacíos. Bloquea el avance si faltan campos obligatorios, emails o teléfonos inválidos con alertas visuales en rojo.</li>
+                                            <li><strong>Pruebas (ON):</strong> Permite avanzar con un clic rellenando datos de prueba automáticamente o usando el botón <em>[🧪 Rellenar Demo]</em> en el wizard.</li>
+                                        </ul>
+                                    </div>
+                                    <div style="display:flex; justify-content:flex-end;">
+                                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:700; color:#0F2A4A; font-size:0.9rem; background:#FFFFFF; padding:10px 16px; border:1px solid #CBD5E1; border-radius:8px;">
+                                            <input type="checkbox" name="wizard_sandbox_mode" value="1" <?= $isWizSandbox ? 'checked' : '' ?> style="width:18px; height:18px; accent-color:#D97706;">
+                                            <span>Activar Modo Pruebas / Demo en Wizards</span>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -24,6 +24,7 @@ $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
 $mpSubirActive = ($settings['mp_enabled'] ?? '1') === '1';
 $khipuSubirActive = ($settings['khipu_enabled'] ?? '1') === '1';
 $defaultSubirGateway = $mpSubirActive ? 'MERCADO_PAGO' : ($khipuSubirActive ? 'KHIPU' : 'NONE');
+$isWizardSandbox = ($settings['wizard_sandbox_mode'] ?? '0') === '1';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -437,9 +438,16 @@ $defaultSubirGateway = $mpSubirActive ? 'MERCADO_PAGO' : ($khipuSubirActive ? 'K
                                 Individualiza a las partes que firmarán el documento con RUT oficial.
                             </p>
                         </div>
-                        <button type="button" class="btn-cta btn-secondary" style="padding:0.4rem 0.85rem; font-size:0.82rem;" onclick="addSignerRow()">
-                            <i class="fas fa-user-plus"></i> + Agregar Firmante
-                        </button>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <?php if ($isWizardSandbox): ?>
+                                <button type="button" class="btn-cta" style="padding:0.4rem 0.85rem; font-size:0.82rem; background:#FEF3C7; border:1px solid #F59E0B; color:#92400E !important; font-weight:700;" onclick="fillSubirDemoData()">
+                                    <i class="fas fa-flask"></i> Rellenar Demo
+                                </button>
+                            <?php endif; ?>
+                            <button type="button" class="btn-cta btn-secondary" style="padding:0.4rem 0.85rem; font-size:0.82rem;" onclick="addSignerRow()">
+                                <i class="fas fa-user-plus"></i> + Agregar Firmante
+                            </button>
+                        </div>
                     </div>
 
                     <div id="signersListContainer">
@@ -480,33 +488,33 @@ $defaultSubirGateway = $mpSubirActive ? 'MERCADO_PAGO' : ($khipuSubirActive ? 'K
                                 </div>
                                 <div class="form-group">
                                     <label class="lbl-id-num" id="lbl_id_0">RUT *</label>
-                                    <input type="text" class="form-control sig-rut" placeholder="12.345.678-5" value="12.345.678-5">
+                                    <input type="text" class="form-control sig-rut" placeholder="12.345.678-5" value="<?= $isWizardSandbox ? '12.345.678-5' : '' ?>">
                                 </div>
                                 <div class="form-group sig-pais-wrap" id="pais_wrap_0" style="display:none;">
                                     <label>País Emisor del Pasaporte *</label>
-                                    <input type="text" class="form-control sig-pais" placeholder="Ej: Venezuela, Colombia, Perú, España" value="Chile">
+                                    <input type="text" class="form-control sig-pais" placeholder="Ej: Venezuela, Colombia, Perú, España" value="<?= $isWizardSandbox ? 'Chile' : '' ?>">
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Nombre Completo del Firmante *</label>
-                                    <input type="text" class="form-control sig-nombre" placeholder="Ej: Juan Andrés Pérez González" value="Juan Andrés Pérez González">
+                                    <input type="text" class="form-control sig-nombre" placeholder="Ej: Juan Andrés Pérez González" value="<?= $isWizardSandbox ? 'Juan Andrés Pérez González' : '' ?>">
                                 </div>
                                 <div class="form-group">
                                     <label>Rol en el Documento *</label>
-                                    <input type="text" class="form-control sig-rol" placeholder="Ej: Arrendador, Contratante, Mandante" value="Parte A">
+                                    <input type="text" class="form-control sig-rol" placeholder="Ej: Arrendador, Contratante, Mandante" value="<?= $isWizardSandbox ? 'Parte A' : '' ?>">
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Correo Electrónico (Para recibir enlace de firma) *</label>
-                                    <input type="email" class="form-control sig-email" placeholder="juan.perez@ejemplo.cl" value="juan.perez@ejemplo.cl">
+                                    <input type="email" class="form-control sig-email" placeholder="juan.perez@ejemplo.cl" value="<?= $isWizardSandbox ? 'juan.perez@ejemplo.cl' : '' ?>">
                                 </div>
                                 <div class="form-group">
                                     <label>Teléfono WhatsApp *</label>
-                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 1234 5678" value="">
+                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 1234 5678" value="<?= $isWizardSandbox ? '+56984180479' : '' ?>">
                                 </div>
                             </div>
                         </div>
@@ -548,33 +556,33 @@ $defaultSubirGateway = $mpSubirActive ? 'MERCADO_PAGO' : ($khipuSubirActive ? 'K
                                 </div>
                                 <div class="form-group">
                                     <label class="lbl-id-num" id="lbl_id_1">RUT *</label>
-                                    <input type="text" class="form-control sig-rut" placeholder="15.444.555-6" value="15.444.555-6">
+                                    <input type="text" class="form-control sig-rut" placeholder="15.444.555-6" value="<?= $isWizardSandbox ? '15.444.555-6' : '' ?>">
                                 </div>
                                 <div class="form-group sig-pais-wrap" id="pais_wrap_1" style="display:none;">
                                     <label>País Emisor del Pasaporte *</label>
-                                    <input type="text" class="form-control sig-pais" placeholder="Ej: Venezuela, Colombia, Perú, España" value="Chile">
+                                    <input type="text" class="form-control sig-pais" placeholder="Ej: Venezuela, Colombia, Perú, España" value="<?= $isWizardSandbox ? 'Chile' : '' ?>">
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Nombre Completo del Firmante *</label>
-                                    <input type="text" class="form-control sig-nombre" placeholder="Ej: María José Valenzuela Soto" value="María José Valenzuela Soto">
+                                    <input type="text" class="form-control sig-nombre" placeholder="Ej: María José Valenzuela Soto" value="<?= $isWizardSandbox ? 'María José Valenzuela Soto' : '' ?>">
                                 </div>
                                 <div class="form-group">
                                     <label>Rol en el Documento *</label>
-                                    <input type="text" class="form-control sig-rol" placeholder="Ej: Arrendatario, Proveedor, Mandatario" value="Parte B">
+                                    <input type="text" class="form-control sig-rol" placeholder="Ej: Arrendatario, Proveedor, Mandatario" value="<?= $isWizardSandbox ? 'Parte B' : '' ?>">
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Correo Electrónico (Para recibir enlace de firma) *</label>
-                                    <input type="email" class="form-control sig-email" placeholder="mj.valenzuela@ejemplo.cl" value="mj.valenzuela@ejemplo.cl">
+                                    <input type="email" class="form-control sig-email" placeholder="mj.valenzuela@ejemplo.cl" value="<?= $isWizardSandbox ? 'mj.valenzuela@ejemplo.cl' : '' ?>">
                                 </div>
                                 <div class="form-group">
                                     <label>Teléfono WhatsApp *</label>
-                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 8765 4321" value="">
+                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 8765 4321" value="<?= $isWizardSandbox ? '+56984180479' : '' ?>">
                                 </div>
                             </div>
                         </div>
@@ -1063,8 +1071,37 @@ $defaultSubirGateway = $mpSubirActive ? 'MERCADO_PAGO' : ($khipuSubirActive ? 'K
             }
         }
 
+        const IS_WIZARD_SANDBOX = <?= $isWizardSandbox ? 'true' : 'false' ?>;
+
+        function fillSubirDemoData() {
+            const boxes = document.querySelectorAll('.signer-box');
+            const safePhone = '+56984180479';
+            if (boxes[0]) {
+                const b = boxes[0];
+                if (b.querySelector('.sig-nombre')) b.querySelector('.sig-nombre').value = 'Juan Andrés Pérez González';
+                if (b.querySelector('.sig-rut')) b.querySelector('.sig-rut').value = '10.993.031-8';
+                if (b.querySelector('.sig-email')) b.querySelector('.sig-email').value = 'contacto@sinnotario.cl';
+                if (b.querySelector('.sig-tel')) b.querySelector('.sig-tel').value = safePhone;
+            }
+            if (boxes[1]) {
+                const b = boxes[1];
+                if (b.querySelector('.sig-nombre')) b.querySelector('.sig-nombre').value = 'María José Valenzuela';
+                if (b.querySelector('.sig-rut')) b.querySelector('.sig-rut').value = '15.444.555-6';
+                if (b.querySelector('.sig-email')) b.querySelector('.sig-email').value = 'contacto@sinnotario.cl';
+                if (b.querySelector('.sig-tel')) b.querySelector('.sig-tel').value = safePhone;
+            }
+        }
+
         function goToStep(step) {
-            // Si intenta avanzar del Paso 2 al Paso 3, validar firmantes y RUTs
+            // Si está en Modo Pruebas / Sandbox y los campos están vacíos, permitir relleno demo
+            if (step === 3 && IS_WIZARD_SANDBOX) {
+                const firstNombre = document.querySelector('.signer-box .sig-nombre');
+                if (firstNombre && !firstNombre.value.trim()) {
+                    fillSubirDemoData();
+                }
+            }
+
+            // Si intenta avanzar del Paso 2 al Paso 3, validar firmantes, emails y teléfonos
             if (step === 3) {
                 const boxes = document.querySelectorAll('.signer-box');
                 let hasErrors = false;
@@ -1074,6 +1111,8 @@ $defaultSubirGateway = $mpSubirActive ? 'MERCADO_PAGO' : ($khipuSubirActive ? 'K
                     const tipoDoc = box.querySelector('.sig-tipo-doc')?.value || 'RUT';
                     const inputNombre = box.querySelector('.sig-nombre');
                     const inputRut = box.querySelector('.sig-rut');
+                    const inputEmail = box.querySelector('.sig-email');
+                    const inputTel = box.querySelector('.sig-tel');
                     let errEl = box.querySelector('.rut-error-text');
 
                     if (!errEl && inputRut && inputRut.parentElement) {
@@ -1085,6 +1124,8 @@ $defaultSubirGateway = $mpSubirActive ? 'MERCADO_PAGO' : ($khipuSubirActive ? 'K
 
                     const nombreVal = inputNombre ? inputNombre.value.trim() : '';
                     const rutVal = inputRut ? inputRut.value.trim() : '';
+                    const emailVal = inputEmail ? inputEmail.value.trim() : '';
+                    const telDigits = inputTel ? inputTel.value.replace(/[^0-9]/g, '') : '';
 
                     if (!nombreVal) {
                         if (inputNombre) inputNombre.classList.add('rut-invalid');
@@ -1092,6 +1133,25 @@ $defaultSubirGateway = $mpSubirActive ? 'MERCADO_PAGO' : ($khipuSubirActive ? 'K
                         if (!firstErrorInput) firstErrorInput = inputNombre;
                     } else if (inputNombre) {
                         inputNombre.classList.remove('rut-invalid');
+                    }
+
+                    // Validar Correo Electrónico
+                    const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal);
+                    if (!isEmailValid) {
+                        if (inputEmail) inputEmail.classList.add('rut-invalid');
+                        hasErrors = true;
+                        if (!firstErrorInput) firstErrorInput = inputEmail;
+                    } else if (inputEmail) {
+                        inputEmail.classList.remove('rut-invalid');
+                    }
+
+                    // Validar Teléfono WhatsApp
+                    if (telDigits.length < 8) {
+                        if (inputTel) inputTel.classList.add('rut-invalid');
+                        hasErrors = true;
+                        if (!firstErrorInput) firstErrorInput = inputTel;
+                    } else if (inputTel) {
+                        inputTel.classList.remove('rut-invalid');
                     }
 
                     if (tipoDoc === 'RUT') {

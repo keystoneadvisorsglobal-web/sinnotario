@@ -40,6 +40,7 @@ $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
 $mpRetailActive = ($sysSettings['mp_enabled'] ?? '1') === '1';
 $khipuRetailActive = ($sysSettings['khipu_enabled'] ?? '1') === '1';
 $defaultRetailGateway = $mpRetailActive ? 'MERCADO_PAGO' : ($khipuRetailActive ? 'KHIPU' : 'NONE');
+$isWizardSandbox = ($sysSettings['wizard_sandbox_mode'] ?? '0') === '1';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -310,6 +311,11 @@ $defaultRetailGateway = $mpRetailActive ? 'MERCADO_PAGO' : ($khipuRetailActive ?
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
+                <?php if ($isWizardSandbox): ?>
+                    <button type="button" onclick="fillDemoData()" class="btn-cta" style="background:#FEF3C7; border:1px solid #F59E0B; color:#92400E !important; font-size:0.8rem; padding:0.4rem 0.8rem; font-weight:700;" title="Rellenar campos automáticamente con datos de prueba">
+                        <i class="fas fa-flask"></i> Rellenar Demo
+                    </button>
+                <?php endif; ?>
                 <?php if ($currentUser): ?>
                     <a href="mi-cuenta.php" class="btn-cta" style="background:#0F2A4A; color:#FFFFFF !important; font-size:0.85rem; padding:0.4rem 0.8rem;">
                         <i class="fas fa-folder-open"></i> Mi Bóveda (<?= htmlspecialchars($currentUser['nombre']) ?>)
@@ -398,11 +404,11 @@ $defaultRetailGateway = $mpRetailActive ? 'MERCADO_PAGO' : ($khipuRetailActive ?
                     <div class="form-row">
                         <div class="form-group">
                             <label id="lbl_parte_a_nombre">Nombre Completo *</label>
-                            <input type="text" id="f_parte_a_nombre" class="form-control" placeholder="Ej: Juan Andrés Pérez González" value="Juan Andrés Pérez González">
+                            <input type="text" id="f_parte_a_nombre" class="form-control" placeholder="Ej: Juan Andrés Pérez González" value="<?= $isWizardSandbox ? 'Juan Andrés Pérez González' : '' ?>">
                         </div>
                         <div class="form-group">
                             <label id="lbl_parte_a_rut">RUT *</label>
-                            <input type="text" id="f_parte_a_rut" class="form-control" placeholder="12.345.678-5" value="12.345.678-5" maxlength="25">
+                            <input type="text" id="f_parte_a_rut" class="form-control" placeholder="12.345.678-5" value="<?= $isWizardSandbox ? '12.345.678-5' : '' ?>" maxlength="25">
                             <span id="err_parte_a_rut" class="rut-error-text">RUT inválido</span>
                         </div>
                     </div>
@@ -410,33 +416,33 @@ $defaultRetailGateway = $mpRetailActive ? 'MERCADO_PAGO' : ($khipuRetailActive ?
                     <div class="form-row">
                         <div class="form-group">
                             <label>Nacionalidad y Estado Civil *</label>
-                            <input type="text" id="f_parte_a_civil" class="form-control" placeholder="Ej: chileno, soltero" value="chileno, soltero">
+                            <input type="text" id="f_parte_a_civil" class="form-control" placeholder="Ej: chileno, soltero" value="<?= $isWizardSandbox ? 'chileno, soltero' : '' ?>">
                         </div>
                         <div class="form-group">
                             <label>Profesión u Oficio *</label>
-                            <input type="text" id="f_parte_a_profesion" class="form-control" placeholder="Ej: Ingeniero Comercial" value="Ingeniero Comercial">
+                            <input type="text" id="f_parte_a_profesion" class="form-control" placeholder="Ej: Ingeniero Comercial" value="<?= $isWizardSandbox ? 'Ingeniero Comercial' : '' ?>">
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label>Correo Electrónico (Para recibir enlace de firma) *</label>
-                            <input type="email" id="f_parte_a_email" class="form-control" placeholder="juan.perez@ejemplo.cl" value="juan.perez@ejemplo.cl">
+                            <input type="email" id="f_parte_a_email" class="form-control" placeholder="juan.perez@ejemplo.cl" value="<?= $isWizardSandbox ? 'juan.perez@ejemplo.cl' : '' ?>">
                         </div>
                         <div class="form-group">
                             <label>Teléfono WhatsApp *</label>
-                            <input type="tel" id="f_parte_a_tel" class="form-control" placeholder="+56 9 1234 5678" value="">
+                            <input type="tel" id="f_parte_a_tel" class="form-control" placeholder="+56 9 1234 5678" value="<?= $isWizardSandbox ? '+56984180479' : '' ?>">
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label>Domicilio Particular *</label>
-                            <input type="text" id="f_parte_a_domicilio" class="form-control" placeholder="Av. Providencia 1234, Depto 402" value="Av. Providencia 1234, Depto 402">
+                            <input type="text" id="f_parte_a_domicilio" class="form-control" placeholder="Av. Providencia 1234, Depto 402" value="<?= $isWizardSandbox ? 'Av. Providencia 1234, Depto 402' : '' ?>">
                         </div>
                         <div class="form-group">
                             <label>Comuna y Ciudad *</label>
-                            <input type="text" id="f_parte_a_comuna" class="form-control" placeholder="Providencia, Santiago" value="Providencia, Santiago">
+                            <input type="text" id="f_parte_a_comuna" class="form-control" placeholder="Providencia, Santiago" value="<?= $isWizardSandbox ? 'Providencia, Santiago' : '' ?>">
                         </div>
                     </div>
 
@@ -496,11 +502,11 @@ $defaultRetailGateway = $mpRetailActive ? 'MERCADO_PAGO' : ($khipuRetailActive ?
                         <div class="form-row">
                             <div class="form-group">
                                 <label id="lbl_parte_b_nombre">Nombre Completo de la Contraparte *</label>
-                                <input type="text" id="f_parte_b_nombre" class="form-control" placeholder="Ej: María José Valenzuela" value="María José Valenzuela">
+                                <input type="text" id="f_parte_b_nombre" class="form-control" placeholder="Ej: María José Valenzuela" value="<?= $isWizardSandbox ? 'María José Valenzuela' : '' ?>">
                             </div>
                             <div class="form-group">
                                 <label id="lbl_parte_b_rut">RUT de la Contraparte *</label>
-                                <input type="text" id="f_parte_b_rut" class="form-control" placeholder="15.444.555-6" value="15.444.555-6" maxlength="25">
+                                <input type="text" id="f_parte_b_rut" class="form-control" placeholder="15.444.555-6" value="<?= $isWizardSandbox ? '15.444.555-6' : '' ?>" maxlength="25">
                                 <span id="err_parte_b_rut" class="rut-error-text">RUT inválido</span>
                             </div>
                         </div>
@@ -508,33 +514,33 @@ $defaultRetailGateway = $mpRetailActive ? 'MERCADO_PAGO' : ($khipuRetailActive ?
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Nacionalidad y Estado Civil *</label>
-                                <input type="text" id="f_parte_b_civil" class="form-control" placeholder="Ej: chilena, casada" value="chilena, soltera">
+                                <input type="text" id="f_parte_b_civil" class="form-control" placeholder="Ej: chilena, casada" value="<?= $isWizardSandbox ? 'chilena, soltera' : '' ?>">
                             </div>
                             <div class="form-group">
                                 <label>Profesión u Oficio *</label>
-                                <input type="text" id="f_parte_b_profesion" class="form-control" placeholder="Ej: Médico Cirujano" value="Abogada">
+                                <input type="text" id="f_parte_b_profesion" class="form-control" placeholder="Ej: Médico Cirujano" value="<?= $isWizardSandbox ? 'Abogada' : '' ?>">
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Domicilio Particular de la Contraparte *</label>
-                                <input type="text" id="f_parte_b_domicilio" class="form-control" placeholder="Ej: Av. Apoquindo 4500, Las Condes" value="Av. Apoquindo 4500, Depto 801, Las Condes">
+                                <input type="text" id="f_parte_b_domicilio" class="form-control" placeholder="Ej: Av. Apoquindo 4500, Las Condes" value="<?= $isWizardSandbox ? 'Av. Apoquindo 4500, Depto 801, Las Condes' : '' ?>">
                             </div>
                             <div class="form-group">
                                 <label>Comuna y Ciudad *</label>
-                                <input type="text" id="f_parte_b_comuna" class="form-control" placeholder="Las Condes, Santiago" value="Las Condes, Santiago">
+                                <input type="text" id="f_parte_b_comuna" class="form-control" placeholder="Las Condes, Santiago" value="<?= $isWizardSandbox ? 'Las Condes, Santiago' : '' ?>">
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Correo Electrónico de la Contraparte *</label>
-                                <input type="email" id="f_parte_b_email" class="form-control" placeholder="mj.valenzuela@ejemplo.cl" value="mj.valenzuela@ejemplo.cl">
+                                <input type="email" id="f_parte_b_email" class="form-control" placeholder="mj.valenzuela@ejemplo.cl" value="<?= $isWizardSandbox ? 'mj.valenzuela@ejemplo.cl' : '' ?>">
                             </div>
                             <div class="form-group">
                                 <label>WhatsApp de la Contraparte *</label>
-                                <input type="tel" id="f_parte_b_tel" class="form-control" placeholder="+56 9 8765 4321" value="">
+                                <input type="tel" id="f_parte_b_tel" class="form-control" placeholder="+56 9 8765 4321" value="<?= $isWizardSandbox ? '+56984180479' : '' ?>">
                             </div>
                         </div>
                     </div>
@@ -3923,12 +3929,50 @@ $defaultRetailGateway = $mpRetailActive ? 'MERCADO_PAGO' : ($khipuRetailActive ?
             bodyContainer.innerHTML = html;
         }
 
+        const IS_WIZARD_SANDBOX = <?= $isWizardSandbox ? 'true' : 'false' ?>;
+
+        function fillDemoData() {
+            // Relleno rápido seguro para pruebas (SOL-0106)
+            const safePhone = '+56984180479';
+            if (document.getElementById('f_parte_a_nombre')) document.getElementById('f_parte_a_nombre').value = 'Juan Andrés Pérez González';
+            if (document.getElementById('f_parte_a_rut')) document.getElementById('f_parte_a_rut').value = '10.993.031-8';
+            if (document.getElementById('f_parte_a_civil')) document.getElementById('f_parte_a_civil').value = 'chileno, soltero';
+            if (document.getElementById('f_parte_a_profesion')) document.getElementById('f_parte_a_profesion').value = 'Ingeniero Comercial';
+            if (document.getElementById('f_parte_a_email')) document.getElementById('f_parte_a_email').value = 'contacto@sinnotario.cl';
+            if (document.getElementById('f_parte_a_tel')) document.getElementById('f_parte_a_tel').value = safePhone;
+            if (document.getElementById('f_parte_a_domicilio')) document.getElementById('f_parte_a_domicilio').value = 'Av. Providencia 1234, Depto 402';
+            if (document.getElementById('f_parte_a_comuna')) document.getElementById('f_parte_a_comuna').value = 'Providencia, Santiago';
+
+            if (document.getElementById('f_parte_b_nombre')) document.getElementById('f_parte_b_nombre').value = 'María José Valenzuela';
+            if (document.getElementById('f_parte_b_rut')) document.getElementById('f_parte_b_rut').value = '15.444.555-6';
+            if (document.getElementById('f_parte_b_civil')) document.getElementById('f_parte_b_civil').value = 'chilena, soltera';
+            if (document.getElementById('f_parte_b_profesion')) document.getElementById('f_parte_b_profesion').value = 'Abogada';
+            if (document.getElementById('f_parte_b_email')) document.getElementById('f_parte_b_email').value = 'contacto@sinnotario.cl';
+            if (document.getElementById('f_parte_b_tel')) document.getElementById('f_parte_b_tel').value = safePhone;
+            if (document.getElementById('f_parte_b_domicilio')) document.getElementById('f_parte_b_domicilio').value = 'Av. Apoquindo 4500, Depto 801';
+            if (document.getElementById('f_parte_b_comuna')) document.getElementById('f_parte_b_comuna').value = 'Las Condes, Santiago';
+
+            // Actualizar vista previa
+            updatePreview();
+        }
+
         function nextUniversalStep(step) {
+            // Si está activo el Modo Pruebas / Sandbox, permitir bypass rápido si el usuario lo desea
+            if (IS_WIZARD_SANDBOX) {
+                // Auto-completar si los campos están vacíos para agilizar la prueba sin bloquear
+                const inputNombreA = document.getElementById('f_parte_a_nombre');
+                if (inputNombreA && !inputNombreA.value.trim()) {
+                    fillDemoData();
+                }
+            }
+
             // Validación dinámica y destacada al avanzar de pasos
             if (currentStep === 1) {
                 const tipoDocA = document.getElementById('f_parte_a_tipo_doc')?.value || 'RUT';
                 const inputNombreA = document.getElementById('f_parte_a_nombre');
                 const inputRutA = document.getElementById('f_parte_a_rut');
+                const inputEmailA = document.getElementById('f_parte_a_email');
+                const inputTelA = document.getElementById('f_parte_a_tel');
                 const errA = document.getElementById('err_parte_a_rut');
                 let hasErr = false;
                 let firstErr = null;
@@ -3973,6 +4017,31 @@ $defaultRetailGateway = $mpRetailActive ? 'MERCADO_PAGO' : ($khipuRetailActive ?
                         if (!firstErr) firstErr = inputRutA;
                     } else {
                         inputRutA.classList.remove('rut-invalid');
+                    }
+                }
+
+                // Validar Correo Titular (Obligatorio en producción)
+                if (inputEmailA) {
+                    const emailVal = inputEmailA.value.trim();
+                    const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal);
+                    if (!isEmailValid) {
+                        inputEmailA.classList.add('rut-invalid');
+                        hasErr = true;
+                        if (!firstErr) firstErr = inputEmailA;
+                    } else {
+                        inputEmailA.classList.remove('rut-invalid');
+                    }
+                }
+
+                // Validar Teléfono Titular (Obligatorio en producción)
+                if (inputTelA) {
+                    const telVal = inputTelA.value.replace(/[^0-9]/g, '');
+                    if (telVal.length < 8) {
+                        inputTelA.classList.add('rut-invalid');
+                        hasErr = true;
+                        if (!firstErr) firstErr = inputTelA;
+                    } else {
+                        inputTelA.classList.remove('rut-invalid');
                     }
                 }
 
@@ -4062,6 +4131,33 @@ $defaultRetailGateway = $mpRetailActive ? 'MERCADO_PAGO' : ($khipuRetailActive ?
                         if (!firstErr) firstErr = inputRutB;
                     } else {
                         inputRutB.classList.remove('rut-invalid');
+                    }
+                }
+
+                // Validar Correo Contraparte (Obligatorio en producción)
+                const inputEmailB = document.getElementById('f_parte_b_email');
+                if (inputEmailB) {
+                    const emailValB = inputEmailB.value.trim();
+                    const isEmailValidB = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValB);
+                    if (!isEmailValidB) {
+                        inputEmailB.classList.add('rut-invalid');
+                        hasErr = true;
+                        if (!firstErr) firstErr = inputEmailB;
+                    } else {
+                        inputEmailB.classList.remove('rut-invalid');
+                    }
+                }
+
+                // Validar Teléfono Contraparte (Obligatorio en producción)
+                const inputTelB = document.getElementById('f_parte_b_tel');
+                if (inputTelB) {
+                    const telValB = inputTelB.value.replace(/[^0-9]/g, '');
+                    if (telValB.length < 8) {
+                        inputTelB.classList.add('rut-invalid');
+                        hasErr = true;
+                        if (!firstErr) firstErr = inputTelB;
+                    } else {
+                        inputTelB.classList.remove('rut-invalid');
                     }
                 }
 
