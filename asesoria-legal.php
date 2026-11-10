@@ -14,7 +14,7 @@ require_once __DIR__ . '/config/app.php';
     <title>Asesoría Legal IA y Redacción Libre | SinNotario.cl</title>
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/style.css?v=20261110_2">
+    <link rel="stylesheet" href="assets/css/style.css?v=20261110_3">
     <style>
         .ai-container {
             max-width: 1200px;

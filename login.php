@@ -40,7 +40,7 @@ if (empty($googleClientId)) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Estilos Principales -->
-    <link rel="stylesheet" href="assets/css/style.css?v=20261110_2">
+    <link rel="stylesheet" href="assets/css/style.css?v=20261110_3">
     
     <!-- Google Identity Services (GIS) para Google Sign-In oficial -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>

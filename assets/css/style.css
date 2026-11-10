@@ -47,12 +47,14 @@ body {
 }
 
 .nav-container {
-    max-width: 1240px;
+    max-width: 96%;
+    width: 100%;
     margin: 0 auto;
-    padding: 0.65rem 1.5rem;
+    padding: 0.65rem 1.75rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 1.5rem;
 }
 
 .brand-logo {
