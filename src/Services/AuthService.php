@@ -95,46 +95,101 @@ class AuthService {
             throw new Exception("Contraseña incorrecta. Por favor verifica tus credenciales.");
         }
 
-        // Si el usuario tiene teléfono celular registrado, iniciar desafío 2FA vía WhatsApp OTP
+        // Cascada 2FA: WhatsApp prioritario, Fallback automático o manual por Email
         $userPhone = !empty($user['telefono']) ? trim($user['telefono']) : '';
+        $userEmail = strtolower(trim($user['email']));
+
+        $otp = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+        $otpHash = password_hash($otp, PASSWORD_BCRYPT);
+
+        $stmtOtp = self::getDb()->prepare("UPDATE users SET otp_code = ?, otp_expires_at = datetime('now', '+5 minutes') WHERE id = ?");
+        $stmtOtp->execute([$otpHash, $user['id']]);
+
+        // Guardar estado pendiente en sesión temporal
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+        $_SESSION['2fa_pending_uid'] = $user['id'];
+        $_SESSION['2fa_pending_email'] = $user['email'];
+        $_SESSION['2fa_pending_remember'] = $remember;
+
+        $nombreCompleto = trim($user['nombre'] . ' ' . $user['apellido']);
+        $channel = 'whatsapp';
+        $destinationMasked = '';
+
         if (!empty($userPhone)) {
-            $otp = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
-            $otpHash = password_hash($otp, PASSWORD_BCRYPT);
-
-            $stmtOtp = self::getDb()->prepare("UPDATE users SET otp_code = ?, otp_expires_at = datetime('now', '+5 minutes') WHERE id = ?");
-            $stmtOtp->execute([$otpHash, $user['id']]);
-
-            // Despachar OTP vía WhatsApp
+            // Intento prioritario por WhatsApp Oficial Evolution API
             try {
                 require_once __DIR__ . '/WhatsAppService.php';
                 $wa = new WhatsAppService();
-                $nombreCompleto = trim($user['nombre'] . ' ' . $user['apellido']);
                 $msg = "🛡️ *SinNotario.cl Security (2FA)*\n\nHola {$nombreCompleto},\nTu código de verificación para ingresar a tu Bóveda es:\n\n👉 *{$otp}*\n\nEste código es válido por 5 minutos.";
                 $wa->sendTextMessage($userPhone, $msg, 'keystone-general', null, $nombreCompleto, '2FA_OTP');
+                $destinationMasked = substr($userPhone, 0, 4) . '***' . substr($userPhone, -4);
+                $channel = 'whatsapp';
             } catch (\Throwable $eWa) {
-                error_log("Error despachando 2FA WhatsApp en SinNotario: " . $eWa->getMessage());
+                error_log("Error despachando 2FA WhatsApp en SinNotario, fallback a email: " . $eWa->getMessage());
+                self::dispatchOtpEmail($userEmail, $nombreCompleto, $otp);
+                $parts = explode('@', $userEmail);
+                $destinationMasked = substr($parts[0], 0, 3) . '***@' . ($parts[1] ?? '');
+                $channel = 'email';
             }
-
-            // Guardar estado pendiente en sesión temporal
-            if (session_status() === PHP_SESSION_NONE) {
-                @session_start();
-            }
-            $_SESSION['2fa_pending_uid'] = $user['id'];
-            $_SESSION['2fa_pending_email'] = $user['email'];
-            $_SESSION['2fa_pending_remember'] = $remember;
-
-            $maskedPhone = substr($userPhone, 0, 4) . '***' . substr($userPhone, -4);
-
-            return [
-                'requires_2fa' => true,
-                'email' => $user['email'],
-                'masked_phone' => $maskedPhone,
-                'message' => "Código de 6 dígitos enviado a tu WhatsApp ({$maskedPhone})"
-            ];
+        } else {
+            // Usuario sin teléfono: despacho automático por correo electrónico corporativo
+            self::dispatchOtpEmail($userEmail, $nombreCompleto, $otp);
+            $parts = explode('@', $userEmail);
+            $destinationMasked = substr($parts[0], 0, 3) . '***@' . ($parts[1] ?? '');
+            $channel = 'email';
         }
 
-        // Si no tiene teléfono configurado aún, conceder sesión directa
-        return self::establishSession($user, $remember);
+        return [
+            'requires_2fa' => true,
+            'email' => $user['email'],
+            'channel' => $channel,
+            'has_phone' => !empty($userPhone),
+            'masked_destination' => $destinationMasked,
+            'message' => $channel === 'whatsapp' 
+                ? "Código de 6 dígitos enviado a tu WhatsApp ({$destinationMasked})"
+                : "Código de 6 dígitos enviado a tu correo ({$destinationMasked})"
+        ];
+    }
+
+    /**
+     * Envía código OTP con plantilla HTML de alta conversión y seguridad vía MailService
+     */
+    public static function dispatchOtpEmail(string $email, string $nombre, string $otp): bool {
+        try {
+            require_once __DIR__ . '/MailService.php';
+            $subject = "🛡️ Código de Verificación 2FA: {$otp} - SinNotario.cl";
+            $html = "
+                <div style='background-color:#0A1C33; padding:25px; text-align:center; border-radius:8px 8px 0 0;'>
+                    <h1 style='color:#FFFFFF; margin:0; font-size:24px; font-weight:800;'>SinNotario<span style='color:#D4AF37;'>.cl</span></h1>
+                    <p style='color:#94A3B8; margin:5px 0 0; font-size:13px; text-transform:uppercase; letter-spacing:1px;'>Seguridad & Autenticación Legal</p>
+                </div>
+                <div style='padding:30px; background:#FFFFFF; border:1px solid #E2E8F0; border-top:none; border-radius:0 0 8px 8px;'>
+                    <p style='font-size:16px; color:#1E293B; margin-top:0;'>Hola <strong>" . htmlspecialchars($nombre) . "</strong>,</p>
+                    <p style='font-size:15px; color:#475569; line-height:1.6;'>
+                        Hemos recibido una solicitud para acceder a tu <strong>Bóveda Digital en SinNotario.cl</strong>. Para completar el inicio de sesión de forma segura, ingresa el siguiente código de verificación temporal:
+                    </p>
+                    <div style='margin:30px 0; text-align:center;'>
+                        <span style='display:inline-block; font-size:32px; font-weight:800; letter-spacing:8px; color:#0A1C33; background:#F8FAFC; border:2px dashed #D4AF37; padding:14px 28px; border-radius:10px; font-family:monospace;'>
+                            {$otp}
+                        </span>
+                    </div>
+                    <p style='font-size:13px; color:#64748B; line-height:1.5;'>
+                        ⏱️ Este código es de uso único y <strong>expira en 5 minutos</strong>.<br>
+                        🔒 Si no solicitaste este código, te recomendamos cambiar tu contraseña inmediatamente o contactar a soporte.
+                    </p>
+                    <hr style='border:none; border-top:1px solid #E2E8F0; margin:25px 0;'>
+                    <p style='font-size:12px; color:#94A3B8; margin-bottom:0; text-align:center;'>
+                        Keystone Advisors SpA — Infraestructura de Firma Electrónica Segura Ley N° 19.799
+                    </p>
+                </div>
+            ";
+            return MailService::send($email, $subject, $html);
+        } catch (\Throwable $e) {
+            error_log("Error enviando email 2FA OTP: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -181,16 +236,16 @@ class AuthService {
     }
 
     /**
-     * Reenviar código OTP 2FA por WhatsApp
+     * Reenviar código OTP 2FA (por WhatsApp o por Email según canal preferido)
      */
-    public static function resendOtp($email) {
+    public static function resendOtp($email, ?string $forceChannel = null) {
         $email = strtolower(trim($email));
         $stmt = self::getDb()->prepare("SELECT * FROM users WHERE LOWER(email) = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$user || empty($user['telefono'])) {
-            throw new Exception("Usuario no encontrado o sin celular registrado.");
+        if (!$user) {
+            throw new Exception("Usuario no encontrado.");
         }
 
         $otp = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
@@ -199,13 +254,44 @@ class AuthService {
         $stmtOtp = self::getDb()->prepare("UPDATE users SET otp_code = ?, otp_expires_at = datetime('now', '+5 minutes') WHERE id = ?");
         $stmtOtp->execute([$otpHash, $user['id']]);
 
-        require_once __DIR__ . '/WhatsAppService.php';
-        $wa = new WhatsAppService();
         $nombreCompleto = trim($user['nombre'] . ' ' . $user['apellido']);
-        $msg = "🛡️ *SinNotario.cl Security (2FA)*\n\nHola {$nombreCompleto},\nTu nuevo código de verificación es:\n\n👉 *{$otp}*\n\nExpira en 5 minutos.";
-        $wa->sendTextMessage($user['telefono'], $msg, 'keystone-general', null, $nombreCompleto, '2FA_OTP');
+        $userPhone = !empty($user['telefono']) ? trim($user['telefono']) : '';
+        $userEmail = $user['email'];
 
-        return true;
+        // Si se pide explícitamente email, o si el usuario no tiene teléfono
+        if ($forceChannel === 'email' || empty($userPhone)) {
+            self::dispatchOtpEmail($userEmail, $nombreCompleto, $otp);
+            $parts = explode('@', $userEmail);
+            $destinationMasked = substr($parts[0], 0, 3) . '***@' . ($parts[1] ?? '');
+            return [
+                'channel' => 'email',
+                'masked_destination' => $destinationMasked,
+                'message' => "Nuevo código enviado a tu correo ({$destinationMasked})"
+            ];
+        }
+
+        // WhatsApp
+        try {
+            require_once __DIR__ . '/WhatsAppService.php';
+            $wa = new WhatsAppService();
+            $msg = "🛡️ *SinNotario.cl Security (2FA)*\n\nHola {$nombreCompleto},\nTu nuevo código de verificación es:\n\n👉 *{$otp}*\n\nExpira en 5 minutos.";
+            $wa->sendTextMessage($userPhone, $msg, 'keystone-general', null, $nombreCompleto, '2FA_OTP');
+            $destinationMasked = substr($userPhone, 0, 4) . '***' . substr($userPhone, -4);
+            return [
+                'channel' => 'whatsapp',
+                'masked_destination' => $destinationMasked,
+                'message' => "Nuevo código enviado a tu WhatsApp ({$destinationMasked})"
+            ];
+        } catch (\Throwable $eWa) {
+            self::dispatchOtpEmail($userEmail, $nombreCompleto, $otp);
+            $parts = explode('@', $userEmail);
+            $destinationMasked = substr($parts[0], 0, 3) . '***@' . ($parts[1] ?? '');
+            return [
+                'channel' => 'email',
+                'masked_destination' => $destinationMasked,
+                'message' => "Nuevo código enviado a tu correo ({$destinationMasked})"
+            ];
+        }
     }
 
     /**

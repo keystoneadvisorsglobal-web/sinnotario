@@ -320,10 +320,10 @@ if (empty($googleClientId)) {
                     </button>
                 </form>
 
-                <!-- FORMULARIO 2FA WHATSAPP OTP (SOL-0123) -->
+                <!-- FORMULARIO 2FA DUAL (WHATSAPP + FALLBACK EMAIL - SOL-0127) -->
                 <form id="form2FA" style="display:none;" onsubmit="submit2FA(event)">
                     <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:1.25rem 1rem; margin-bottom:1.5rem; text-align:center;">
-                        <div style="font-size:1.8rem; margin-bottom:0.35rem;">🛡️</div>
+                        <div style="font-size:1.8rem; margin-bottom:0.35rem;" id="icon2FaBadge">🛡️</div>
                         <div style="font-weight:800; color:#166534; font-size:1rem; margin-bottom:0.25rem;">Doble Factor Activo (2FA)</div>
                         <div style="font-size:0.86rem; color:#15803D;" id="txt2FaTargetPhone">Código de seguridad enviado a tu WhatsApp</div>
                     </div>
@@ -337,7 +337,17 @@ if (empty($googleClientId)) {
                         <i class="fas fa-shield-alt"></i> Verificar y Entrar ➜
                     </button>
 
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem; font-size:0.85rem;">
+                    <!-- Acciones Alternativas de Canal -->
+                    <div style="margin-top:1.2rem; text-align:center; padding:0.6rem; background:#F8FAFC; border-radius:8px; font-size:0.82rem;" id="boxSwitchChannel">
+                        <a href="javascript:void(0)" onclick="resend2FaCode('email')" style="color:#0066CC; text-decoration:none; font-weight:600;" id="lnkSwitchToEmail">
+                            <i class="fas fa-envelope"></i> ¿No tienes acceso a tu WhatsApp? Recibir por correo
+                        </a>
+                        <a href="javascript:void(0)" onclick="resend2FaCode('whatsapp')" style="color:#16A34A; text-decoration:none; font-weight:600; display:none;" id="lnkSwitchToWa">
+                            <i class="fab fa-whatsapp"></i> ¿Prefieres recibirlo en WhatsApp? Enviar al celular
+                        </a>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.25rem; font-size:0.85rem;">
                         <a href="javascript:void(0)" onclick="resend2FaCode()" style="color:#0066CC; text-decoration:none; font-weight:700;"><i class="fas fa-sync-alt"></i> Reenviar Código</a>
                         <a href="javascript:void(0)" onclick="cancel2Fa()" style="color:#DC2626; text-decoration:none; font-weight:700;"><i class="fas fa-times"></i> Cancelar</a>
                     </div>
@@ -465,16 +475,32 @@ if (empty($googleClientId)) {
 
                 if (data.success) {
                     if (data.data && data.data.requires_2fa) {
-                        // Activar pantalla de Desafío 2FA WhatsApp
+                        // Activar pantalla de Desafío 2FA Dual (WhatsApp / Email)
                         active2FaEmail = data.data.email;
                         document.getElementById('formLogin').style.display = 'none';
                         document.getElementById('btnGoogleAuth').style.display = 'none';
                         document.querySelector('.auth-divider').style.display = 'none';
                         document.querySelector('.auth-tabs').style.display = 'none';
-                        document.getElementById('txt2FaTargetPhone').innerHTML = `Hemos enviado un código a tu WhatsApp <strong>${data.data.masked_phone}</strong>`;
+
+                        const isEmail = data.data.channel === 'email';
+                        const targetText = isEmail 
+                            ? `Hemos enviado un código a tu correo <strong>${data.data.masked_destination}</strong>`
+                            : `Hemos enviado un código a tu WhatsApp <strong>${data.data.masked_destination}</strong>`;
+                        document.getElementById('txt2FaTargetPhone').innerHTML = targetText;
+                        document.getElementById('icon2FaBadge').textContent = isEmail ? '✉️' : '🛡️';
+
+                        // Conmutadores de canal
+                        if (isEmail) {
+                            document.getElementById('lnkSwitchToEmail').style.display = 'none';
+                            document.getElementById('lnkSwitchToWa').style.display = data.data.has_phone ? 'inline-block' : 'none';
+                        } else {
+                            document.getElementById('lnkSwitchToEmail').style.display = 'inline-block';
+                            document.getElementById('lnkSwitchToWa').style.display = 'none';
+                        }
+
                         document.getElementById('form2FA').style.display = 'block';
                         document.getElementById('input2FaCode').focus();
-                        showAlert('Código enviado a tu WhatsApp.', true);
+                        showAlert(data.data.message || 'Código de seguridad enviado.', true);
                     } else {
                         showAlert('¡Bienvenido! Redirigiendo a tu bóveda...', true);
                         setTimeout(() => {
@@ -493,7 +519,7 @@ if (empty($googleClientId)) {
             }
         }
 
-        // 1b. Enviar Desafío 2FA (SOL-0123)
+        // 1b. Enviar Desafío 2FA (SOL-0123 / SOL-0127)
         async function submit2FA(e) {
             e.preventDefault();
             const btn = document.getElementById('btn2FaSubmit');
@@ -533,19 +559,40 @@ if (empty($googleClientId)) {
             }
         }
 
-        // 1c. Reenviar Código 2FA
-        async function resend2FaCode() {
+        // 1c. Reenviar Código 2FA (WhatsApp o Email)
+        async function resend2FaCode(forceChannel = null) {
             if (!active2FaEmail) return;
-            showAlert('Reenviando código a tu WhatsApp...', true);
+            const targetName = forceChannel === 'email' ? 'tu correo...' : (forceChannel === 'whatsapp' ? 'tu WhatsApp...' : 'tu destino...');
+            showAlert(`Reenviando código a ${targetName}`, true);
+
             try {
+                const payload = { email: active2FaEmail };
+                if (forceChannel) payload.channel = forceChannel;
+
                 const res = await fetch('api/index.php?action=auth_resend_otp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: active2FaEmail })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
                 if (data.success) {
-                    showAlert('Nuevo código despachado a tu WhatsApp.', true);
+                    const info = data.data || {};
+                    showAlert(info.message || 'Nuevo código despachado exitosamente.', true);
+                    if (info.masked_destination) {
+                        const isEmail = info.channel === 'email';
+                        document.getElementById('txt2FaTargetPhone').innerHTML = isEmail
+                            ? `Hemos enviado un código a tu correo <strong>${info.masked_destination}</strong>`
+                            : `Hemos enviado un código a tu WhatsApp <strong>${info.masked_destination}</strong>`;
+                        document.getElementById('icon2FaBadge').textContent = isEmail ? '✉️' : '🛡️';
+
+                        if (isEmail) {
+                            document.getElementById('lnkSwitchToEmail').style.display = 'none';
+                            document.getElementById('lnkSwitchToWa').style.display = 'inline-block';
+                        } else {
+                            document.getElementById('lnkSwitchToEmail').style.display = 'inline-block';
+                            document.getElementById('lnkSwitchToWa').style.display = 'none';
+                        }
+                    }
                     document.getElementById('input2FaCode').value = '';
                     document.getElementById('input2FaCode').focus();
                 } else {
@@ -553,6 +600,8 @@ if (empty($googleClientId)) {
                 }
             } catch (err) {
                 showAlert('Error al reenviar código: ' + err.message);
+            }
+        }
             }
         }
 

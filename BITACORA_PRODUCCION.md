@@ -1,5 +1,25 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 19:50 UTC-3] - SOL-0127
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0127`
+- **Alcance de los Cambios:**
+  - **Cascada Dual 2FA (WhatsApp OTP prioritario + Fallback Automático y Conmutador Manual por Email):**
+    1. **Lógica en Cascada en Backend (`src/Services/AuthService.php`):**
+       - Si el usuario que inicia sesión tiene celular registrado, se despacha prioritariamente el código OTP de 6 dígitos por WhatsApp Oficial Evolution API (`keystone-general`).
+       - Si el usuario **NO** tiene teléfono registrado (o si ocurre un fallo en el Gateway WhatsApp), el sistema conmuta de forma transparente y automática despachando el OTP vía correo electrónico transaccional.
+       - Nuevo método `AuthService::dispatchOtpEmail()` con maquetación HTML responsive institucional (cabecera Deep Navy, tipografía Arial, código de 32px con borde dorado `#D4AF37` y advertencias de caducidad de 5 minutos).
+    2. **Conmutación Manual en Endpoint API (`api/index.php` - `auth_resend_otp`):**
+       - Parámetro opcional `channel` (`'email'` o `'whatsapp'`), permitiendo al usuario decidir en cualquier instante por cuál canal desea recibir el código.
+    3. **Capa Frontend y UX Adaptativa (`login.php`):**
+       - Detección reactiva del canal de entrega: renderiza el badge `🛡️` (WhatsApp) o `✉️` (Correo) con su respectivo mensaje contextual (`+569***0431` o `usu***@empresa.com`).
+       - Enlace interactivo: `¿No tienes acceso a tu WhatsApp? Recibir por correo` y viceversa.
+    4. **Pruebas Validadas:**
+       - PHP Lint remoto: 0 errores detectados en todos los archivos modificados.
+       - Smoke test HTTP 200 OK en `login.php`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 19:40 UTC-3] - SOL-0126
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

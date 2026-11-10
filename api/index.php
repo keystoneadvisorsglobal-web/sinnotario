@@ -746,17 +746,18 @@ try {
             }
             break;
 
-        // 10c. Reenvío de Código 2FA WhatsApp OTP (SOL-0123)
+        // 10c. Reenvío de Código 2FA OTP (WhatsApp / Email - SOL-0127)
         case 'auth_resend_otp':
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 jsonResponse(false, null, 'Método no permitido', 405);
             }
             $input = json_decode(file_get_contents('php://input'), true);
             $email = $input['email'] ?? '';
+            $channel = $input['channel'] ?? null;
 
             try {
-                AuthService::resendOtp($email);
-                jsonResponse(true, ['message' => 'Código reenviado exitosamente a tu WhatsApp']);
+                $resData = AuthService::resendOtp($email, $channel);
+                jsonResponse(true, $resData);
             } catch (Exception $e) {
                 jsonResponse(false, null, $e->getMessage(), 400);
             }
