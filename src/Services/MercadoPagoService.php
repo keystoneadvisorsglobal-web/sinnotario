@@ -650,21 +650,30 @@ class MercadoPagoService {
             ");
             $stmtUpd->execute([$paymentId, json_encode($rawPayload, JSON_UNESCAPED_UNICODE), $order['id']]);
 
-            // Si es recarga B2B, acreditar firmas a la empresa
+            // Si es recarga B2B, acreditar firmas a la empresa (FES o FEA según corresponda)
             if ($order['payment_type'] === 'B2B_PACK' && !empty($order['company_id'])) {
                 require_once __DIR__ . '/B2BService.php';
                 $packs = B2BService::getPrepaidPacks();
                 $packKey = $order['pack_key'];
                 $firmasAcreditar = isset($packs[$packKey]) ? $packs[$packKey]['firmas'] : 50;
 
-                $stmtC = $pdo->prepare("SELECT saldo_firmas_prepago FROM companies WHERE id = ?");
+                $isFea = false;
+                if (isset($packs[$packKey])) {
+                    $isFea = ($packs[$packKey]['tipo_firma'] ?? 'FES') === 'FEA' || strpos($packKey, 'FEA') !== false;
+                } else {
+                    $isFea = strpos($packKey, 'FEA') !== false;
+                }
+                $saldoCol = $isFea ? 'saldo_firmas_fea' : 'saldo_firmas_prepago';
+                $tipoLabel = $isFea ? 'FEA (Avanzada ClaveÚnica)' : 'FES (Simple)';
+
+                $stmtC = $pdo->prepare("SELECT {$saldoCol} FROM companies WHERE id = ?");
                 $stmtC->execute([$order['company_id']]);
                 $saldoActual = (int)$stmtC->fetchColumn();
                 $nuevoSaldo = $saldoActual + $firmasAcreditar;
 
                 $stmtUpdComp = $pdo->prepare("
                     UPDATE companies
-                    SET saldo_firmas_prepago = ?, updated_at = datetime('now')
+                    SET {$saldoCol} = ?, updated_at = datetime('now')
                     WHERE id = ?
                 ");
                 $stmtUpdComp->execute([$nuevoSaldo, $order['company_id']]);
@@ -682,7 +691,7 @@ class MercadoPagoService {
                     $order['monto_total'],
                     $saldoActual,
                     $nuevoSaldo,
-                    "Pago acreditado vía Mercado Pago (ID: {$paymentId}, Ref: {$externalRef})"
+                    "Pago acreditado vía Mercado Pago ({$tipoLabel}) (ID: {$paymentId}, Ref: {$externalRef})"
                 ]);
 
                 // Notificación automática por Email y WhatsApp a la Empresa B2B (SOL-0107)
@@ -920,6 +929,14 @@ class MercadoPagoService {
             }
 
             $packs = [
+                'PACK_FES_10' => 'Bolsa Simple (10 Firmas FES)',
+                'PACK_FES_50' => 'Bolsa Simple (50 Firmas FES)',
+                'PACK_FES_200' => 'Bolsa Simple (200 Firmas FES)',
+                'PACK_FES_500' => 'Bolsa Simple (500 Firmas FES)',
+                'PACK_FEA_10' => 'Bolsa Avanzada ClaveÚnica (10 Firmas FEA)',
+                'PACK_FEA_50' => 'Bolsa Avanzada ClaveÚnica (50 Firmas FEA)',
+                'PACK_FEA_200' => 'Bolsa Avanzada ClaveÚnica (200 Firmas FEA)',
+                'PACK_FEA_500' => 'Bolsa Avanzada ClaveÚnica (500 Firmas FEA)',
                 'PACK_10' => 'Bolsa de Bienvenida (10 Firmas)',
                 'PACK_50' => 'Bolsa de 50 Firmas',
                 'PACK_200' => 'Bolsa de 200 Firmas',

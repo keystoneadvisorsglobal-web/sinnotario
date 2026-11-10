@@ -182,13 +182,18 @@ if ($externalRef || $orderIdParam) {
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 1.25rem;">
-                <!-- Widget Financiero: Bolsa Prepago o Facturación Postpago -->
+                <!-- Widget Financiero: Bolsa Prepago o Facturación Postpago (Dual FES / FEA SOL-0116) -->
                 <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 0.5rem 1rem; text-align: right;" id="widgetFinanciero">
-                    <div style="font-size: 0.72rem; color: #64748B; font-weight: 700; text-transform: uppercase;" id="lblSaldoModalidad">BOLSA PREPAGADA ACTIVA</div>
-                    <div style="font-size: 1.15rem; font-weight: 800; color: #15803D;" id="valSaldoModalidad">
-                        <span id="dispSaldoPrepago">50</span> firmas disponibles
+                    <div style="font-size: 0.72rem; color: #64748B; font-weight: 700; text-transform: uppercase;" id="lblSaldoModalidad">BOLSAS DISPONIBLES</div>
+                    <div style="display:flex; align-items:center; justify-content:flex-end; gap:0.75rem; margin-top:2px;" id="valSaldoModalidad">
+                        <span style="font-size: 0.95rem; font-weight: 800; color: #16A34A; background:#DCFCE7; padding:2px 8px; border-radius:6px;" title="Firmas Electrónicas Simples Disponibles">
+                            <i class="fas fa-file-signature"></i> FES: <strong id="dispSaldoPrepago">0</strong>
+                        </span>
+                        <span style="font-size: 0.95rem; font-weight: 800; color: #1D4ED8; background:#DBEAFE; padding:2px 8px; border-radius:6px;" title="Firmas Avanzadas ClaveÚnica Disponibles">
+                            <i class="fas fa-shield-alt"></i> FEA: <strong id="dispSaldoFea">0</strong>
+                        </span>
                     </div>
-                    <div style="font-size: 0.72rem; color: #64748B;" id="subSaldoModalidad">Total histórico emitido: <strong id="dispHistoricoUsadas">0</strong></div>
+                    <div style="font-size: 0.72rem; color: #64748B; margin-top:2px;" id="subSaldoModalidad">Total histórico emitido: <strong id="dispHistoricoUsadas">0</strong></div>
                 </div>
                 
                 <div style="display:flex; flex-direction:column; gap:4px;">
@@ -202,60 +207,142 @@ if ($externalRef || $orderIdParam) {
             </div>
         </div>
 
-        <!-- Banner de Selección de Bolsas con Descuento -->
+        <!-- Banner de Selección de Bolsas con Descuento (Dual FES vs FEA SOL-0116) -->
         <?php 
         $activePacks = B2BService::getPrepaidPacks(); 
-        $p10 = $activePacks['PACK_10'];
-        $p50 = $activePacks['PACK_50'];
-        $p200 = $activePacks['PACK_200'];
-        $p500 = $activePacks['PACK_500'];
+        $fes10 = $activePacks['PACK_FES_10'];
+        $fes50 = $activePacks['PACK_FES_50'];
+        $fes200 = $activePacks['PACK_FES_200'];
+        $fes500 = $activePacks['PACK_FES_500'];
+
+        $fea10 = $activePacks['PACK_FEA_10'];
+        $fea50 = $activePacks['PACK_FEA_50'];
+        $fea200 = $activePacks['PACK_FEA_200'];
+        $fea500 = $activePacks['PACK_FEA_500'];
         ?>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-            <!-- Pack 10 Starter -->
-            <div style="background:#FFFFFF; border:1px solid #BBF7D0; border-top:3px solid #16A34A; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
+        <div style="margin-bottom: 2rem;">
+            <!-- Selector de Tipo de Firma para Packs -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.75rem;">
                 <div>
-                    <span style="font-size:0.72rem; font-weight:800; color:#15803D; background:#DCFCE7; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($p10['badge']) ?></span>
-                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($p10['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
-                    <p style="margin:0; font-size:0.76rem; color:#64748B;"><?= htmlspecialchars($p10['nombre']) ?> ($<?= number_format($p10['total'], 0, '', '.') ?> CLP)</p>
+                    <h3 style="font-size:1.15rem; font-weight:800; color:var(--primary); margin:0;">
+                        <i class="fas fa-tags" style="color:var(--gold);"></i> Bolsas de Firmas Prepagadas con Descuento por Volumen
+                    </h3>
+                    <p style="font-size:0.83rem; color:#64748B; margin:2px 0 0;">
+                        Escoge la línea que mejor se adapte a tus operaciones: Firma Simple (FES) o Firma Avanzada ClaveÚnica (FEA).
+                    </p>
                 </div>
-                <button type="button" class="btn-cta" style="background:#16A34A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_10')">
-                    Probar
-                </button>
+                <div style="display:inline-flex; background:#E2E8F0; padding:4px; border-radius:10px; gap:4px;">
+                    <button type="button" id="tabPackFesBtn" onclick="togglePackLine('FES')" style="padding:6px 14px; border-radius:8px; font-size:0.82rem; font-weight:800; border:none; cursor:pointer; background:#16A34A; color:#FFFFFF; transition:all 0.2s;">
+                        <i class="fas fa-file-signature"></i> Firma Simple (FES)
+                    </button>
+                    <button type="button" id="tabPackFeaBtn" onclick="togglePackLine('FEA')" style="padding:6px 14px; border-radius:8px; font-size:0.82rem; font-weight:800; border:none; cursor:pointer; background:transparent; color:#475569; transition:all 0.2s;">
+                        <i class="fas fa-shield-alt"></i> Avanzada ClaveÚnica (FEA)
+                    </button>
+                </div>
             </div>
 
-            <!-- Pack 50 -->
-            <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
-                <div>
-                    <span style="font-size:0.72rem; font-weight:800; color:#2563EB; background:#EFF6FF; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($p50['badge']) ?></span>
-                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($p50['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
-                    <p style="margin:0; font-size:0.76rem; color:#64748B;"><?= htmlspecialchars($p50['ahorro_desc']) ?> ($<?= number_format($p50['total'], 0, '', '.') ?> CLP)</p>
+            <!-- GRILLA PACKS FES -->
+            <div id="gridPacksFES" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+                <!-- FES Pack 10 Starter -->
+                <div style="background:#FFFFFF; border:1px solid #BBF7D0; border-top:3px solid #16A34A; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
+                    <div>
+                        <span style="font-size:0.72rem; font-weight:800; color:#15803D; background:#DCFCE7; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($fes10['badge']) ?></span>
+                        <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($fes10['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                        <p style="margin:0; font-size:0.76rem; color:#64748B;"><?= htmlspecialchars($fes10['nombre']) ?> ($<?= number_format($fes10['total'], 0, '', '.') ?> CLP)</p>
+                    </div>
+                    <button type="button" class="btn-cta" style="background:#16A34A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_FES_10')">
+                        Probar
+                    </button>
                 </div>
-                <button type="button" class="btn-cta" style="background:#0F2A4A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_50')">
-                    Recargar
-                </button>
+
+                <!-- FES Pack 50 -->
+                <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
+                    <div>
+                        <span style="font-size:0.72rem; font-weight:800; color:#15803D; background:#DCFCE7; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($fes50['badge']) ?></span>
+                        <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($fes50['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                        <p style="margin:0; font-size:0.76rem; color:#64748B;"><?= htmlspecialchars($fes50['ahorro_desc']) ?> ($<?= number_format($fes50['total'], 0, '', '.') ?> CLP)</p>
+                    </div>
+                    <button type="button" class="btn-cta" style="background:#0F2A4A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_FES_50')">
+                        Recargar
+                    </button>
+                </div>
+
+                <!-- FES Pack 200 Popular -->
+                <div style="background:#FFFFFF; border:2px solid #16A34A; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm); position:relative;">
+                    <span style="position:absolute; top:-10px; right:15px; background:#16A34A; color:#FFF; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:10px;"><?= htmlspecialchars($fes200['badge']) ?></span>
+                    <div>
+                        <span style="font-size:0.75rem; font-weight:800; color:#15803D; background:#DCFCE7; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($fes200['nombre']) ?></span>
+                        <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($fes200['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                        <p style="margin:0; font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($fes200['ahorro_desc']) ?> ($<?= number_format($fes200['total'], 0, '', '.') ?> CLP)</p>
+                    </div>
+                    <button type="button" class="btn-cta" style="background:#16A34A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_FES_200')">
+                        Recargar
+                    </button>
+                </div>
+
+                <!-- FES Pack 500 Enterprise -->
+                <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
+                    <div>
+                        <span style="font-size:0.75rem; font-weight:800; color:#15803D; background:#DCFCE7; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($fes500['badge']) ?></span>
+                        <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($fes500['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                        <p style="margin:0; font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($fes500['ahorro_desc']) ?> ($<?= number_format($fes500['total'], 0, '', '.') ?> CLP)</p>
+                    </div>
+                    <button type="button" class="btn-cta" style="background:#0F2A4A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_FES_500')">
+                        Recargar
+                    </button>
+                </div>
             </div>
 
-            <div style="background:#FFFFFF; border:2px solid #D4AF37; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm); position:relative;">
-                <span style="position:absolute; top:-10px; right:15px; background:#D4AF37; color:#0A1C33; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:10px;"><?= htmlspecialchars($p200['badge']) ?></span>
-                <div>
-                    <span style="font-size:0.75rem; font-weight:800; color:#B45309; background:#FEF3C7; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($p200['nombre']) ?></span>
-                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($p200['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
-                    <p style="margin:0; font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($p200['ahorro_desc']) ?> ($<?= number_format($p200['total'], 0, '', '.') ?> CLP)</p>
+            <!-- GRILLA PACKS FEA (INICIALMENTE OCULTA O ALTERNABLE) -->
+            <div id="gridPacksFEA" style="display: none; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+                <!-- FEA Pack 10 Starter -->
+                <div style="background:#FFFFFF; border:1px solid #BFDBFE; border-top:3px solid #2563EB; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
+                    <div>
+                        <span style="font-size:0.72rem; font-weight:800; color:#1D4ED8; background:#DBEAFE; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($fea10['badge']) ?></span>
+                        <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($fea10['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                        <p style="margin:0; font-size:0.76rem; color:#64748B;"><?= htmlspecialchars($fea10['nombre']) ?> ($<?= number_format($fea10['total'], 0, '', '.') ?> CLP)</p>
+                    </div>
+                    <button type="button" class="btn-cta" style="background:#2563EB; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_FEA_10')">
+                        Probar
+                    </button>
                 </div>
-                <button type="button" class="btn-cta btn-gold" style="padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_200')">
-                    Recargar
-                </button>
-            </div>
 
-            <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
-                <div>
-                    <span style="font-size:0.75rem; font-weight:800; color:#15803D; background:#DCFCE7; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($p500['badge']) ?></span>
-                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($p500['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
-                    <p style="margin:0; font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($p500['ahorro_desc']) ?> ($<?= number_format($p500['total'], 0, '', '.') ?> CLP)</p>
+                <!-- FEA Pack 50 -->
+                <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
+                    <div>
+                        <span style="font-size:0.72rem; font-weight:800; color:#1D4ED8; background:#DBEAFE; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($fea50['badge']) ?></span>
+                        <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($fea50['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                        <p style="margin:0; font-size:0.76rem; color:#64748B;"><?= htmlspecialchars($fea50['ahorro_desc']) ?> ($<?= number_format($fea50['total'], 0, '', '.') ?> CLP)</p>
+                    </div>
+                    <button type="button" class="btn-cta" style="background:#0F2A4A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_FEA_50')">
+                        Recargar
+                    </button>
                 </div>
-                <button type="button" class="btn-cta" style="background:#0F2A4A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_500')">
-                    Recargar
-                </button>
+
+                <!-- FEA Pack 200 Popular -->
+                <div style="background:#FFFFFF; border:2px solid #D4AF37; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm); position:relative;">
+                    <span style="position:absolute; top:-10px; right:15px; background:#D4AF37; color:#0A1C33; font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:10px;"><?= htmlspecialchars($fea200['badge']) ?></span>
+                    <div>
+                        <span style="font-size:0.75rem; font-weight:800; color:#B45309; background:#FEF3C7; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($fea200['nombre']) ?></span>
+                        <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($fea200['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                        <p style="margin:0; font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($fea200['ahorro_desc']) ?> ($<?= number_format($fea200['total'], 0, '', '.') ?> CLP)</p>
+                    </div>
+                    <button type="button" class="btn-cta btn-gold" style="padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_FEA_200')">
+                        Recargar
+                    </button>
+                </div>
+
+                <!-- FEA Pack 500 Enterprise -->
+                <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
+                    <div>
+                        <span style="font-size:0.75rem; font-weight:800; color:#15803D; background:#DCFCE7; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($fea500['badge']) ?></span>
+                        <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($fea500['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                        <p style="margin:0; font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($fea500['ahorro_desc']) ?> ($<?= number_format($fea500['total'], 0, '', '.') ?> CLP)</p>
+                    </div>
+                    <button type="button" class="btn-cta" style="background:#0F2A4A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_FEA_500')">
+                        Recargar
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -849,68 +936,152 @@ if ($externalRef || $orderIdParam) {
                 <button type="button" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748B;" onclick="closeRechargeModal()">&times;</button>
             </div>
 
-            <!-- Paso 1: Elegir Bolsa -->
+            <!-- Paso 1: Elegir Línea y Pack de Firmas -->
             <div style="margin-bottom:1.5rem;">
-                <label style="display:block; font-size:0.85rem; font-weight:800; color:#1E293B; margin-bottom:8px;">
-                    1. Selecciona el Pack de Firmas:
-                </label>
-                <div style="display:grid; grid-template-columns:1fr; gap:0.75rem;">
-                    <!-- Pack 10 Starter Bienvenida SOL-0115 -->
-                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #BBF7D0; background:#F0FDF4; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPack10" onclick="selectCheckoutPack('PACK_10')">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <label style="font-size:0.85rem; font-weight:800; color:#1E293B; margin:0;">
+                        1. Selecciona el Tipo y Pack de Firmas:
+                    </label>
+                    <div style="display:inline-flex; background:#E2E8F0; padding:2px; border-radius:8px; gap:2px;">
+                        <button type="button" id="modalLineFesBtn" onclick="switchModalPackLine('FES')" style="padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:800; border:none; cursor:pointer; background:#16A34A; color:#FFFFFF;">
+                            FES (Simple)
+                        </button>
+                        <button type="button" id="modalLineFeaBtn" onclick="switchModalPackLine('FEA')" style="padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:800; border:none; cursor:pointer; background:transparent; color:#475569;">
+                            FEA (ClaveÚnica)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PACKS FES EN MODAL -->
+                <div id="modalPacksFES" style="display:grid; grid-template-columns:1fr; gap:0.75rem;">
+                    <!-- FES 10 -->
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #BBF7D0; background:#F0FDF4; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPackFes10" onclick="selectCheckoutPack('PACK_FES_10')">
                         <div style="display:flex; align-items:center; gap:12px;">
-                            <input type="radio" name="checkout_pack" value="PACK_10" checked style="accent-color:#16A34A; transform:scale(1.2);">
+                            <input type="radio" name="checkout_pack" value="PACK_FES_10" checked style="accent-color:#16A34A; transform:scale(1.2);">
                             <div>
-                                <span style="background:#DCFCE7; color:#15803D; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;">🚀 BIENVENIDA STARTER</span>
-                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem; margin-top:2px;">Pack Bienvenida 10 Firmas</div>
-                                <div style="font-size:0.78rem; color:#64748B;">Ideal para probar sin compromisos ($3.990 + IVA c/u)</div>
+                                <span style="background:#DCFCE7; color:#15803D; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($fes10['badge']) ?></span>
+                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem; margin-top:2px;"><?= htmlspecialchars($fes10['nombre']) ?></div>
+                                <div style="font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($fes10['ahorro_desc']) ?> ($<?= number_format($fes10['precio_unit'], 0, '', '.') ?> + IVA c/u)</div>
                             </div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-weight:800; color:#166534; font-size:1.1rem;">$39.900 CLP</div>
-                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($47.481 total)</div>
+                            <div style="font-weight:800; color:#166534; font-size:1.1rem;">$<?= number_format($fes10['total'], 0, '', '.') ?> CLP</div>
+                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($<?= number_format(round($fes10['total'] * 1.19), 0, '', '.') ?> total)</div>
                         </div>
                     </label>
 
-                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #E2E8F0; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPack50" onclick="selectCheckoutPack('PACK_50')">
+                    <!-- FES 50 -->
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #E2E8F0; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPackFes50" onclick="selectCheckoutPack('PACK_FES_50')">
                         <div style="display:flex; align-items:center; gap:12px;">
-                            <input type="radio" name="checkout_pack" value="PACK_50" style="accent-color:#009EE3; transform:scale(1.2);">
+                            <input type="radio" name="checkout_pack" value="PACK_FES_50" style="accent-color:#16A34A; transform:scale(1.2);">
                             <div>
-                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem;">Pack 50 Firmas</div>
-                                <div style="font-size:0.78rem; color:#64748B;">Ahorro 30% vs tarifa estándar ($3.490 + IVA c/u)</div>
+                                <span style="background:#DCFCE7; color:#15803D; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($fes50['badge']) ?></span>
+                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem; margin-top:2px;"><?= htmlspecialchars($fes50['nombre']) ?></div>
+                                <div style="font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($fes50['ahorro_desc']) ?> ($<?= number_format($fes50['precio_unit'], 0, '', '.') ?> + IVA c/u)</div>
                             </div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-weight:800; color:#0F2A4A; font-size:1.1rem;">$174.500 CLP</div>
-                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($207.655 total)</div>
+                            <div style="font-weight:800; color:#0F2A4A; font-size:1.1rem;">$<?= number_format($fes50['total'], 0, '', '.') ?> CLP</div>
+                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($<?= number_format(round($fes50['total'] * 1.19), 0, '', '.') ?> total)</div>
                         </div>
                     </label>
 
-                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #D4AF37; background:#FFFDF5; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPack200" onclick="selectCheckoutPack('PACK_200')">
+                    <!-- FES 200 -->
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #16A34A; background:#F0FDF4; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPackFes200" onclick="selectCheckoutPack('PACK_FES_200')">
                         <div style="display:flex; align-items:center; gap:12px;">
-                            <input type="radio" name="checkout_pack" value="PACK_200" style="accent-color:#D4AF37; transform:scale(1.2);">
+                            <input type="radio" name="checkout_pack" value="PACK_FES_200" style="accent-color:#16A34A; transform:scale(1.2);">
                             <div>
-                                <span style="background:#FEF3C7; color:#B45309; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;">MÁS POPULAR</span>
-                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem; margin-top:2px;">Pack 200 Firmas</div>
-                                <div style="font-size:0.78rem; color:#64748B;">Ahorro 45% ($2.790 + IVA c/u)</div>
+                                <span style="background:#DCFCE7; color:#15803D; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($fes200['badge']) ?></span>
+                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem; margin-top:2px;"><?= htmlspecialchars($fes200['nombre']) ?></div>
+                                <div style="font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($fes200['ahorro_desc']) ?> ($<?= number_format($fes200['precio_unit'], 0, '', '.') ?> + IVA c/u)</div>
                             </div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-weight:800; color:#0F2A4A; font-size:1.1rem;">$558.000 CLP</div>
-                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($664.020 total)</div>
+                            <div style="font-weight:800; color:#0F2A4A; font-size:1.1rem;">$<?= number_format($fes200['total'], 0, '', '.') ?> CLP</div>
+                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($<?= number_format(round($fes200['total'] * 1.19), 0, '', '.') ?> total)</div>
                         </div>
                     </label>
 
-                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #E2E8F0; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPack500" onclick="selectCheckoutPack('PACK_500')">
+                    <!-- FES 500 -->
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #E2E8F0; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPackFes500" onclick="selectCheckoutPack('PACK_FES_500')">
                         <div style="display:flex; align-items:center; gap:12px;">
-                            <input type="radio" name="checkout_pack" value="PACK_500" style="accent-color:#15803D; transform:scale(1.2);">
+                            <input type="radio" name="checkout_pack" value="PACK_FES_500" style="accent-color:#16A34A; transform:scale(1.2);">
                             <div>
-                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem;">Pack 500+ Enterprise</div>
-                                <div style="font-size:0.78rem; color:#64748B;">Tarifa mínima garantizada ($1.990 + IVA c/u)</div>
+                                <span style="background:#DCFCE7; color:#15803D; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($fes500['badge']) ?></span>
+                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem; margin-top:2px;"><?= htmlspecialchars($fes500['nombre']) ?></div>
+                                <div style="font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($fes500['ahorro_desc']) ?> ($<?= number_format($fes500['precio_unit'], 0, '', '.') ?> + IVA c/u)</div>
                             </div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-weight:800; color:#0F2A4A; font-size:1.1rem;">$995.000 CLP</div>
-                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($1.184.050 total)</div>
+                            <div style="font-weight:800; color:#0F2A4A; font-size:1.1rem;">$<?= number_format($fes500['total'], 0, '', '.') ?> CLP</div>
+                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($<?= number_format(round($fes500['total'] * 1.19), 0, '', '.') ?> total)</div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- PACKS FEA EN MODAL -->
+                <div id="modalPacksFEA" style="display:none; grid-template-columns:1fr; gap:0.75rem;">
+                    <!-- FEA 10 -->
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #BFDBFE; background:#F8FAFC; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPackFea10" onclick="selectCheckoutPack('PACK_FEA_10')">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <input type="radio" name="checkout_pack" value="PACK_FEA_10" style="accent-color:#2563EB; transform:scale(1.2);">
+                            <div>
+                                <span style="background:#DBEAFE; color:#1D4ED8; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($fea10['badge']) ?></span>
+                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem; margin-top:2px;"><?= htmlspecialchars($fea10['nombre']) ?></div>
+                                <div style="font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($fea10['ahorro_desc']) ?> ($<?= number_format($fea10['precio_unit'], 0, '', '.') ?> + IVA c/u)</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:800; color:#1D4ED8; font-size:1.1rem;">$<?= number_format($fea10['total'], 0, '', '.') ?> CLP</div>
+                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($<?= number_format(round($fea10['total'] * 1.19), 0, '', '.') ?> total)</div>
+                        </div>
+                    </label>
+
+                    <!-- FEA 50 -->
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #E2E8F0; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPackFea50" onclick="selectCheckoutPack('PACK_FEA_50')">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <input type="radio" name="checkout_pack" value="PACK_FEA_50" style="accent-color:#2563EB; transform:scale(1.2);">
+                            <div>
+                                <span style="background:#DBEAFE; color:#1D4ED8; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($fea50['badge']) ?></span>
+                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem; margin-top:2px;"><?= htmlspecialchars($fea50['nombre']) ?></div>
+                                <div style="font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($fea50['ahorro_desc']) ?> ($<?= number_format($fea50['precio_unit'], 0, '', '.') ?> + IVA c/u)</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:800; color:#0F2A4A; font-size:1.1rem;">$<?= number_format($fea50['total'], 0, '', '.') ?> CLP</div>
+                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($<?= number_format(round($fea50['total'] * 1.19), 0, '', '.') ?> total)</div>
+                        </div>
+                    </label>
+
+                    <!-- FEA 200 -->
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #D4AF37; background:#FFFDF5; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPackFea200" onclick="selectCheckoutPack('PACK_FEA_200')">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <input type="radio" name="checkout_pack" value="PACK_FEA_200" style="accent-color:#D4AF37; transform:scale(1.2);">
+                            <div>
+                                <span style="background:#FEF3C7; color:#B45309; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($fea200['badge']) ?></span>
+                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem; margin-top:2px;"><?= htmlspecialchars($fea200['nombre']) ?></div>
+                                <div style="font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($fea200['ahorro_desc']) ?> ($<?= number_format($fea200['precio_unit'], 0, '', '.') ?> + IVA c/u)</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:800; color:#0F2A4A; font-size:1.1rem;">$<?= number_format($fea200['total'], 0, '', '.') ?> CLP</div>
+                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($<?= number_format(round($fea200['total'] * 1.19), 0, '', '.') ?> total)</div>
+                        </div>
+                    </label>
+
+                    <!-- FEA 500 -->
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #E2E8F0; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPackFea500" onclick="selectCheckoutPack('PACK_FEA_500')">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <input type="radio" name="checkout_pack" value="PACK_FEA_500" style="accent-color:#2563EB; transform:scale(1.2);">
+                            <div>
+                                <span style="background:#DCFCE7; color:#15803D; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;"><?= htmlspecialchars($fea500['badge']) ?></span>
+                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem; margin-top:2px;"><?= htmlspecialchars($fea500['nombre']) ?></div>
+                                <div style="font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($fea500['ahorro_desc']) ?> ($<?= number_format($fea500['precio_unit'], 0, '', '.') ?> + IVA c/u)</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:800; color:#0F2A4A; font-size:1.1rem;">$<?= number_format($fea500['total'], 0, '', '.') ?> CLP</div>
+                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($<?= number_format(round($fea500['total'] * 1.19), 0, '', '.') ?> total)</div>
                         </div>
                     </label>
                 </div>
@@ -1017,9 +1188,11 @@ if ($externalRef || $orderIdParam) {
             document.getElementById('dispModalidadCobro').textContent = modalidad;
 
             if (modalidad === 'PREPAGO') {
-                document.getElementById('lblSaldoModalidad').textContent = 'BOLSA PREPAGADA ACTIVA';
-                const saldo = parseInt(currentCompany.saldo_firmas_prepago || 0);
-                document.getElementById('valSaldoModalidad').innerHTML = `<span id="dispSaldoPrepago" style="color:${saldo < 10 ? '#DC2626' : '#15803D'};">${saldo}</span> firmas disponibles`;
+                document.getElementById('lblSaldoModalidad').textContent = 'BOLSAS PREPAGADAS ACTIVAS';
+                const saldoFes = parseInt(currentCompany.saldo_firmas_prepago || 0);
+                const saldoFea = parseInt(currentCompany.saldo_firmas_fea || 0);
+                document.getElementById('dispSaldoPrepago').textContent = saldoFes;
+                document.getElementById('dispSaldoFea').textContent = saldoFea;
                 document.getElementById('subSaldoModalidad').innerHTML = `Total firmas consumidas: <strong>${currentCompany.firmas_utilizadas || 0}</strong>`;
             } else {
                 document.getElementById('lblSaldoModalidad').textContent = 'CRÉDITO POSTPAGO MENSUAL';
@@ -1046,17 +1219,82 @@ if ($externalRef || $orderIdParam) {
         }
 
         // Variables de estado del Checkout Modal
-        let selectedPackKey = 'PACK_200';
+        let selectedPackKey = 'PACK_FES_200';
         let selectedGateway = 'MERCADO_PAGO';
 
+        // Alternar vista del Banner Principal entre FES y FEA
+        function togglePackLine(line) {
+            const gridFes = document.getElementById('gridPacksFES');
+            const gridFea = document.getElementById('gridPacksFEA');
+            const btnFes = document.getElementById('tabPackFesBtn');
+            const btnFea = document.getElementById('tabPackFeaBtn');
+
+            if (line === 'FES') {
+                gridFes.style.display = 'grid';
+                gridFea.style.display = 'none';
+                btnFes.style.background = '#16A34A';
+                btnFes.style.color = '#FFFFFF';
+                btnFea.style.background = 'transparent';
+                btnFea.style.color = '#475569';
+            } else {
+                gridFes.style.display = 'none';
+                gridFea.style.display = 'grid';
+                btnFea.style.background = '#2563EB';
+                btnFea.style.color = '#FFFFFF';
+                btnFes.style.background = 'transparent';
+                btnFes.style.color = '#475569';
+            }
+        }
+
+        // Alternar vista dentro del Modal de Compra
+        function switchModalPackLine(line) {
+            const boxFes = document.getElementById('modalPacksFES');
+            const boxFea = document.getElementById('modalPacksFEA');
+            const btnFes = document.getElementById('modalLineFesBtn');
+            const btnFea = document.getElementById('modalLineFeaBtn');
+
+            if (line === 'FES') {
+                boxFes.style.display = 'grid';
+                boxFea.style.display = 'none';
+                btnFes.style.background = '#16A34A';
+                btnFes.style.color = '#FFFFFF';
+                btnFea.style.background = 'transparent';
+                btnFea.style.color = '#475569';
+                selectCheckoutPack('PACK_FES_200');
+            } else {
+                boxFes.style.display = 'none';
+                boxFea.style.display = 'grid';
+                btnFea.style.background = '#2563EB';
+                btnFea.style.color = '#FFFFFF';
+                btnFes.style.background = 'transparent';
+                btnFes.style.color = '#475569';
+                selectCheckoutPack('PACK_FEA_200');
+            }
+        }
+
         const PACK_TOTALS = {
+            // Línea FES
+            'PACK_FES_10': { neto: 19900, total: 23681, label: '$23.681 CLP (IVA incl.)' },
+            'PACK_FES_50': { neto: 84500, total: 100555, label: '$100.555 CLP (IVA incl.)' },
+            'PACK_FES_200': { neto: 258000, total: 307020, label: '$307.020 CLP (IVA incl.)' },
+            'PACK_FES_500': { neto: 495000, total: 589050, label: '$589.050 CLP (IVA incl.)' },
+
+            // Línea FEA
+            'PACK_FEA_10': { neto: 39900, total: 47481, label: '$47.481 CLP (IVA incl.)' },
+            'PACK_FEA_50': { neto: 174500, total: 207655, label: '$207.655 CLP (IVA incl.)' },
+            'PACK_FEA_200': { neto: 558000, total: 664020, label: '$664.020 CLP (IVA incl.)' },
+            'PACK_FEA_500': { neto: 995000, total: 1184050, label: '$1.184.050 CLP (IVA incl.)' },
+
+            // Retrocompatibilidad
             'PACK_10': { neto: 39900, total: 47481, label: '$47.481 CLP (IVA incl.)' },
             'PACK_50': { neto: 174500, total: 207655, label: '$207.655 CLP (IVA incl.)' },
             'PACK_200': { neto: 558000, total: 664020, label: '$664.020 CLP (IVA incl.)' },
             'PACK_500': { neto: 995000, total: 1184050, label: '$1.184.050 CLP (IVA incl.)' }
         };
 
-        function openRechargeModal(preselectedPack = 'PACK_200') {
+        function openRechargeModal(preselectedPack = 'PACK_FES_200') {
+            const isFea = preselectedPack.indexOf('FEA') !== -1;
+            switchModalPackLine(isFea ? 'FEA' : 'FES');
             selectCheckoutPack(preselectedPack);
             document.getElementById('rechargeModal').style.display = 'flex';
         }
@@ -1066,14 +1304,26 @@ if ($externalRef || $orderIdParam) {
         }
 
         function selectCheckoutPack(packKey) {
+            // Mapear claves legacy
+            if (packKey === 'PACK_10') packKey = 'PACK_FEA_10';
+            if (packKey === 'PACK_50') packKey = 'PACK_FEA_50';
+            if (packKey === 'PACK_200') packKey = 'PACK_FEA_200';
+            if (packKey === 'PACK_500') packKey = 'PACK_FEA_500';
+
             selectedPackKey = packKey;
-            ['PACK_10', 'PACK_50', 'PACK_200', 'PACK_500'].forEach(k => {
-                const label = document.getElementById('labelPack' + k.replace('PACK_', ''));
+            const allPacks = ['PACK_FES_10', 'PACK_FES_50', 'PACK_FES_200', 'PACK_FES_500', 'PACK_FEA_10', 'PACK_FEA_50', 'PACK_FEA_200', 'PACK_FEA_500'];
+            
+            allPacks.forEach(k => {
+                let idSuffix = '';
+                if (k.startsWith('PACK_FES_')) idSuffix = 'PackFes' + k.replace('PACK_FES_', '');
+                else if (k.startsWith('PACK_FEA_')) idSuffix = 'PackFea' + k.replace('PACK_FEA_', '');
+
+                const label = document.getElementById('label' + idSuffix);
                 const radio = label ? label.querySelector('input[type="radio"]') : null;
                 if (label) {
                     if (k === packKey) {
-                        label.style.borderColor = '#009EE3';
-                        label.style.background = '#F0F9FF';
+                        label.style.borderColor = k.indexOf('FEA') !== -1 ? '#2563EB' : '#16A34A';
+                        label.style.background = k.indexOf('FEA') !== -1 ? '#EFF6FF' : '#F0FDF4';
                         if (radio) radio.checked = true;
                     } else {
                         label.style.borderColor = '#E2E8F0';

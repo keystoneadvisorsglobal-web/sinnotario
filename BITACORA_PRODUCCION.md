@@ -1,5 +1,43 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 03:30 UTC-3] - SOL-0116
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0116`
+- **Alcance de los Cambios:**
+  - **Doble Línea Comercial B2B: 4 Packs de Firma Simple (FES) + 4 Packs de Firma Avanzada (FEA) con Gestión Dual y Saldos Segregados:**
+    1. **Estructura de Base de Datos y Saldos Segregados (`database/Database.php` y SQLite):**
+       - Columna `saldo_firmas_fea INTEGER DEFAULT 0` agregada a la tabla `companies` en caliente y registrada en la inicialización idempotente de esquemas.
+       - Aislamiento contable entre `saldo_firmas_prepago` (Firma Simple FES) y `saldo_firmas_fea` (Firma Avanzada Spot ClaveÚnica FEA).
+    2. **Catálogo de 8 Paquetes Prepagados (`B2BService.php`):**
+       - **Línea Firma Simple (FES):**
+         - `PACK_FES_10`: 10 firmas a $1.990 + IVA c/u ($19.900 neto).
+         - `PACK_FES_50`: 50 firmas a $1.690 + IVA c/u ($84.500 neto).
+         - `PACK_FES_200`: 200 firmas a $1.290 + IVA c/u ($258.000 neto).
+         - `PACK_FES_500`: 500 firmas a $990 + IVA c/u ($495.000 neto).
+       - **Línea Firma Avanzada Spot con ClaveÚnica (FEA):**
+         - `PACK_FEA_10`: 10 firmas a $3.990 + IVA c/u ($39.900 neto).
+         - `PACK_FEA_50`: 50 firmas a $3.490 + IVA c/u ($174.500 neto).
+         - `PACK_FEA_200`: 200 firmas a $2.790 + IVA c/u ($558.000 neto).
+         - `PACK_FEA_500`: 500 firmas a $1.990 + IVA c/u ($995.000 neto).
+       - Aliases de compatibilidad retroactiva (`PACK_10`, `PACK_50`, etc.).
+       - Método `rechargePrepagoBag()` adaptado para acreditar dinámicamente al saldo correspondiente (`saldo_firmas_fea` vs `saldo_firmas_prepago`).
+    3. **Consola de Administración Parametrizable (`admin.php#empresas`):**
+       - Despliegue de 8 tarjetas independientes agrupadas por línea legal (4 tarjetas FES verdes + 4 tarjetas FEA azules).
+       - Edición total en caliente de nombres, firmas, precios unitarios, ahorros y badges con persistencia en `system_settings`.
+    4. **Portal Corporativo de Empresas (`empresas.php`):**
+       - Widget de saldos en cabecera con indicadores duales estilizados: `FES: X` y `FEA: Y`.
+       - Selector de pestañas interactivas en el banner de recarga (`[ 🟢 Firma Simple (FES) ]` vs `[ 🔵 Avanzada ClaveÚnica (FEA) ]`).
+       - Modal de checkout dual con preselección inteligente y recálculo automático de IVA (19%).
+    5. **Pasarela de Pago y Notificaciones (`MercadoPagoService.php`):**
+       - Mapeo de descripciones para los 8 packs en Mercado Pago y rescate comercial de carritos.
+       - Acreditación automática segregada post-pago al saldo de firmas simples o avanzadas según corresponda.
+- **Pruebas Validadas:**
+  - Inspección sintáctica en servidor remoto (`php -l`): 0 errores en los 5 archivos modificados.
+  - Comprobación del endpoint API `api/index.php?action=b2b_get_packs` retornando los 8 paquetes completos.
+  - Batería obligatoria de smoke tests (`curl -s -o /dev/null -w "%{http_code}"`) sobre las 8 rutas maestras: 100% `HTTP 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 03:15 UTC-3] - SOL-0115
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

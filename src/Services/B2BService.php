@@ -647,45 +647,100 @@ class B2BService {
         $stmt = $pdo->query("SELECT key, value FROM system_settings WHERE key LIKE 'b2b_pack_%'");
         $settings = $stmt ? $stmt->fetchAll(PDO::FETCH_KEY_PAIR) : [];
 
-        // Valores por defecto o sobreescritos dinámicamente desde la administración
-        return [
-            'PACK_10' => [
-                'id' => 'PACK_10',
-                'nombre' => $settings['b2b_pack_10_nombre'] ?? 'Pack Bienvenida 10 Firmas',
-                'firmas' => (int)($settings['b2b_pack_10_firmas'] ?? 10),
-                'precio_unit' => (int)($settings['b2b_pack_10_precio_unit'] ?? 3990),
-                'total' => (int)($settings['b2b_pack_10_firmas'] ?? 10) * (int)($settings['b2b_pack_10_precio_unit'] ?? 3990),
-                'ahorro_desc' => $settings['b2b_pack_10_ahorro'] ?? 'Ideal para probar sin compromisos',
-                'badge' => $settings['b2b_pack_10_badge'] ?? '🚀 BIENVENIDA STARTER'
+        // 4 Packs Firma Electrónica Simple (FES) + 4 Packs Firma Avanzada (FEA)
+        $packsRet = [
+            // --- LÍNEA FIRMA ELECTRÓNICA SIMPLE (FES) ---
+            'PACK_FES_10' => [
+                'id' => 'PACK_FES_10',
+                'tipo_firma' => 'FES',
+                'nombre' => $settings['b2b_pack_fes_10_nombre'] ?? 'Pack FES Bienvenida 10',
+                'firmas' => (int)($settings['b2b_pack_fes_10_firmas'] ?? 10),
+                'precio_unit' => (int)($settings['b2b_pack_fes_10_precio_unit'] ?? 1990),
+                'total' => (int)($settings['b2b_pack_fes_10_firmas'] ?? 10) * (int)($settings['b2b_pack_fes_10_precio_unit'] ?? 1990),
+                'ahorro_desc' => $settings['b2b_pack_fes_10_ahorro'] ?? 'Firma Simple de inicio sin compromisos',
+                'badge' => $settings['b2b_pack_fes_10_badge'] ?? '🚀 STARTER FES'
             ],
-            'PACK_50' => [
-                'id' => 'PACK_50',
-                'nombre' => $settings['b2b_pack_50_nombre'] ?? 'Pack 50 Firmas',
-                'firmas' => (int)($settings['b2b_pack_50_firmas'] ?? 50),
-                'precio_unit' => (int)($settings['b2b_pack_50_precio_unit'] ?? 3490),
-                'total' => (int)($settings['b2b_pack_50_firmas'] ?? 50) * (int)($settings['b2b_pack_50_precio_unit'] ?? 3490),
-                'ahorro_desc' => $settings['b2b_pack_50_ahorro'] ?? 'Ahorro 30% vs tarifa estándar',
-                'badge' => $settings['b2b_pack_50_badge'] ?? 'PACK 50 FIRMAS'
+            'PACK_FES_50' => [
+                'id' => 'PACK_FES_50',
+                'tipo_firma' => 'FES',
+                'nombre' => $settings['b2b_pack_fes_50_nombre'] ?? 'Pack FES 50 Firmas',
+                'firmas' => (int)($settings['b2b_pack_fes_50_firmas'] ?? 50),
+                'precio_unit' => (int)($settings['b2b_pack_fes_50_precio_unit'] ?? 1690),
+                'total' => (int)($settings['b2b_pack_fes_50_firmas'] ?? 50) * (int)($settings['b2b_pack_fes_50_precio_unit'] ?? 1690),
+                'ahorro_desc' => $settings['b2b_pack_fes_50_ahorro'] ?? 'Ahorro 40% vs trámite individual',
+                'badge' => $settings['b2b_pack_fes_50_badge'] ?? 'PACK 50 FES'
             ],
-            'PACK_200' => [
-                'id' => 'PACK_200',
-                'nombre' => $settings['b2b_pack_200_nombre'] ?? 'Pack 200 Firmas',
-                'firmas' => (int)($settings['b2b_pack_200_firmas'] ?? 200),
-                'precio_unit' => (int)($settings['b2b_pack_200_precio_unit'] ?? 2790),
-                'total' => (int)($settings['b2b_pack_200_firmas'] ?? 200) * (int)($settings['b2b_pack_200_precio_unit'] ?? 2790),
-                'ahorro_desc' => $settings['b2b_pack_200_ahorro'] ?? 'Ahorro 45% vs tarifa estándar',
-                'badge' => $settings['b2b_pack_200_badge'] ?? 'MÁS POPULAR'
+            'PACK_FES_200' => [
+                'id' => 'PACK_FES_200',
+                'tipo_firma' => 'FES',
+                'nombre' => $settings['b2b_pack_fes_200_nombre'] ?? 'Pack FES 200 Firmas',
+                'firmas' => (int)($settings['b2b_pack_fes_200_firmas'] ?? 200),
+                'precio_unit' => (int)($settings['b2b_pack_fes_200_precio_unit'] ?? 1290),
+                'total' => (int)($settings['b2b_pack_fes_200_firmas'] ?? 200) * (int)($settings['b2b_pack_fes_200_precio_unit'] ?? 1290),
+                'ahorro_desc' => $settings['b2b_pack_fes_200_ahorro'] ?? 'Ahorro 55% para nómina y trámites',
+                'badge' => $settings['b2b_pack_fes_200_badge'] ?? 'MÁS POPULAR FES'
             ],
-            'PACK_500' => [
-                'id' => 'PACK_500',
-                'nombre' => $settings['b2b_pack_500_nombre'] ?? 'Pack 500 Enterprise',
-                'firmas' => (int)($settings['b2b_pack_500_firmas'] ?? 500),
-                'precio_unit' => (int)($settings['b2b_pack_500_precio_unit'] ?? 1990),
-                'total' => (int)($settings['b2b_pack_500_firmas'] ?? 500) * (int)($settings['b2b_pack_500_precio_unit'] ?? 1990),
-                'ahorro_desc' => $settings['b2b_pack_500_ahorro'] ?? 'Tarifa mínima garantizada',
-                'badge' => $settings['b2b_pack_500_badge'] ?? 'PACK 500+ ENTERPRISE'
+            'PACK_FES_500' => [
+                'id' => 'PACK_FES_500',
+                'tipo_firma' => 'FES',
+                'nombre' => $settings['b2b_pack_fes_500_nombre'] ?? 'Pack FES 500 Enterprise',
+                'firmas' => (int)($settings['b2b_pack_fes_500_firmas'] ?? 500),
+                'precio_unit' => (int)($settings['b2b_pack_fes_500_precio_unit'] ?? 990),
+                'total' => (int)($settings['b2b_pack_fes_500_firmas'] ?? 500) * (int)($settings['b2b_pack_fes_500_precio_unit'] ?? 990),
+                'ahorro_desc' => $settings['b2b_pack_fes_500_ahorro'] ?? 'Tarifa mínima corporativa ($990 c/u)',
+                'badge' => $settings['b2b_pack_fes_500_badge'] ?? 'ESCALA CORPORATIVA'
+            ],
+
+            // --- LÍNEA FIRMA ELECTRÓNICA AVANZADA (FEA SPOT / CLAVEÚNICA / DT) ---
+            'PACK_FEA_10' => [
+                'id' => 'PACK_FEA_10',
+                'tipo_firma' => 'FEA',
+                'nombre' => $settings['b2b_pack_fea_10_nombre'] ?? ($settings['b2b_pack_10_nombre'] ?? 'Pack FEA Bienvenida 10'),
+                'firmas' => (int)($settings['b2b_pack_fea_10_firmas'] ?? ($settings['b2b_pack_10_firmas'] ?? 10)),
+                'precio_unit' => (int)($settings['b2b_pack_fea_10_precio_unit'] ?? ($settings['b2b_pack_10_precio_unit'] ?? 3990)),
+                'total' => (int)($settings['b2b_pack_fea_10_firmas'] ?? 10) * (int)($settings['b2b_pack_fea_10_precio_unit'] ?? 3990),
+                'ahorro_desc' => $settings['b2b_pack_fea_10_ahorro'] ?? 'Firma Avanzada con ClaveÚnica para probar',
+                'badge' => $settings['b2b_pack_fea_10_badge'] ?? '🚀 STARTER FEA'
+            ],
+            'PACK_FEA_50' => [
+                'id' => 'PACK_FEA_50',
+                'tipo_firma' => 'FEA',
+                'nombre' => $settings['b2b_pack_fea_50_nombre'] ?? ($settings['b2b_pack_50_nombre'] ?? 'Pack FEA 50 Firmas'),
+                'firmas' => (int)($settings['b2b_pack_fea_50_firmas'] ?? ($settings['b2b_pack_50_firmas'] ?? 50)),
+                'precio_unit' => (int)($settings['b2b_pack_fea_50_precio_unit'] ?? ($settings['b2b_pack_50_precio_unit'] ?? 3490)),
+                'total' => (int)($settings['b2b_pack_fea_50_firmas'] ?? 50) * (int)($settings['b2b_pack_fea_50_precio_unit'] ?? 3490),
+                'ahorro_desc' => $settings['b2b_pack_fea_50_ahorro'] ?? 'Ahorro 30% en Firma Avanzada',
+                'badge' => $settings['b2b_pack_fea_50_badge'] ?? 'PACK 50 FEA'
+            ],
+            'PACK_FEA_200' => [
+                'id' => 'PACK_FEA_200',
+                'tipo_firma' => 'FEA',
+                'nombre' => $settings['b2b_pack_fea_200_nombre'] ?? ($settings['b2b_pack_200_nombre'] ?? 'Pack FEA 200 Firmas'),
+                'firmas' => (int)($settings['b2b_pack_fea_200_firmas'] ?? ($settings['b2b_pack_200_firmas'] ?? 200)),
+                'precio_unit' => (int)($settings['b2b_pack_fea_200_precio_unit'] ?? ($settings['b2b_pack_200_precio_unit'] ?? 2790)),
+                'total' => (int)($settings['b2b_pack_fea_200_firmas'] ?? 200) * (int)($settings['b2b_pack_fea_200_precio_unit'] ?? 2790),
+                'ahorro_desc' => $settings['b2b_pack_fea_200_ahorro'] ?? 'Ahorro 45% para contratos de trabajo',
+                'badge' => $settings['b2b_pack_fea_200_badge'] ?? 'MÁS POPULAR FEA'
+            ],
+            'PACK_FEA_500' => [
+                'id' => 'PACK_FEA_500',
+                'tipo_firma' => 'FEA',
+                'nombre' => $settings['b2b_pack_fea_500_nombre'] ?? ($settings['b2b_pack_500_nombre'] ?? 'Pack FEA 500 Enterprise'),
+                'firmas' => (int)($settings['b2b_pack_fea_500_firmas'] ?? ($settings['b2b_pack_500_firmas'] ?? 500)),
+                'precio_unit' => (int)($settings['b2b_pack_fea_500_precio_unit'] ?? ($settings['b2b_pack_500_precio_unit'] ?? 1990)),
+                'total' => (int)($settings['b2b_pack_fea_500_firmas'] ?? 500) * (int)($settings['b2b_pack_fea_500_precio_unit'] ?? 1990),
+                'ahorro_desc' => $settings['b2b_pack_fea_500_ahorro'] ?? 'Tarifa mínima FEA garantizada',
+                'badge' => $settings['b2b_pack_fea_500_badge'] ?? 'FEA ENTERPRISE'
             ]
         ];
+
+        // Aliases retrocompatibles
+        $packsRet['PACK_10'] = &$packsRet['PACK_FEA_10'];
+        $packsRet['PACK_50'] = &$packsRet['PACK_FEA_50'];
+        $packsRet['PACK_200'] = &$packsRet['PACK_FEA_200'];
+        $packsRet['PACK_500'] = &$packsRet['PACK_FEA_500'];
+
+        return $packsRet;
     }
 
     /**
@@ -701,20 +756,23 @@ class B2BService {
         }
 
         $pack = $packs[$packType];
+        $isFea = ($pack['tipo_firma'] ?? 'FES') === 'FEA' || strpos($packType, 'FEA') !== false;
+        $saldoCol = $isFea ? 'saldo_firmas_fea' : 'saldo_firmas_prepago';
 
-        $stmtC = $pdo->prepare("SELECT saldo_firmas_prepago FROM companies WHERE id = ?");
+        $stmtC = $pdo->prepare("SELECT {$saldoCol} FROM companies WHERE id = ?");
         $stmtC->execute([$companyId]);
         $saldoActual = (int)$stmtC->fetchColumn();
         $nuevoSaldo = $saldoActual + $pack['firmas'];
 
         $stmtUpd = $pdo->prepare("
             UPDATE companies 
-            SET saldo_firmas_prepago = ?, updated_at = datetime('now')
+            SET {$saldoCol} = ?, updated_at = datetime('now')
             WHERE id = ?
         ");
         $stmtUpd->execute([$nuevoSaldo, $companyId]);
 
         // Registrar movimiento
+        $tipoLabel = $isFea ? 'FEA (Avanzada)' : 'FES (Simple)';
         $stmtLog = $pdo->prepare("
             INSERT INTO b2b_billing_logs (
                 company_id, tipo_movimiento, modalidad, cantidad_firmas,
@@ -727,15 +785,16 @@ class B2BService {
             $pack['total'],
             $saldoActual,
             $nuevoSaldo,
-            "Recarga de {$pack['nombre']} a \${$pack['precio_unit']} c/u"
+            "Recarga de {$pack['nombre']} ({$tipoLabel}) a \${$pack['precio_unit']} c/u"
         ]);
 
         return [
             'success' => true,
             'pack' => $pack,
+            'tipo_firma' => $isFea ? 'FEA' : 'FES',
             'saldo_anterior' => $saldoActual,
             'saldo_nuevo' => $nuevoSaldo,
-            'message' => "Bolsa de {$pack['firmas']} firmas activada exitosamente."
+            'message' => "Bolsa de {$pack['firmas']} firmas ({$tipoLabel}) activada exitosamente."
         ];
     }
 
