@@ -1727,3 +1727,18 @@
   5) **Portal de Firma:** Despliegue en `firmar.php` de insignia dorada destacando el mérito de fe pública para documentos emitidos con FEA.
   6) **Pruebas en Vivo:** Emisión exitosa de borrador #18 (`SN-BCBB-0764`) con upgrade FEA ($6.480 CLP) y orden #33 generada en Mercado Pago con init_point oficial. Verificación PHP Lint 0 errores y HTTP 200 OK en producción.
 - **Estado Final:** ✅ Éxito Total / Desplegado y 100% Operativo en Producción.
+
+### Registro de Despliegue: SOL-0110
+- **Fecha y Hora:** 2026-11-10 02:08:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0110`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Corrección inmediata de Error 500 en raíz de dominio e institucionalización de regla permanente anti-fallos:
+  1) **Causa Raíz:** En la transferencia SCP previa de múltiples archivos en un solo comando, el archivo `api/index.php` (enrutador JSON) sobreescribió accidentalmente al `index.php` (Landing Page raíz) en `/public_html/`. Al ser consultado por peticiones web directas (`GET /`), invocaba el switch de API sin parámetro de acción, culminando en un corte de ejecución y cabeceras desconfiguradas (HTTP 500).
+  2) **Restauración Inmediata:** Se restituyó el archivo `index.php` legítimo de la portada (24 KB), restableciendo inmediatamente la disponibilidad de la plataforma (HTTP 200 OK).
+  3) **Creación de Regla de Workspace Permanente (`.agents/rules/sinnotario.md`):** Se definió una norma estricta de gobernanza para cualquier agente o intervención futura:
+     - Prohibición absoluta de comandos SCP mezclando archivos de raíz y subdirectorios.
+     - Obligatoriedad de ejecutar una batería completa de smoke tests automatizados con `curl -I` sobre las 8 rutas fundamentales (`/`, `redactar.php`, `subir-documento.php`, `firmar.php`, `admin.php`, `verificar.php`, `empresas.php` y `api/index.php?action=get_pricing_settings`).
+  4) **Verificación:** Batería ejecutada arrojando HTTP 200 OK en el 100% de los endpoints.
+- **Estado Final:** ✅ Éxito Total / Error 500 Eliminado y Regla de Blindaje Activa.
