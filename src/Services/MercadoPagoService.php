@@ -920,6 +920,7 @@ class MercadoPagoService {
             }
 
             $packs = [
+                'PACK_10' => 'Bolsa de Bienvenida (10 Firmas)',
                 'PACK_50' => 'Bolsa de 50 Firmas',
                 'PACK_200' => 'Bolsa de 200 Firmas',
                 'PACK_500' => 'Bolsa Enterprise de 500 Firmas'

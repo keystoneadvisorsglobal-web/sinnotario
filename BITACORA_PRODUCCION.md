@@ -1,5 +1,30 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 03:15 UTC-3] - SOL-0115
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0115`
+- **Alcance de los Cambios:**
+  - **Pack de Bienvenida Starter de 10 Firmas para Empresas y Parametrización en Backend Admin:**
+    1. **Definición de Paquete Comercial (`PACK_10` en `B2BService.php`):**
+       - Cantidad: 10 firmas prepago.
+       - Tarifa base: $3.990 CLP + IVA por firma ($39.900 CLP neto / $47.481 CLP total con IVA).
+       - Badge distintivo: `🚀 BIENVENIDA STARTER`.
+       - Glosa: *Ideal para probar sin compromisos*.
+    2. **Parametrización en Consola de Administración (`admin.php#empresas`):**
+       - Cuarta tarjeta de configuración agregada al panel de bolsas B2B, permitiendo editar en caliente: nombre visible, firmas incluidas, precio unitario, glosa de ahorro y badge.
+       - Procesamiento seguro persistido en `system_settings` (`b2b_pack_10_*`).
+    3. **Portal Corporativo de Empresas (`empresas.php`):**
+       - Banner de 4 columnas en la cabecera de la suite B2B con botón rápido de recarga `[Probar]`.
+       - Opción preseleccionada en el modal de checkout electrónico con desglose neto/total.
+    4. **Pasarelas de Pago y Rescate Comercial:**
+       - Soporte en `MercadoPagoService.php` para generación de órdenes B2B con ítem `PACK_10`, acreditación automática y rescate de carritos abandonados.
+- **Pruebas Validadas:**
+  - Sintaxis PHP Lint en servidor: 0 errores en todos los archivos modificados.
+  - Validación de endpoint API `b2b_get_packs` retornando exitosamente el objeto `PACK_10`.
+  - Smoke tests obligatorios de 8 rutas maestros retornando `HTTP 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 03:00 UTC-3] - SOL-0114
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

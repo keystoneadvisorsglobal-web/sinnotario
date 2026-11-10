@@ -649,6 +649,15 @@ class B2BService {
 
         // Valores por defecto o sobreescritos dinámicamente desde la administración
         return [
+            'PACK_10' => [
+                'id' => 'PACK_10',
+                'nombre' => $settings['b2b_pack_10_nombre'] ?? 'Pack Bienvenida 10 Firmas',
+                'firmas' => (int)($settings['b2b_pack_10_firmas'] ?? 10),
+                'precio_unit' => (int)($settings['b2b_pack_10_precio_unit'] ?? 3990),
+                'total' => (int)($settings['b2b_pack_10_firmas'] ?? 10) * (int)($settings['b2b_pack_10_precio_unit'] ?? 3990),
+                'ahorro_desc' => $settings['b2b_pack_10_ahorro'] ?? 'Ideal para probar sin compromisos',
+                'badge' => $settings['b2b_pack_10_badge'] ?? '🚀 BIENVENIDA STARTER'
+            ],
             'PACK_50' => [
                 'id' => 'PACK_50',
                 'nombre' => $settings['b2b_pack_50_nombre'] ?? 'Pack 50 Firmas',

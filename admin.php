@@ -308,6 +308,7 @@ if (isset($_POST['admin_b2b_action'])) {
         $msgB2BSuccess = "Se abonaron {$firmasAdd} firmas a la empresa #{$targetCompId}.";
     } elseif ($actionType === 'update_b2b_packs') {
         $packKeys = [
+            'b2b_pack_10_nombre', 'b2b_pack_10_firmas', 'b2b_pack_10_precio_unit', 'b2b_pack_10_ahorro', 'b2b_pack_10_badge',
             'b2b_pack_50_nombre', 'b2b_pack_50_firmas', 'b2b_pack_50_precio_unit', 'b2b_pack_50_ahorro', 'b2b_pack_50_badge',
             'b2b_pack_200_nombre', 'b2b_pack_200_firmas', 'b2b_pack_200_precio_unit', 'b2b_pack_200_ahorro', 'b2b_pack_200_badge',
             'b2b_pack_500_nombre', 'b2b_pack_500_firmas', 'b2b_pack_500_precio_unit', 'b2b_pack_500_ahorro', 'b2b_pack_500_badge'
@@ -877,7 +878,37 @@ function resolvePaymentMethodDetail(array $ord): array {
                     <form method="POST" action="admin.php#empresas">
                         <input type="hidden" name="admin_b2b_action" value="update_b2b_packs">
 
-                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem; margin-bottom:1.5rem;">
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:1.25rem; margin-bottom:1.5rem;">
+                            <!-- Pack 10 (Bienvenida Starter SOL-0115) -->
+                            <div style="border:1px solid #CBD5E1; border-radius:10px; padding:1.25rem; background:#F0FDF4; border-top:3px solid #16A34A;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                                    <span style="font-size:0.75rem; font-weight:800; color:#15803D; background:#DCFCE7; padding:3px 8px; border-radius:4px;">PACK BIENVENIDA</span>
+                                    <strong style="color:#166534; font-size:0.85rem;">Starter / Prueba</strong>
+                                </div>
+                                <div style="margin-bottom:0.75rem;">
+                                    <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Nombre Visible</label>
+                                    <input type="text" name="b2b_pack_10_nombre" value="<?= htmlspecialchars($currentPacks['PACK_10']['nombre'] ?? 'Pack Bienvenida 10 Firmas') ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.85rem; border:1px solid #CBD5E1; border-radius:6px;" required>
+                                </div>
+                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; margin-bottom:0.75rem;">
+                                    <div>
+                                        <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Firmas Incluidas</label>
+                                        <input type="number" name="b2b_pack_10_firmas" value="<?= $currentPacks['PACK_10']['firmas'] ?? 10 ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.85rem; border:1px solid #CBD5E1; border-radius:6px;" min="1" required>
+                                    </div>
+                                    <div>
+                                        <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Precio Unitario CLP</label>
+                                        <input type="number" name="b2b_pack_10_precio_unit" value="<?= $currentPacks['PACK_10']['precio_unit'] ?? 3990 ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.85rem; border:1px solid #CBD5E1; border-radius:6px;" min="500" required>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom:0.75rem;">
+                                    <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Glosa de Ahorro / Subtexto</label>
+                                    <input type="text" name="b2b_pack_10_ahorro" value="<?= htmlspecialchars($currentPacks['PACK_10']['ahorro_desc'] ?? 'Ideal para probar sin compromisos') ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.82rem; border:1px solid #CBD5E1; border-radius:6px;">
+                                </div>
+                                <div>
+                                    <label style="display:block; font-size:0.78rem; font-weight:700; color:#475569; margin-bottom:3px;">Insignia / Badge</label>
+                                    <input type="text" name="b2b_pack_10_badge" value="<?= htmlspecialchars($currentPacks['PACK_10']['badge'] ?? '🚀 BIENVENIDA STARTER') ?>" class="form-control" style="width:100%; padding:6px 10px; font-size:0.82rem; border:1px solid #CBD5E1; border-radius:6px;">
+                                </div>
+                            </div>
+
                             <!-- Pack 50 -->
                             <div style="border:1px solid #CBD5E1; border-radius:10px; padding:1.25rem; background:#F8FAFC;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">

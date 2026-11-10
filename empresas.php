@@ -205,16 +205,30 @@ if ($externalRef || $orderIdParam) {
         <!-- Banner de Selección de Bolsas con Descuento -->
         <?php 
         $activePacks = B2BService::getPrepaidPacks(); 
+        $p10 = $activePacks['PACK_10'];
         $p50 = $activePacks['PACK_50'];
         $p200 = $activePacks['PACK_200'];
         $p500 = $activePacks['PACK_500'];
         ?>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <!-- Pack 10 Starter -->
+            <div style="background:#FFFFFF; border:1px solid #BBF7D0; border-top:3px solid #16A34A; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
+                <div>
+                    <span style="font-size:0.72rem; font-weight:800; color:#15803D; background:#DCFCE7; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($p10['badge']) ?></span>
+                    <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($p10['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
+                    <p style="margin:0; font-size:0.76rem; color:#64748B;"><?= htmlspecialchars($p10['nombre']) ?> ($<?= number_format($p10['total'], 0, '', '.') ?> CLP)</p>
+                </div>
+                <button type="button" class="btn-cta" style="background:#16A34A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_10')">
+                    Probar
+                </button>
+            </div>
+
+            <!-- Pack 50 -->
             <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:1.25rem; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--shadow-sm);">
                 <div>
-                    <span style="font-size:0.75rem; font-weight:800; color:#2563EB; background:#EFF6FF; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($p50['badge']) ?></span>
+                    <span style="font-size:0.72rem; font-weight:800; color:#2563EB; background:#EFF6FF; padding:2px 8px; border-radius:4px;"><?= htmlspecialchars($p50['badge']) ?></span>
                     <h4 style="margin:4px 0; font-size:1.15rem; color:var(--primary); font-weight:800;">$<?= number_format($p50['precio_unit'], 0, '', '.') ?> <span style="font-size:0.8rem; font-weight:400; color:#64748B;">+ IVA / firma</span></h4>
-                    <p style="margin:0; font-size:0.78rem; color:#64748B;"><?= htmlspecialchars($p50['ahorro_desc']) ?> ($<?= number_format($p50['total'], 0, '', '.') ?> CLP)</p>
+                    <p style="margin:0; font-size:0.76rem; color:#64748B;"><?= htmlspecialchars($p50['ahorro_desc']) ?> ($<?= number_format($p50['total'], 0, '', '.') ?> CLP)</p>
                 </div>
                 <button type="button" class="btn-cta" style="background:#0F2A4A; color:#FFF !important; padding:6px 12px; font-size:0.82rem;" onclick="rechargePack('PACK_50')">
                     Recargar
@@ -841,9 +855,25 @@ if ($externalRef || $orderIdParam) {
                     1. Selecciona el Pack de Firmas:
                 </label>
                 <div style="display:grid; grid-template-columns:1fr; gap:0.75rem;">
+                    <!-- Pack 10 Starter Bienvenida SOL-0115 -->
+                    <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #BBF7D0; background:#F0FDF4; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPack10" onclick="selectCheckoutPack('PACK_10')">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <input type="radio" name="checkout_pack" value="PACK_10" checked style="accent-color:#16A34A; transform:scale(1.2);">
+                            <div>
+                                <span style="background:#DCFCE7; color:#15803D; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;">🚀 BIENVENIDA STARTER</span>
+                                <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem; margin-top:2px;">Pack Bienvenida 10 Firmas</div>
+                                <div style="font-size:0.78rem; color:#64748B;">Ideal para probar sin compromisos ($3.990 + IVA c/u)</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:800; color:#166534; font-size:1.1rem;">$39.900 CLP</div>
+                            <div style="font-size:0.72rem; color:#64748B;">+ IVA ($47.481 total)</div>
+                        </div>
+                    </label>
+
                     <label style="display:flex; justify-content:space-between; align-items:center; padding:1rem; border:2px solid #E2E8F0; border-radius:10px; cursor:pointer; transition:all 0.2s;" id="labelPack50" onclick="selectCheckoutPack('PACK_50')">
                         <div style="display:flex; align-items:center; gap:12px;">
-                            <input type="radio" name="checkout_pack" value="PACK_50" checked style="accent-color:#009EE3; transform:scale(1.2);">
+                            <input type="radio" name="checkout_pack" value="PACK_50" style="accent-color:#009EE3; transform:scale(1.2);">
                             <div>
                                 <div style="font-weight:800; color:#0F2A4A; font-size:0.95rem;">Pack 50 Firmas</div>
                                 <div style="font-size:0.78rem; color:#64748B;">Ahorro 30% vs tarifa estándar ($3.490 + IVA c/u)</div>
@@ -1020,6 +1050,7 @@ if ($externalRef || $orderIdParam) {
         let selectedGateway = 'MERCADO_PAGO';
 
         const PACK_TOTALS = {
+            'PACK_10': { neto: 39900, total: 47481, label: '$47.481 CLP (IVA incl.)' },
             'PACK_50': { neto: 174500, total: 207655, label: '$207.655 CLP (IVA incl.)' },
             'PACK_200': { neto: 558000, total: 664020, label: '$664.020 CLP (IVA incl.)' },
             'PACK_500': { neto: 995000, total: 1184050, label: '$1.184.050 CLP (IVA incl.)' }
@@ -1036,7 +1067,7 @@ if ($externalRef || $orderIdParam) {
 
         function selectCheckoutPack(packKey) {
             selectedPackKey = packKey;
-            ['PACK_50', 'PACK_200', 'PACK_500'].forEach(k => {
+            ['PACK_10', 'PACK_50', 'PACK_200', 'PACK_500'].forEach(k => {
                 const label = document.getElementById('labelPack' + k.replace('PACK_', ''));
                 const radio = label ? label.querySelector('input[type="radio"]') : null;
                 if (label) {
