@@ -18,11 +18,13 @@ class PdfContractGenerator extends FPDF {
     private $verificationCode;
     private $docTitle;
     private $qrTempPath;
+    private $isSimulation;
 
-    public function __construct($verificationCode, $docTitle) {
+    public function __construct($verificationCode, $docTitle, $isSimulation = false) {
         parent::__construct('P', 'mm', 'Letter');
         $this->verificationCode = $verificationCode;
         $this->docTitle = utf8_decode($docTitle);
+        $this->isSimulation = (bool)$isSimulation;
         $this->SetMargins(20, 22, 20);
         $this->SetAutoPageBreak(true, 25);
 
@@ -39,6 +41,13 @@ class PdfContractGenerator extends FPDF {
 
     // Cabecera institucional
     public function Header() {
+        if ($this->isSimulation) {
+            $this->SetFont('Arial', 'B', 9);
+            $this->SetTextColor(217, 119, 6); // Ámbar/Naranja
+            $this->Cell(0, 5, utf8_decode('⚠️ PILOTO DE ENSAYO / DOCUMENTO DE PRUEBA B2B — NO TIENE EFECTO VINCULANTE'), 0, 1, 'C');
+            $this->Ln(1);
+        }
+
         $this->SetFont('Arial', 'B', 8);
         $this->SetTextColor(15, 42, 74); // Azul Marino
         $this->Cell(0, 5, utf8_decode('SINNOTARIO.CL | PLATAFORMA DE INSTRUMENTOS PRIVADOS Y FIRMA DIGITAL'), 0, 1, 'L');
@@ -110,7 +119,8 @@ class DocumentPdfService {
         $formData = json_decode($doc['datos_formulario'] ?? '{}', true);
 
         // 2. Instanciar Generador PDF
-        $pdf = new PdfContractGenerator($doc['codigo_verificacion'], $doc['titulo']);
+        $isSimulation = !empty($doc['is_simulation']);
+        $pdf = new PdfContractGenerator($doc['codigo_verificacion'], $doc['titulo'], $isSimulation);
         $pdf->AliasNbPages();
         $pdf->AddPage();
 

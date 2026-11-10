@@ -119,9 +119,11 @@ class B2BService {
     /**
      * Procesa y valida un lote de registros (filas de nómina)
      */
-    public static function processBatchUpload($userId, $companyId, $titulo, $templateSlug, array $rows, $tipoFirma = 'FES') {
+    public static function processBatchUpload($userId, $companyId, $titulo, $templateSlug, array $rows, $tipoFirma = 'FES', $isSimulation = 0, $simulationEmail = null) {
         $pdo = Database::getInstance();
         $tipoFirma = strtoupper($tipoFirma) === 'FEA' ? 'FEA' : 'FES';
+        $isSimulation = !empty($isSimulation) ? 1 : 0;
+        $simulationEmail = $simulationEmail ? trim($simulationEmail) : null;
 
         $totalRecords = count($rows);
         $validRecords = 0;
@@ -181,8 +183,8 @@ class B2BService {
             INSERT INTO b2b_batches (
                 company_id, user_id, titulo, template_slug, tipo_firma,
                 total_records, valid_records, invalid_records,
-                status, batch_hash
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'BORRADOR', ?)
+                status, batch_hash, is_simulation, simulation_email
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'BORRADOR', ?, ?, ?)
         ");
         $stmtBatch->execute([
             $companyId,
@@ -193,7 +195,9 @@ class B2BService {
             $totalRecords,
             $validRecords,
             $invalidRecords,
-            $batchHash
+            $batchHash,
+            $isSimulation,
+            $simulationEmail
         ]);
         $batchId = $pdo->lastInsertId();
 
@@ -275,6 +279,7 @@ class B2BService {
         }
 
         // Validar Financieramente: PREPAGO vs POSTPAGO (Dual FES / FEA)
+        $isSimulation = !empty($batch['is_simulation']);
         $tipoFirma = strtoupper($batch['tipo_firma'] ?? 'FES') === 'FEA' ? 'FEA' : 'FES';
         $modalidad = $batch['modalidad_cobro'] ?: 'PREPAGO';
         $saldoCol = $tipoFirma === 'FEA' ? 'saldo_firmas_fea' : 'saldo_firmas_prepago';
@@ -285,14 +290,16 @@ class B2BService {
         $firmasUsadas = (int)($batch['firmas_utilizadas'] ?? 0);
         $tarifaUnit = (int)($batch['tarifa_tramo_clp'] ?: 2490);
 
-        if ($modalidad === 'PREPAGO') {
-            if ($saldoDisponible < $itemsCount) {
-                throw new Exception("Saldo de firmas prepagadas insuficiente. Su bolsa actual de {$tipoLabel} tiene {$saldoDisponible} firmas disponibles y el lote requiere {$itemsCount}. Por favor recargue un pack de {$tipoLabel}.");
-            }
-        } else {
-            // POSTPAGO: Validar que no sobrepase el umbral de crédito
-            if (($firmasUsadas + $itemsCount) > $umbralPostpago) {
-                throw new Exception("Límite de sobregiro alcanzado para modalidad Postpago ({$umbralPostpago} firmas). Consumo proyectado: " . ($firmasUsadas + $itemsCount) . ". Solicite ampliación de umbral a Keystone Advisors.");
+        if (!$isSimulation) {
+            if ($modalidad === 'PREPAGO') {
+                if ($saldoDisponible < $itemsCount) {
+                    throw new Exception("Saldo de firmas prepagadas insuficiente. Su bolsa actual de {$tipoLabel} tiene {$saldoDisponible} firmas disponibles y el lote requiere {$itemsCount}. Por favor recargue un pack de {$tipoLabel}.");
+                }
+            } else {
+                // POSTPAGO: Validar que no sobrepase el umbral de crédito
+                if (($firmasUsadas + $itemsCount) > $umbralPostpago) {
+                    throw new Exception("Límite de sobregiro alcanzado para modalidad Postpago ({$umbralPostpago} firmas). Consumo proyectado: " . ($firmasUsadas + $itemsCount) . ". Solicite ampliación de umbral a Keystone Advisors.");
+                }
             }
         }
 
@@ -332,8 +339,8 @@ class B2BService {
             $stmtDoc = $pdo->prepare("
                 INSERT INTO documents (
                     codigo_verificacion, template_id, user_id, titulo,
-                    estado, datos_formulario, estado_pago, monto_pagado, tipo_firma
-                ) VALUES (?, ?, ?, ?, 'PENDIENTE_FIRMAS', ?, 'PAGADO', 4990, ?)
+                    estado, datos_formulario, estado_pago, monto_pagado, tipo_firma, is_simulation
+                ) VALUES (?, ?, ?, ?, 'PENDIENTE_FIRMAS', ?, 'PAGADO', 4990, ?, ?)
             ");
             $stmtDoc->execute([
                 $code,
@@ -341,7 +348,8 @@ class B2BService {
                 $batch['user_id'],
                 $docTitle,
                 json_encode($formData, JSON_UNESCAPED_UNICODE),
-                $tipoFirma
+                $tipoFirma,
+                $isSimulation ? 1 : 0
             ]);
             $docId = $pdo->lastInsertId();
 
@@ -406,23 +414,88 @@ class B2BService {
             ");
             $stmtUpdItem->execute([$docId, $now, $item['id']]);
 
-            // Paso 2: Vincular o actualizar Expediente Digital del Trabajador (worker_folders)
-            try {
-                self::linkWorkerFolderDocument(
-                    $batch['company_id'],
-                    $item['colaborador_rut'],
-                    $item['colaborador_nombre'],
-                    $item['colaborador_email'],
-                    $item['colaborador_telefono'],
-                    $item['cargo'],
-                    $docId,
-                    'CONTRATO_INICIAL',
-                    $docTitle,
-                    $pdfResult['pdf_sha256'] ?? null,
-                    $pdfResult['r2_key'] ?? null
-                );
-            } catch (Exception $eExp) {
-                error_log("Error vinculando expediente digital: " . $eExp->getMessage());
+            // Paso 2: Vincular o actualizar Expediente Digital del Trabajador (worker_folders) - Solo si NO es simulación
+            if (!$isSimulation) {
+                try {
+                    self::linkWorkerFolderDocument(
+                        $batch['company_id'],
+                        $item['colaborador_rut'],
+                        $item['colaborador_nombre'],
+                        $item['colaborador_email'],
+                        $item['colaborador_telefono'],
+                        $item['cargo'],
+                        $docId,
+                        'CONTRATO_INICIAL',
+                        $docTitle,
+                        $pdfResult['pdf_sha256'] ?? null,
+                        $pdfResult['r2_key'] ?? null
+                    );
+                } catch (Exception $eExp) {
+                    error_log("Error vinculando expediente digital: " . $eExp->getMessage());
+                }
+            }
+
+            // Paso 3: Despacho de notificación de firma
+            $destEmail = $isSimulation ? ($batch['simulation_email'] ?: $item['colaborador_email']) : $item['colaborador_email'];
+            if (!empty($destEmail) && filter_var($destEmail, FILTER_VALIDATE_EMAIL)) {
+                $signUrl = "https://sinnotario.cl/firmar.php?code={$code}&token={$tokenColab}";
+                $empresaNombre = $batch['razon_social'] ?: 'Keystone Advisors SpA';
+                
+                if ($isSimulation) {
+                    $emailSubject = "🧪 [PILOTO DE PRUEBA] Simulación de Firma: {$docTitle}";
+                    $emailBody = "
+                        <div style='background:#FEF3C7; border:2px dashed #D97706; border-radius:8px; padding:12px 16px; margin-bottom:18px;'>
+                            <strong style='color:#B45309; font-size:14px;'><i class='fas fa-flask'></i> MODO SIMULACIÓN / PILOTO DE ENSAYO B2B</strong>
+                            <p style='color:#78350F; font-size:12px; margin:4px 0 0;'>
+                                Este es un correo de prueba generado exclusivamente para que usted pueda validar el diseño, datos y flujo de firma antes de emitirlo formalmente a toda la nómina de trabajadores.
+                            </p>
+                        </div>
+                        <p style='font-size:15px; color:#1E293B;'>
+                            Estimado(a) <strong>" . htmlspecialchars($item['colaborador_nombre']) . "</strong>,
+                        </p>
+                        <p style='font-size:14px; color:#475569; line-height:1.6;'>
+                            <strong>" . htmlspecialchars($empresaNombre) . "</strong> ha preparado el siguiente documento contractual en el marco de la prueba piloto de emisión masiva:
+                        </p>
+                        <div style='background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:14px; margin:16px 0;'>
+                            <div style='font-size:13px; color:#64748B;'>Documento: <strong style='color:#0F2A4A;'>" . htmlspecialchars($docTitle) . "</strong></div>
+                            <div style='font-size:13px; color:#64748B;'>Tipo de Certificación: <strong style='color:#15803D;'>" . htmlspecialchars($tipoLabel) . "</strong></div>
+                            <div style='font-size:13px; color:#64748B;'>Folio de Validación: <strong style='color:#0F2A4A;'>" . htmlspecialchars($code) . "</strong></div>
+                        </div>
+                        <div style='text-align:center; margin:24px 0;'>
+                            <a href='{$signUrl}' style='background:#0F2A4A; color:#FFFFFF; text-decoration:none; padding:12px 28px; border-radius:8px; font-weight:700; font-size:14px; display:inline-block;'>
+                                ✍️ Abrir y Probar Enlace de Firma
+                            </a>
+                        </div>
+                        <p style='font-size:12px; color:#94A3B8; text-align:center;'>
+                            Enlace directo: <a href='{$signUrl}' style='color:#0066CC;'>{$signUrl}</a>
+                        </p>
+                    ";
+                } else {
+                    $emailSubject = "✍️ Firma Requerida: {$docTitle} — {$empresaNombre}";
+                    $emailBody = "
+                        <p style='font-size:15px; color:#1E293B;'>
+                            Hola <strong>" . htmlspecialchars($item['colaborador_nombre']) . "</strong>,
+                        </p>
+                        <p style='font-size:14px; color:#475569; line-height:1.6;'>
+                            <strong>" . htmlspecialchars($empresaNombre) . "</strong> ha emitido tu contrato laboral con firma electrónica bajo la Ley N° 19.799.
+                        </p>
+                        <div style='text-align:center; margin:24px 0;'>
+                            <a href='{$signUrl}' style='background:#0F2A4A; color:#FFFFFF; text-decoration:none; padding:12px 28px; border-radius:8px; font-weight:700; font-size:14px; display:inline-block;'>
+                                ✍️ Revisar y Estampar Firma Digital
+                            </a>
+                        </div>
+                        <p style='font-size:12px; color:#94A3B8; text-align:center;'>
+                            Enlace directo: <a href='{$signUrl}' style='color:#0066CC;'>{$signUrl}</a>
+                        </p>
+                    ";
+                }
+
+                try {
+                    require_once __DIR__ . '/MailService.php';
+                    MailService::sendEmail($destEmail, $emailSubject, $emailBody);
+                } catch (\Throwable $eMail) {
+                    error_log("Error enviando correo de firma a {$destEmail}: " . $eMail->getMessage());
+                }
             }
 
             $signedCount++;
@@ -432,8 +505,8 @@ class B2BService {
         $stmtUpdBatch = $pdo->prepare("UPDATE b2b_batches SET status = 'EN_FIRMA', updated_at = datetime('now') WHERE id = ?");
         $stmtUpdBatch->execute([$batchId]);
 
-        // Incrementar firmas consumidas en la empresa para control de plan y gastos
-        if (!empty($batch['company_id'])) {
+        // Incrementar firmas consumidas en la empresa para control de plan y gastos (SOLO SI NO ES SIMULACIÓN)
+        if (!empty($batch['company_id']) && !$isSimulation) {
             $nuevoGastoPeriodo = (int)($batch['gasto_acumulado_periodo'] ?? 0) + ($signedCount * $tarifaUnit);
 
             if ($modalidad === 'PREPAGO') {
@@ -494,8 +567,11 @@ class B2BService {
         return [
             'batch_id' => $batchId,
             'signed_count' => $signedCount,
+            'is_simulation' => $isSimulation,
             'status' => 'EN_FIRMA',
-            'message' => "Se firmaron masivamente {$signedCount} contratos con certificación legal. Los colaboradores han sido convocados vía correo y WhatsApp."
+            'message' => $isSimulation 
+                ? "Simulación Piloto ejecutada con éxito. Se generó el documento de prueba sin consumir firmas de su bolsa y se despachó al correo configurado."
+                : "Se firmaron masivamente {$signedCount} contratos con certificación legal. Los colaboradores han sido convocados vía correo y WhatsApp."
         ];
     }
 
@@ -1134,5 +1210,37 @@ class B2BService {
         }
 
         return $csv;
+    }
+
+    /**
+     * Elimina un lote de simulación o lote no firmado para limpiar la vista e historial
+     */
+    public static function deleteBatch($batchId, $companyId) {
+        $pdo = Database::getInstance();
+        $stmtB = $pdo->prepare("SELECT * FROM b2b_batches WHERE id = ? AND company_id = ?");
+        $stmtB->execute([$batchId, $companyId]);
+        $batch = $stmtB->fetch(PDO::FETCH_ASSOC);
+
+        if (!$batch) {
+            throw new Exception("Lote no encontrado o no pertenece a la empresa.");
+        }
+
+        // Obtener documentos asociados
+        $stmtDocs = $pdo->prepare("SELECT document_id FROM b2b_batch_items WHERE batch_id = ? AND document_id IS NOT NULL");
+        $stmtDocs->execute([$batchId]);
+        $docIds = $stmtDocs->fetchAll(PDO::FETCH_COLUMN);
+
+        if (!empty($docIds)) {
+            $inClause = implode(',', array_map('intval', $docIds));
+            // Eliminar firmantes y documentos generados en simulación
+            $pdo->exec("DELETE FROM document_signers WHERE document_id IN ($inClause)");
+            $pdo->exec("DELETE FROM documents WHERE id IN ($inClause)");
+        }
+
+        // Eliminar items y el lote
+        $pdo->prepare("DELETE FROM b2b_batch_items WHERE batch_id = ?")->execute([$batchId]);
+        $pdo->prepare("DELETE FROM b2b_batches WHERE id = ?")->execute([$batchId]);
+
+        return ['success' => true, 'message' => "Lote #{$batchId} eliminado correctamente."];
     }
 }

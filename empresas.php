@@ -465,12 +465,12 @@ if ($externalRef || $orderIdParam) {
                     <p style="color: #64748B; font-size: 0.88rem; margin-top: 0.35rem;">
                         Formatos admitidos: <code>.csv</code> (separado por coma o punto y coma). Columnas recomendadas: <code>nombre</code>, <code>rut</code>, <code>email</code>, <code>telefono</code>, <code>cargo</code>, <code>sueldo</code>.
                     </p>
-                    <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem;">
+                    <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
                         <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important; border:1px solid #CBD5E1;" onclick="event.stopPropagation(); downloadSampleCsv();">
                             <i class="fas fa-download"></i> Descargar Planilla Modelo (.csv)
                         </button>
-                        <button type="button" class="btn-cta btn-gold" onclick="event.stopPropagation(); loadSampleData();">
-                            <i class="fas fa-magic"></i> Cargar Nómina de Muestra
+                        <button type="button" class="btn-cta btn-gold" onclick="event.stopPropagation(); openSimulationModal();">
+                            <i class="fas fa-flask"></i> Simular Emisión Piloto (Prueba Sin Consumo)
                         </button>
                     </div>
                 </div>
@@ -1179,6 +1179,76 @@ if ($externalRef || $orderIdParam) {
         </div>
     </div>
 
+    <!-- MODAL DE SIMULACIÓN Y PRUEBA PILOTO B2B (SOL-0121) -->
+    <div id="simulationModal" style="display:none; position:fixed; inset:0; background:rgba(10,28,51,0.7); z-index:9999; align-items:center; justify-content:center; padding:1.5rem; backdrop-filter:blur(4px);">
+        <div style="background:#FFFFFF; border-radius:16px; max-width:580px; width:100%; padding:2rem; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); border:1px solid #E2E8F0; max-height:92vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.25rem;">
+                <div>
+                    <span style="background:#FEF3C7; color:#B45309; font-weight:800; font-size:0.75rem; padding:3px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">
+                        <i class="fas fa-flask"></i> Entorno de Ensayo Corporativo
+                    </span>
+                    <h3 style="font-size:1.35rem; font-weight:800; color:var(--primary); margin:6px 0 0;">
+                        Simulación de Emisión Piloto
+                    </h3>
+                </div>
+                <button type="button" onclick="closeSimulationModal()" style="background:none; border:none; font-size:1.4rem; color:#94A3B8; cursor:pointer;">&times;</button>
+            </div>
+
+            <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:1rem; margin-bottom:1.5rem;">
+                <p style="font-size:0.85rem; color:#1E40AF; margin:0; line-height:1.5;">
+                    <strong>¿Cómo funciona el Piloto?</strong><br>
+                    Generamos 1 documento contractual de muestra para que puedas <strong>recibirlo en tu correo institucional y probar el enlace de firma en vivo</strong> antes de emitirlo formalmente a toda la nómina de trabajadores.<br>
+                    <span style="color:#059669; font-weight:700;"><i class="fas fa-check-circle"></i> No consume firmas de tu bolsa ni afecta tus estadísticas laborales.</span>
+                </p>
+            </div>
+
+            <div style="margin-bottom:1.25rem;">
+                <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">
+                    Correo donde recibirás el documento piloto:
+                </label>
+                <input type="email" id="simEmail" class="form-control" style="width:100%; padding:10px 12px; font-size:0.95rem; border:1px solid #CBD5E1; border-radius:8px;" placeholder="ejemplo: rrhh@tuempresa.cl">
+                <span style="font-size:0.75rem; color:#64748B;">Te enviaremos el contrato con marca de agua y el botón de prueba de firma digital.</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.25rem;">
+                <div>
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">
+                        Nombre del Colaborador (Piloto):
+                    </label>
+                    <input type="text" id="simWorkerName" class="form-control" style="width:100%; padding:8px 12px; font-size:0.9rem;" value="Patricio Alarcón Soto">
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">
+                        RUT Colaborador (Piloto):
+                    </label>
+                    <input type="text" id="simWorkerRut" class="form-control" style="width:100%; padding:8px 12px; font-size:0.9rem;" value="14.234.567-6">
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
+                <div>
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">
+                        Cargo de Prueba:
+                    </label>
+                    <input type="text" id="simWorkerCargo" class="form-control" style="width:100%; padding:8px 12px; font-size:0.9rem;" value="Operador Técnico">
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">
+                        Sueldo Base de Prueba:
+                    </label>
+                    <input type="text" id="simWorkerSueldo" class="form-control" style="width:100%; padding:8px 12px; font-size:0.9rem;" value="750.000">
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #E2E8F0; padding-top:1.25rem;">
+                <button type="button" class="btn-cta" style="background:#F1F5F9; color:#334155 !important;" onclick="closeSimulationModal()">Cancelar</button>
+                <button type="button" id="btnExecuteSimulation" class="btn-cta btn-gold" style="padding:10px 22px; font-size:0.95rem;" onclick="executeSimulationBatch()">
+                    <i class="fas fa-paper-plane"></i> Generar y Enviar Piloto a Mi Correo
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="assets/js/app.js"></script>
     <script>
         let currentBatch = null;
@@ -1628,15 +1698,117 @@ if ($externalRef || $orderIdParam) {
             document.body.removeChild(link);
         }
 
-        // Carga de muestra automática
+        // Modal de simulación y prueba piloto B2B (SOL-0121)
+        function openSimulationModal() {
+            const defaultEmail = currentCompany.rep_legal_email || 'contacto@sinnotario.cl';
+            document.getElementById('simEmail').value = defaultEmail;
+            document.getElementById('simulationModal').style.display = 'flex';
+        }
+
+        function closeSimulationModal() {
+            document.getElementById('simulationModal').style.display = 'none';
+        }
+
+        async function executeSimulationBatch() {
+            const email = document.getElementById('simEmail').value.trim();
+            if (!email || !email.includes('@')) {
+                alert("Por favor ingresa un correo electrónico válido para recibir el documento de prueba.");
+                document.getElementById('simEmail').focus();
+                return;
+            }
+
+            const nombre = document.getElementById('simWorkerName').value.trim() || 'Patricio Alarcón Soto';
+            const rut = document.getElementById('simWorkerRut').value.trim() || '14.234.567-6';
+            const cargo = document.getElementById('simWorkerCargo').value.trim() || 'Operador Técnico';
+            const sueldo = document.getElementById('simWorkerSueldo').value.trim() || '750.000';
+
+            const btn = document.getElementById('btnExecuteSimulation');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generando y despachando piloto...`;
+
+            try {
+                const sampleRows = [{
+                    nombre: nombre,
+                    rut: rut,
+                    email: email, // Enviar al email corporativo de prueba
+                    telefono: '+56984180479',
+                    cargo: cargo,
+                    sueldo: sueldo
+                }];
+
+                const title = "🧪 Piloto de Ensayo - " + new Date().toLocaleDateString('es-CL') + " " + new Date().toLocaleTimeString('es-CL', {hour: '2-digit', minute:'2-digit'});
+                
+                // 1. Subir lote como simulación
+                const selectedSlug = document.getElementById('selectBatchTemplate') ? document.getElementById('selectBatchTemplate').value : 'contrato-individual-trabajo';
+                const payloadUpload = {
+                    titulo: title,
+                    template_slug: selectedSlug,
+                    tipo_firma: selectedBatchCertType || 'FES',
+                    rows: sampleRows,
+                    company: currentCompany,
+                    is_simulation: 1,
+                    simulation_email: email
+                };
+
+                const resUp = await fetch('api/index.php?action=b2b_upload_batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadUpload)
+                });
+                const jsonUp = await resUp.json();
+
+                if (!jsonUp.success || !jsonUp.data.batch) {
+                    alert("Error creando lote piloto: " + (jsonUp.error || 'Error desconocido'));
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fas fa-paper-plane"></i> Generar y Enviar Piloto a Mi Correo`;
+                    return;
+                }
+
+                const simBatch = jsonUp.data.batch;
+
+                // 2. Firmar y generar automáticamente el documento piloto sin descontar saldo
+                const resSign = await fetch('api/index.php?action=b2b_sign_batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        batch_id: simBatch.batch_id,
+                        rep_legal: {
+                            nombre: currentCompany.rep_legal_nombre,
+                            rut: currentCompany.rep_legal_rut,
+                            email: email
+                        }
+                    })
+                });
+                const jsonSign = await resSign.json();
+
+                closeSimulationModal();
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-paper-plane"></i> Generar y Enviar Piloto a Mi Correo`;
+
+                if (jsonSign.success) {
+                    alert(`🎉 ¡Simulación Piloto Ejecutada Exitosamente!\n\n` +
+                          `• Hemos generado el contrato de prueba con marca de agua.\n` +
+                          `• Te enviamos el correo a ${email} con el enlace para revisar y probar la firma.\n` +
+                          `• Saldo consumido: 0 firmas (Tu bolsa se mantiene intacta).\n\n` +
+                          `Cuando estés listo, puedes cargar tu nómina definitiva.`);
+                    
+                    currentBatch = simBatch;
+                    renderBatchUI(currentBatch);
+                    loadCompanyProfile(); // Actualizar historial con badge de simulación
+                } else {
+                    alert("Aviso en la emisión del piloto: " + (jsonSign.error || 'Verifica la consola'));
+                }
+
+            } catch (err) {
+                alert("Error ejecutando simulación: " + err.message);
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-paper-plane"></i> Generar y Enviar Piloto a Mi Correo`;
+            }
+        }
+
+        // Carga de muestra automática legacy (redirigido a modal de simulación)
         function loadSampleData() {
-            const sampleRows = [
-                { nombre: 'Patricio Alarcón Soto', rut: '14.234.567-6', email: 'patricio.alarcon@empresa.cl', telefono: '+56991122334', cargo: 'Operador Técnico', sueldo: '750.000' },
-                { nombre: 'Daniela Morales Vega', rut: '16.789.012-1', email: 'daniela.morales@empresa.cl', telefono: '+56987654321', cargo: 'Jefa de Turno', sueldo: '1.200.000' },
-                { nombre: 'Cristián Fuentes Parra', rut: '18.456.789-K', email: 'cristian.fuentes@empresa.cl', telefono: '+56977889900', cargo: 'Supervisor Faena', sueldo: '950.000' },
-                { nombre: 'Marcela Silva Henríquez', rut: '19.123.456-1', email: 'marcela.silva@empresa.cl', telefono: '+56966554433', cargo: 'Prevencionista de Riesgos', sueldo: '1.100.000' }
-            ];
-            uploadBatchToServer("Lote Nómina Faena - " + new Date().toLocaleDateString('es-CL'), sampleRows);
+            openSimulationModal();
         }
 
         // Manejo de archivo subido
@@ -2446,10 +2618,15 @@ if ($externalRef || $orderIdParam) {
                 return;
             }
 
-            tbody.innerHTML = batches.map(b => `
-                <tr style="border-bottom: 1px solid #E2E8F0;">
+            tbody.innerHTML = batches.map(b => {
+                const isSim = parseInt(b.is_simulation || 0) === 1;
+                return `
+                <tr style="border-bottom: 1px solid #E2E8F0; background: ${isSim ? '#FFFBEB' : '#FFFFFF'};">
                     <td style="padding:0.75rem; font-weight:700;">#${b.id}</td>
-                    <td style="padding:0.75rem; font-weight:600;">${b.titulo}</td>
+                    <td style="padding:0.75rem; font-weight:600;">
+                        ${b.titulo}
+                        ${isSim ? `<span style="background:#FEF3C7; color:#B45309; font-size:0.7rem; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:6px;"><i class="fas fa-flask"></i> PILOTO / NO OFICIAL</span>` : ''}
+                    </td>
                     <td style="padding:0.75rem; color:#64748B;">${b.created_at}</td>
                     <td style="padding:0.75rem;">
                         <span style="font-weight:700; color:var(--primary);">${b.valid_records}</span> / ${b.total_records}
@@ -2459,13 +2636,42 @@ if ($externalRef || $orderIdParam) {
                             ${b.status}
                         </span>
                     </td>
-                    <td style="padding:0.75rem; text-align:right;">
-                        <a href="api/index.php?action=b2b_export_dt&batch_id=${b.id}" class="btn-cta" style="background:#F1F5F9; color:#334155 !important; padding:4px 10px; font-size:0.75rem;">
+                    <td style="padding:0.75rem; text-align:right; white-space:nowrap;">
+                        ${!isSim ? `
+                        <a href="api/index.php?action=b2b_export_dt&batch_id=${b.id}" class="btn-cta" style="background:#F1F5F9; color:#334155 !important; padding:4px 10px; font-size:0.75rem; margin-right:4px;">
                             <i class="fas fa-file-csv"></i> Descargar DT
-                        </a>
+                        </a>` : ''}
+                        <button type="button" class="btn-cta" style="background:#FEE2E2; color:#B91C1C !important; padding:4px 10px; font-size:0.75rem; border:none;" onclick="deleteBatchConfirm(${b.id}, ${isSim})" title="Eliminar registro">
+                            <i class="fas fa-trash-alt"></i> ${isSim ? 'Limpiar Prueba' : 'Eliminar'}
+                        </button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
+        }
+
+        async function deleteBatchConfirm(batchId, isSim) {
+            const promptText = isSim 
+                ? `¿Deseas eliminar este lote piloto de prueba (#${batchId}) para mantener tu historial completamente limpio?`
+                : `¿Confirmas que deseas eliminar el lote #${batchId}?`;
+            if (!confirm(promptText)) return;
+
+            try {
+                const res = await fetch('api/index.php?action=b2b_delete_batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ batch_id: batchId, company_id: currentCompany.id })
+                });
+                const json = await res.json();
+                if (json.success) {
+                    alert("✅ Lote eliminado exitosamente.");
+                    loadCompanyProfile();
+                } else {
+                    alert("Error: " + (json.error || 'No se pudo eliminar el lote'));
+                }
+            } catch (e) {
+                alert("Error de comunicación: " + e.message);
+            }
+        }
         }
     </script>
 </body>

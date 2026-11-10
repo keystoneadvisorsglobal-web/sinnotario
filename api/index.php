@@ -971,7 +971,9 @@ try {
 
             $company = B2BService::getOrCreateCompany($userId, $companyData);
             $tipoFirma = strtoupper(trim($input['tipo_firma'] ?? 'FES')) === 'FEA' ? 'FEA' : 'FES';
-            $batchResult = B2BService::processBatchUpload($userId, $company['id'], $titulo, $templateSlug, $rows, $tipoFirma);
+            $isSimulation = !empty($input['is_simulation']) ? 1 : 0;
+            $simulationEmail = !empty($input['simulation_email']) ? trim($input['simulation_email']) : null;
+            $batchResult = B2BService::processBatchUpload($userId, $company['id'], $titulo, $templateSlug, $rows, $tipoFirma, $isSimulation, $simulationEmail);
 
             jsonResponse(true, [
                 'batch' => $batchResult,
@@ -1024,6 +1026,31 @@ try {
                 jsonResponse(true, $resBroadcast);
             } catch (Exception $eBroad) {
                 jsonResponse(false, null, $eBroad->getMessage(), 400);
+            }
+            break;
+
+        // 20C. Eliminar lote B2B (Especialmente pruebas/simulaciones para no ensuciar la vista)
+        case 'b2b_delete_batch':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+
+            $user = AuthService::getCurrentUser();
+            $userId = $user ? $user['id'] : null;
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $batchId = (int)($input['batch_id'] ?? 0);
+            $companyId = (int)($input['company_id'] ?? 0);
+
+            if ($batchId <= 0) {
+                jsonResponse(false, null, 'ID de lote inválido', 400);
+            }
+
+            try {
+                $resDel = B2BService::deleteBatch($batchId, $companyId);
+                jsonResponse(true, $resDel);
+            } catch (Exception $eDel) {
+                jsonResponse(false, null, $eDel->getMessage(), 400);
             }
             break;
 

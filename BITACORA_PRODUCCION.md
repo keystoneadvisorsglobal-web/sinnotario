@@ -1,5 +1,31 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 04:15 UTC-3] - SOL-0121
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0121`
+- **Alcance de los Cambios:**
+  - **Modo de Simulación y Emisión Piloto para Empresas B2B (Prueba Sin Consumo de Firmas y Despacho a Correo de Ensayo):**
+    1. **Estructura de Base de Datos y Migraciones Seguras (`database/Database.php` y SQLite):**
+       - Nuevas columnas `is_simulation INTEGER DEFAULT 0` y `simulation_email VARCHAR(150)` en la tabla `b2b_batches`.
+       - Nueva columna `is_simulation INTEGER DEFAULT 0` en la tabla `documents`.
+    2. **Experiencia de Usuario en Suite Corporativa (`empresas.php`):**
+       - Reemplazo del botón estático de muestra por **"Simular Emisión Piloto (Prueba Sin Consumo)"** (`<i class="fas fa-flask"></i>`).
+       - Modal interactivo de ensayo: la empresa ingresa el correo de su equipo de RRHH / encargado donde desea recibir el documento piloto, pudiendo personalizar opcionalmente los datos del trabajador de prueba.
+       - Despacho y generación en 1 clic sin fricción técnica.
+    3. **Motor Backend B2B (`src/Services/B2BService.php` y `api/index.php`):**
+       - **Blindaje Financiero:** Se bloquea la deducción de firmas en simulación; la bolsa de la empresa (`saldo_firmas_prepago` o `saldo_firmas_fea`) permanece 100% intacta.
+       - **Aislamiento de Expedientes:** Los contratos de simulación no contaminan los expedientes digitales permanentes de trabajadores (`worker_folders`).
+       - **Notificación por Correo Especializada:** Se despacha un correo HTML de ensayo con cintillo dorado `[🧪 PILOTO DE ENSAYO B2B]` y botón funcional de firma digital para que el encargado pueda auditar el flujo exactamente como lo experimentará el colaborador.
+       - **Nuevo Endpoint `b2b_delete_batch`:** Permite eliminar lotes de prueba para dejar el historial y la vista de la empresa 100% limpios tras completar el ensayo.
+    4. **Motor de Generación PDF (`src/Services/DocumentPdfService.php`):**
+       - Detección del flag de simulación en `documents.is_simulation`: incrustación automática de la marca de agua legal superior `⚠️ PILOTO DE ENSAYO / DOCUMENTO DE PRUEBA B2B — NO TIENE EFECTO VINCULANTE`.
+    5. **Pruebas Validadas:**
+       - Inspección de sintaxis en servidor remoto (`php -l`): 0 errores en los 6 archivos involucrados.
+       - Migración idempotente de base de datos ejecutada con éxito.
+       - Batería obligatoria de smoke tests en las 8 rutas maestras: 100% `HTTP 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 03:55 UTC-3] - SOL-0120
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

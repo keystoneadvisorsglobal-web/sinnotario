@@ -73,6 +73,13 @@ class MailService {
     }
 
     /**
+     * Alias de compatibilidad para send()
+     */
+    public static function sendEmail($to, $subject, $htmlBody, $replyTo = null) {
+        return self::send($to, $subject, $htmlBody, $replyTo);
+    }
+
+    /**
      * Enviar correo con enlace y código para restablecer contraseña
      */
     public static function sendPasswordReset($toEmail, $nombre, $resetLink, $tokenCode) {

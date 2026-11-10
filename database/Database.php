@@ -113,7 +113,9 @@ class Database {
                 'batch_type' => "ALTER TABLE b2b_batches ADD COLUMN batch_type VARCHAR(30) DEFAULT 'TEMPLATE';", // TEMPLATE o BROADCAST_PDF
                 'tipo_firma' => "ALTER TABLE b2b_batches ADD COLUMN tipo_firma VARCHAR(10) DEFAULT 'FES';", // FES o FEA
                 'pdf_r2_key' => "ALTER TABLE b2b_batches ADD COLUMN pdf_r2_key VARCHAR(255);",
-                'pdf_sha256' => "ALTER TABLE b2b_batches ADD COLUMN pdf_sha256 VARCHAR(64);"
+                'pdf_sha256' => "ALTER TABLE b2b_batches ADD COLUMN pdf_sha256 VARCHAR(64);",
+                'is_simulation' => "ALTER TABLE b2b_batches ADD COLUMN is_simulation INTEGER DEFAULT 0;",
+                'simulation_email' => "ALTER TABLE b2b_batches ADD COLUMN simulation_email VARCHAR(150);"
             ];
             foreach ($missingBatchCols as $bCol => $bSql) {
                 if (!in_array($bCol, $batchCols)) {
@@ -412,18 +414,24 @@ class Database {
             $this->pdo->exec($sql);
         }
 
-        // Migración idempotente: columna tipo_firma en documents si no existe
+        // Migración idempotente: columna tipo_firma e is_simulation en documents si no existen
         try {
             $colsDoc = $this->pdo->query("PRAGMA table_info(documents)")->fetchAll(PDO::FETCH_ASSOC);
             $hasTipoFirma = false;
+            $hasIsSimulation = false;
             foreach ($colsDoc as $cd) {
                 if (($cd['name'] ?? '') === 'tipo_firma') {
                     $hasTipoFirma = true;
-                    break;
+                }
+                if (($cd['name'] ?? '') === 'is_simulation') {
+                    $hasIsSimulation = true;
                 }
             }
             if (!$hasTipoFirma) {
                 $this->pdo->exec("ALTER TABLE documents ADD COLUMN tipo_firma VARCHAR(10) DEFAULT 'FES';");
+            }
+            if (!$hasIsSimulation) {
+                $this->pdo->exec("ALTER TABLE documents ADD COLUMN is_simulation INTEGER DEFAULT 0;");
             }
         } catch (Exception $eCol) {
             // Ignorar si ya existe
