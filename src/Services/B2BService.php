@@ -119,8 +119,9 @@ class B2BService {
     /**
      * Procesa y valida un lote de registros (filas de nómina)
      */
-    public static function processBatchUpload($userId, $companyId, $titulo, $templateSlug, array $rows) {
+    public static function processBatchUpload($userId, $companyId, $titulo, $templateSlug, array $rows, $tipoFirma = 'FES') {
         $pdo = Database::getInstance();
+        $tipoFirma = strtoupper($tipoFirma) === 'FEA' ? 'FEA' : 'FES';
 
         $totalRecords = count($rows);
         $validRecords = 0;
@@ -178,16 +179,17 @@ class B2BService {
         // Insertar cabecera de lote
         $stmtBatch = $pdo->prepare("
             INSERT INTO b2b_batches (
-                company_id, user_id, titulo, template_slug,
+                company_id, user_id, titulo, template_slug, tipo_firma,
                 total_records, valid_records, invalid_records,
                 status, batch_hash
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'BORRADOR', ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'BORRADOR', ?)
         ");
         $stmtBatch->execute([
             $companyId,
             $userId,
             $titulo,
             $templateSlug,
+            $tipoFirma,
             $totalRecords,
             $validRecords,
             $invalidRecords,
@@ -243,7 +245,7 @@ class B2BService {
             SELECT b.*, c.id as comp_id, c.razon_social, c.rut as empresa_rut, c.direccion as empresa_dir,
                    c.rep_legal_nombre, c.rep_legal_rut, c.plan_nombre, c.plan_estado,
                    c.firmas_totales_plan, c.firmas_utilizadas, c.costo_firma_extra_clp,
-                   c.modalidad_cobro, c.saldo_firmas_prepago, c.umbral_max_postpago,
+                   c.modalidad_cobro, c.saldo_firmas_prepago, c.saldo_firmas_fea, c.umbral_max_postpago,
                    c.gasto_acumulado_periodo, c.tarifa_tramo_clp
             FROM b2b_batches b
             LEFT JOIN companies c ON b.company_id = c.id
@@ -272,16 +274,20 @@ class B2BService {
             throw new Exception("El plan corporativo de su empresa se encuentra " . $batch['plan_estado'] . ". Regularice su suscripción para continuar firmando.");
         }
 
-        // Validar Financieramente: PREPAGO vs POSTPAGO
+        // Validar Financieramente: PREPAGO vs POSTPAGO (Dual FES / FEA)
+        $tipoFirma = strtoupper($batch['tipo_firma'] ?? 'FES') === 'FEA' ? 'FEA' : 'FES';
         $modalidad = $batch['modalidad_cobro'] ?: 'PREPAGO';
-        $saldoPrepago = (int)($batch['saldo_firmas_prepago'] ?? 0);
+        $saldoCol = $tipoFirma === 'FEA' ? 'saldo_firmas_fea' : 'saldo_firmas_prepago';
+        $saldoDisponible = (int)($batch[$saldoCol] ?? 0);
+        $tipoLabel = $tipoFirma === 'FEA' ? 'Firma Avanzada ClaveÚnica (FEA)' : 'Firma Simple (FES)';
+
         $umbralPostpago = (int)($batch['umbral_max_postpago'] ?? 200);
         $firmasUsadas = (int)($batch['firmas_utilizadas'] ?? 0);
         $tarifaUnit = (int)($batch['tarifa_tramo_clp'] ?: 2490);
 
         if ($modalidad === 'PREPAGO') {
-            if ($saldoPrepago < $itemsCount) {
-                throw new Exception("Saldo de firmas prepagadas insuficiente. Su bolsa actual tiene {$saldoPrepago} firmas disponibles y el lote requiere {$itemsCount}. Por favor recargue una bolsa de firmas con descuento.");
+            if ($saldoDisponible < $itemsCount) {
+                throw new Exception("Saldo de firmas prepagadas insuficiente. Su bolsa actual de {$tipoLabel} tiene {$saldoDisponible} firmas disponibles y el lote requiere {$itemsCount}. Por favor recargue un pack de {$tipoLabel}.");
             }
         } else {
             // POSTPAGO: Validar que no sobrepase el umbral de crédito
@@ -326,15 +332,16 @@ class B2BService {
             $stmtDoc = $pdo->prepare("
                 INSERT INTO documents (
                     codigo_verificacion, template_id, user_id, titulo,
-                    estado, datos_formulario, estado_pago, monto_pagado
-                ) VALUES (?, ?, ?, ?, 'PENDIENTE_FIRMAS', ?, 'PAGADO', 4990)
+                    estado, datos_formulario, estado_pago, monto_pagado, tipo_firma
+                ) VALUES (?, ?, ?, ?, 'PENDIENTE_FIRMAS', ?, 'PAGADO', 4990, ?)
             ");
             $stmtDoc->execute([
                 $code,
                 $templateId,
                 $batch['user_id'],
                 $docTitle,
-                json_encode($formData, JSON_UNESCAPED_UNICODE)
+                json_encode($formData, JSON_UNESCAPED_UNICODE),
+                $tipoFirma
             ]);
             $docId = $pdo->lastInsertId();
 
@@ -360,14 +367,14 @@ class B2BService {
                 $ip
             ]);
 
-            // Firmante 2: Colaborador (convocado por correo/WhatsApp)
+            // Firmante 2: Colaborador (convocado por correo/WhatsApp con FES o FEA según lote)
             $tokenColab = bin2hex(random_bytes(16));
             $stmtColab = $pdo->prepare("
                 INSERT INTO document_signers (
                     document_id, rol_firmante, rut, tipo_documento, nombre_completo,
                     es_representante, email, telefono, orden_firma, token_acceso,
                     estado_firma, metodo_firma
-                ) VALUES (?, 'TRABAJADOR', ?, 'RUT', ?, 0, ?, ?, 2, ?, 'NOTIFICADO', 'FES')
+                ) VALUES (?, 'TRABAJADOR', ?, 'RUT', ?, 0, ?, ?, 2, ?, 'NOTIFICADO', ?)
             ");
             $stmtColab->execute([
                 $docId,
@@ -375,7 +382,8 @@ class B2BService {
                 $item['colaborador_nombre'],
                 $item['colaborador_email'],
                 $item['colaborador_telefono'],
-                $tokenColab
+                $tokenColab,
+                $tipoFirma
             ]);
 
             // Generar PDF y almacenar en R2/Local
@@ -429,15 +437,15 @@ class B2BService {
             $nuevoGastoPeriodo = (int)($batch['gasto_acumulado_periodo'] ?? 0) + ($signedCount * $tarifaUnit);
 
             if ($modalidad === 'PREPAGO') {
-                $nuevoSaldoPrepago = max(0, $saldoPrepago - $signedCount);
+                $nuevoSaldo = max(0, $saldoDisponible - $signedCount);
                 $stmtUpdComp = $pdo->prepare("
                     UPDATE companies 
                     SET firmas_utilizadas = COALESCE(firmas_utilizadas, 0) + ?,
-                        saldo_firmas_prepago = ?,
+                        {$saldoCol} = ?,
                         updated_at = datetime('now') 
                     WHERE id = ?
                 ");
-                $stmtUpdComp->execute([$signedCount, $nuevoSaldoPrepago, $batch['company_id']]);
+                $stmtUpdComp->execute([$signedCount, $nuevoSaldo, $batch['company_id']]);
 
                 // Registrar en log contable
                 $stmtLog = $pdo->prepare("
@@ -449,9 +457,9 @@ class B2BService {
                 $stmtLog->execute([
                     $batch['company_id'],
                     $signedCount,
-                    $saldoPrepago,
-                    $nuevoSaldoPrepago,
-                    "Consumo masivo de {$signedCount} firmas en Lote #{$batchId}"
+                    $saldoDisponible,
+                    $nuevoSaldo,
+                    "Consumo masivo de {$signedCount} firmas ({$tipoLabel}) en Lote #{$batchId}"
                 ]);
 
             } else {
@@ -822,8 +830,9 @@ class B2BService {
      * Emite y difunde un PDF Único Masivo (Reglamento Interno, Ley Karin, EPP, etc.)
      * Almacena el PDF común en R2 y crea los documentos individuales en cada expediente con convocatoria por WhatsApp y Email.
      */
-    public static function broadcastPdfBatch(int $companyId, int $userId, string $titulo, string $categoria, string $pdfBase64, string $fileName, array $workers, array $repLegal) {
+    public static function broadcastPdfBatch(int $companyId, int $userId, string $titulo, string $categoria, string $pdfBase64, string $fileName, array $workers, array $repLegal, string $tipoFirma = 'FES') {
         $pdo = Database::getInstance();
+        $tipoFirma = strtoupper($tipoFirma) === 'FEA' ? 'FEA' : 'FES';
 
         if (empty($pdfBase64)) {
             throw new Exception("El archivo PDF es requerido.");
@@ -840,7 +849,7 @@ class B2BService {
             throw new Exception("Debes incluir al menos un trabajador en la nómina destinataria.");
         }
 
-        // 1. Obtener y validar datos de la empresa y saldo de firmas
+        // 1. Obtener y validar datos de la empresa y saldo de firmas (Dual FES / FEA)
         $stmtC = $pdo->prepare("SELECT * FROM companies WHERE id = ?");
         $stmtC->execute([$companyId]);
         $company = $stmtC->fetch(PDO::FETCH_ASSOC);
@@ -850,11 +859,13 @@ class B2BService {
         }
 
         $modalidad = strtoupper($company['modalidad_cobro'] ?? 'PREPAGO');
-        $saldoPrepago = (int)($company['saldo_firmas_prepago'] ?? 0);
+        $saldoCol = $tipoFirma === 'FEA' ? 'saldo_firmas_fea' : 'saldo_firmas_prepago';
+        $saldoDisponible = (int)($company[$saldoCol] ?? 0);
         $tarifaUnit = (int)($company['tarifa_tramo_clp'] ?? 2490);
+        $tipoLabel = $tipoFirma === 'FEA' ? 'Firma Avanzada ClaveÚnica (FEA)' : 'Firma Simple (FES)';
 
-        if ($modalidad === 'PREPAGO' && $saldoPrepago < $totalWorkers) {
-            throw new Exception("Saldo de firmas prepago insuficiente. Tienes {$saldoPrepago} firmas disponibles y necesitas {$totalWorkers}. Por favor, recarga una bolsa de firmas.");
+        if ($modalidad === 'PREPAGO' && $saldoDisponible < $totalWorkers) {
+            throw new Exception("Saldo de firmas prepago insuficiente. Tienes {$saldoDisponible} firmas disponibles de {$tipoLabel} y necesitas {$totalWorkers}. Por favor, recarga una bolsa de firmas de {$tipoLabel}.");
         }
 
         // 2. Almacenar PDF maestro en Cloudflare R2
@@ -881,15 +892,16 @@ class B2BService {
         $batchHash = hash('sha256', $titulo . '_' . $pdfSha256 . '_' . time());
         $stmtBatch = $pdo->prepare("
             INSERT INTO b2b_batches (
-                company_id, user_id, titulo, template_slug,
+                company_id, user_id, titulo, template_slug, tipo_firma,
                 total_records, valid_records, invalid_records,
                 status, batch_hash, batch_type, pdf_r2_key, pdf_sha256
-            ) VALUES (?, ?, ?, 'pdf-difusion-masiva', ?, ?, 0, 'EN_FIRMA', ?, 'BROADCAST_PDF', ?, ?)
+            ) VALUES (?, ?, ?, 'pdf-difusion-masiva', ?, ?, ?, 0, 'EN_FIRMA', ?, 'BROADCAST_PDF', ?, ?)
         ");
         $stmtBatch->execute([
             $companyId,
             $userId,
             $titulo,
+            $tipoFirma,
             $totalWorkers,
             $totalWorkers,
             $batchHash,
@@ -932,11 +944,11 @@ class B2BService {
             $stmtDoc = $pdo->prepare("
                 INSERT INTO documents (
                     codigo_verificacion, user_id, titulo,
-                    estado, pdf_sha256, pdf_r2_key, estado_pago, monto_pagado
-                ) VALUES (?, ?, ?, 'PENDIENTE_FIRMAS', ?, ?, 'PAGADO', 4990)
+                    estado, pdf_sha256, pdf_r2_key, estado_pago, monto_pagado, tipo_firma
+                ) VALUES (?, ?, ?, 'PENDIENTE_FIRMAS', ?, ?, 'PAGADO', 4990, ?)
             ");
             $docTitle = "{$titulo} - {$nombre}";
-            $stmtDoc->execute([$verifCode, $userId, $docTitle, $pdfSha256, $r2Key]);
+            $stmtDoc->execute([$verifCode, $userId, $docTitle, $pdfSha256, $r2Key, $tipoFirma]);
             $docId = $pdo->lastInsertId();
 
             // Firmante 1: Empleador (firmado por representante)
@@ -968,7 +980,7 @@ class B2BService {
                     document_id, rol_firmante, rut, tipo_documento, nombre_completo,
                     es_representante, email, telefono, orden_firma, token_acceso,
                     estado_firma, metodo_firma
-                ) VALUES (?, 'TRABAJADOR', ?, 'RUT', ?, 0, ?, ?, 2, ?, 'NOTIFICADO', 'FES')
+                ) VALUES (?, 'TRABAJADOR', ?, 'RUT', ?, 0, ?, ?, 2, ?, 'NOTIFICADO', ?)
             ");
             $stmtColab->execute([
                 $docId,
@@ -976,7 +988,8 @@ class B2BService {
                 $nombre,
                 $email,
                 $tel,
-                $tokenColab
+                $tokenColab,
+                $tipoFirma
             ]);
 
             // Vincular al lote
@@ -1029,17 +1042,17 @@ class B2BService {
             $processedCount++;
         }
 
-        // 5. Descontar firmas de la bolsa prepagada
+        // 5. Descontar firmas de la bolsa prepagada (Dual FES / FEA)
         if ($modalidad === 'PREPAGO') {
-            $nuevoSaldoPrepago = max(0, $saldoPrepago - $processedCount);
+            $nuevoSaldo = max(0, $saldoDisponible - $processedCount);
             $stmtUpdComp = $pdo->prepare("
                 UPDATE companies 
                 SET firmas_utilizadas = COALESCE(firmas_utilizadas, 0) + ?,
-                    saldo_firmas_prepago = ?,
+                    {$saldoCol} = ?,
                     updated_at = datetime('now') 
                 WHERE id = ?
             ");
-            $stmtUpdComp->execute([$processedCount, $nuevoSaldoPrepago, $companyId]);
+            $stmtUpdComp->execute([$processedCount, $nuevoSaldo, $companyId]);
 
             // Registrar en auditoría contable
             $stmtLog = $pdo->prepare("
@@ -1051,9 +1064,9 @@ class B2BService {
             $stmtLog->execute([
                 $companyId,
                 $processedCount,
-                $saldoPrepago,
-                $nuevoSaldoPrepago,
-                "Difusión Masiva PDF '{$titulo}' para {$processedCount} colaboradores (Lote #{$batchId})"
+                $saldoDisponible,
+                $nuevoSaldo,
+                "Difusión Masiva PDF '{$titulo}' ({$tipoLabel}) para {$processedCount} colaboradores (Lote #{$batchId})"
             ]);
         } else {
             // Postpago

@@ -970,7 +970,8 @@ try {
             ];
 
             $company = B2BService::getOrCreateCompany($userId, $companyData);
-            $batchResult = B2BService::processBatchUpload($userId, $company['id'], $titulo, $templateSlug, $rows);
+            $tipoFirma = strtoupper(trim($input['tipo_firma'] ?? 'FES')) === 'FEA' ? 'FEA' : 'FES';
+            $batchResult = B2BService::processBatchUpload($userId, $company['id'], $titulo, $templateSlug, $rows, $tipoFirma);
 
             jsonResponse(true, [
                 'batch' => $batchResult,
@@ -1012,13 +1013,14 @@ try {
             $fileName = trim($input['file_name'] ?? 'documento.pdf');
             $workers = $input['workers'] ?? [];
             $repLegal = $input['rep_legal'] ?? [];
+            $tipoFirma = strtoupper(trim($input['tipo_firma'] ?? 'FES')) === 'FEA' ? 'FEA' : 'FES';
 
             if ($companyId <= 0 || empty($pdfBase64) || empty($workers)) {
                 jsonResponse(false, null, 'Datos incompletos. Se requiere PDF y lista de trabajadores.', 400);
             }
 
             try {
-                $resBroadcast = B2BService::broadcastPdfBatch($companyId, $userId, $titulo, $categoria, $pdfBase64, $fileName, $workers, $repLegal);
+                $resBroadcast = B2BService::broadcastPdfBatch($companyId, $userId, $titulo, $categoria, $pdfBase64, $fileName, $workers, $repLegal, $tipoFirma);
                 jsonResponse(true, $resBroadcast);
             } catch (Exception $eBroad) {
                 jsonResponse(false, null, $eBroad->getMessage(), 400);

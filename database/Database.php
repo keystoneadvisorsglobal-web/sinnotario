@@ -111,6 +111,7 @@ class Database {
             $batchCols = $batchColsStmt ? $batchColsStmt->fetchAll(PDO::FETCH_COLUMN, 1) : [];
             $missingBatchCols = [
                 'batch_type' => "ALTER TABLE b2b_batches ADD COLUMN batch_type VARCHAR(30) DEFAULT 'TEMPLATE';", // TEMPLATE o BROADCAST_PDF
+                'tipo_firma' => "ALTER TABLE b2b_batches ADD COLUMN tipo_firma VARCHAR(10) DEFAULT 'FES';", // FES o FEA
                 'pdf_r2_key' => "ALTER TABLE b2b_batches ADD COLUMN pdf_r2_key VARCHAR(255);",
                 'pdf_sha256' => "ALTER TABLE b2b_batches ADD COLUMN pdf_sha256 VARCHAR(64);"
             ];

@@ -1,5 +1,26 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 03:50 UTC-3] - SOL-0119
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0119`
+- **Alcance de los Cambios:**
+  - **Selector Dual de Certificación Legal (FES vs FEA) en Emisión Masiva y Deducción Segregada de Bolsas:**
+    1. **Estructura y Esquema de Base de Datos (`database/Database.php` y SQLite):**
+       - Columna `tipo_firma VARCHAR(10) DEFAULT 'FES'` agregada a la tabla `b2b_batches` en producción.
+    2. **Experiencia de Usuario en Suite Corporativa (`empresas.php`):**
+       - **Opción A (Planilla Excel con variables):** Incorporación de selector dual `[ 🟢 Simple (FES) ]` vs `[ 🔵 ClaveÚnica (FEA) ]` en la barra superior de plantilla, con feedback visual reactivo y lectura de saldos remanentes en tiempo real.
+       - **Opción B (Difusión Masiva de PDF Único):** Incorporación de selector dual con hints dinámicos de saldo FES/FEA antes de despachar el documento común a la nómina.
+       - **Validación Preventiva Anti-Quiebre:** Al presionar *"Firmar Lote con 1 Clic"* o *"Emitir y Difundir PDF"*, el sistema valida inmediatamente que la empresa cuente con saldo suficiente en la bolsa específica elegida, previniendo emisiones fallidas y ofreciendo abrir el modal de compra correspondiente.
+    3. **Motor Backend B2B (`src/Services/B2BService.php` y `api/index.php`):**
+       - `processBatchUpload()`: Persiste el `tipo_firma` del lote.
+       - `signBatch()`: Genera los documentos y firmantes asignando `tipo_firma` ('FES' o 'FEA'), valida el saldo disponible en la bolsa correcta y descuenta atómicamente de `saldo_firmas_prepago` o `saldo_firmas_fea` registrando la auditoría contable.
+       - `broadcastPdfBatch()`: Procesa la difusión masiva segregando la deducción según sea FES o FEA.
+    4. **Pruebas Validadas:**
+       - Inspección sintáctica en servidor remoto (`php -l`): 0 errores en los 4 archivos modificados.
+       - Batería obligatoria de smoke tests en las 8 rutas maestras: 100% `HTTP 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 03:40 UTC-3] - SOL-0118
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

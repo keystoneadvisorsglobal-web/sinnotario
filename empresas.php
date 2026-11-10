@@ -409,7 +409,7 @@ if ($externalRef || $orderIdParam) {
 
             <!-- CONTENEDOR MODO A: PLANILLA DINÁMICA -->
             <div id="modeSpreadsheetWrap">
-                <!-- Barra Superior de Selección de Plantilla para Emisión Masiva -->
+                <!-- Barra Superior de Selección de Plantilla y Tipo de Certificación (Dual FES vs FEA) -->
                 <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
                     <div style="flex:1; min-width:280px;">
                         <label style="display:block; font-size:0.85rem; font-weight:800; color:var(--primary); margin-bottom:4px;">
@@ -428,9 +428,28 @@ if ($externalRef || $orderIdParam) {
                             </optgroup>
                         </select>
                     </div>
+
+                    <!-- Selector de Certificación Legal (FES vs FEA) -->
+                    <div style="min-width:260px;">
+                        <label style="display:block; font-size:0.85rem; font-weight:800; color:var(--primary); margin-bottom:4px;">
+                            <i class="fas fa-shield-alt" style="color:#2563EB;"></i> 2. Tipo de Firma y Certificación:
+                        </label>
+                        <div style="display:flex; background:#F1F5F9; padding:3px; border-radius:8px; gap:4px; border:1px solid #CBD5E1;">
+                            <button type="button" id="btnBatchCertFes" onclick="selectBatchCertType('FES')" style="flex:1; padding:7px 10px; font-size:0.8rem; font-weight:800; border:none; border-radius:6px; cursor:pointer; background:#16A34A; color:#FFF; transition:all 0.2s;">
+                                <i class="fas fa-file-signature"></i> Simple (FES)
+                            </button>
+                            <button type="button" id="btnBatchCertFea" onclick="selectBatchCertType('FEA')" style="flex:1; padding:7px 10px; font-size:0.8rem; font-weight:800; border:none; border-radius:6px; cursor:pointer; background:transparent; color:#475569; transition:all 0.2s;">
+                                <i class="fas fa-shield-alt"></i> ClaveÚnica (FEA)
+                            </button>
+                        </div>
+                        <div id="batchCertHint" style="font-size:0.74rem; color:#15803D; margin-top:4px; font-weight:600;">
+                            🟢 Bolsa FES: <strong id="hintSaldoFes">0</strong> disponibles
+                        </div>
+                    </div>
+
                     <div style="display:flex; align-items:flex-end; gap:0.75rem;">
                         <button type="button" class="btn-cta" style="background:#F1F5F9; color:#0A1C33 !important; border:1px solid #CBD5E1; padding:9px 14px; font-size:0.85rem;" onclick="downloadSampleCsv()">
-                            <i class="fas fa-download"></i> Descargar Planilla Excel (.csv) para esta Plantilla
+                            <i class="fas fa-download"></i> Planilla (.csv)
                         </button>
                         <a href="javascript:void(0)" onclick="openTemplateWizardPreview()" class="btn-cta" style="background:#FFF; color:#2563EB !important; border:1px solid #BFDBFE; padding:9px 12px; font-size:0.85rem;" title="Ver estructura y redacción de la plantilla">
                             <i class="fas fa-eye"></i> Ver Plantilla
@@ -492,6 +511,22 @@ if ($externalRef || $orderIdParam) {
                                 <option value="POLITICA_INTERNA">Política de Seguridad de la Información / Privacidad</option>
                                 <option value="COMUNICADO_OFICIAL">Circular / Comunicado General de Empresa</option>
                             </select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px;">
+                                Tipo de Firma y Certificación:
+                            </label>
+                            <div style="display:flex; background:#F1F5F9; padding:3px; border-radius:8px; gap:4px; border:1px solid #CBD5E1;">
+                                <button type="button" id="btnBroadcastCertFes" onclick="selectBroadcastCertType('FES')" style="flex:1; padding:7px 10px; font-size:0.8rem; font-weight:800; border:none; border-radius:6px; cursor:pointer; background:#16A34A; color:#FFF; transition:all 0.2s;">
+                                    <i class="fas fa-file-signature"></i> Simple (FES)
+                                </button>
+                                <button type="button" id="btnBroadcastCertFea" onclick="selectBroadcastCertType('FEA')" style="flex:1; padding:7px 10px; font-size:0.8rem; font-weight:800; border:none; border-radius:6px; cursor:pointer; background:transparent; color:#475569; transition:all 0.2s;">
+                                    <i class="fas fa-shield-alt"></i> ClaveÚnica (FEA)
+                                </button>
+                            </div>
+                            <div id="broadcastCertHint" style="font-size:0.74rem; color:#15803D; margin-top:4px; font-weight:600;">
+                                🟢 Bolsa FES: <strong id="hintBroadcastSaldoFes">0</strong> disponibles
+                            </div>
                         </div>
                     </div>
 
@@ -1194,6 +1229,9 @@ if ($externalRef || $orderIdParam) {
                 document.getElementById('dispSaldoPrepago').textContent = saldoFes;
                 document.getElementById('dispSaldoFea').textContent = saldoFea;
                 document.getElementById('subSaldoModalidad').innerHTML = `Total firmas consumidas: <strong>${currentCompany.firmas_utilizadas || 0}</strong>`;
+
+                // Actualizar hints de saldo en selectores de emisión
+                updateCertHints();
             } else {
                 document.getElementById('lblSaldoModalidad').textContent = 'CRÉDITO POSTPAGO MENSUAL';
                 const gasto = Number(currentCompany.gasto_acumulado_periodo || 0).toLocaleString('es-CL');
@@ -1221,6 +1259,75 @@ if ($externalRef || $orderIdParam) {
         // Variables de estado del Checkout Modal
         let selectedPackKey = 'PACK_FES_200';
         let selectedGateway = 'MERCADO_PAGO';
+
+        // Variables globales de Certificación Masiva (FES vs FEA)
+        let selectedBatchCertType = 'FES';
+        let selectedBroadcastCertType = 'FES';
+
+        function selectBatchCertType(type) {
+            selectedBatchCertType = type === 'FEA' ? 'FEA' : 'FES';
+            const btnFes = document.getElementById('btnBatchCertFes');
+            const btnFea = document.getElementById('btnBatchCertFea');
+            if (selectedBatchCertType === 'FES') {
+                btnFes.style.background = '#16A34A';
+                btnFes.style.color = '#FFF';
+                btnFea.style.background = 'transparent';
+                btnFea.style.color = '#475569';
+            } else {
+                btnFea.style.background = '#2563EB';
+                btnFea.style.color = '#FFF';
+                btnFes.style.background = 'transparent';
+                btnFes.style.color = '#475569';
+            }
+            updateCertHints();
+        }
+
+        function selectBroadcastCertType(type) {
+            selectedBroadcastCertType = type === 'FEA' ? 'FEA' : 'FES';
+            const btnFes = document.getElementById('btnBroadcastCertFes');
+            const btnFea = document.getElementById('btnBroadcastCertFea');
+            if (selectedBroadcastCertType === 'FES') {
+                btnFes.style.background = '#16A34A';
+                btnFes.style.color = '#FFF';
+                btnFea.style.background = 'transparent';
+                btnFea.style.color = '#475569';
+            } else {
+                btnFea.style.background = '#2563EB';
+                btnFea.style.color = '#FFF';
+                btnFes.style.background = 'transparent';
+                btnFes.style.color = '#475569';
+            }
+            updateCertHints();
+        }
+
+        function updateCertHints() {
+            const saldoFes = parseInt(currentCompany.saldo_firmas_prepago || 0);
+            const saldoFea = parseInt(currentCompany.saldo_firmas_fea || 0);
+
+            // Hint Batch
+            const hintBatch = document.getElementById('batchCertHint');
+            if (hintBatch) {
+                if (selectedBatchCertType === 'FES') {
+                    hintBatch.innerHTML = `🟢 Bolsa FES: <strong>${saldoFes}</strong> disponibles`;
+                    hintBatch.style.color = saldoFes > 0 ? '#15803D' : '#DC2626';
+                } else {
+                    hintBatch.innerHTML = `🔵 Bolsa FEA (ClaveÚnica): <strong>${saldoFea}</strong> disponibles`;
+                    hintBatch.style.color = saldoFea > 0 ? '#1D4ED8' : '#DC2626';
+                }
+            }
+
+            // Hint Broadcast
+            const hintBroad = document.getElementById('broadcastCertHint');
+            if (hintBroad) {
+                if (selectedBroadcastCertType === 'FES') {
+                    hintBroad.innerHTML = `🟢 Bolsa FES: <strong>${saldoFes}</strong> disponibles`;
+                    hintBroad.style.color = saldoFes > 0 ? '#15803D' : '#DC2626';
+                } else {
+                    hintBroad.innerHTML = `🔵 Bolsa FEA (ClaveÚnica): <strong>${saldoFea}</strong> disponibles`;
+                    hintBroad.style.color = saldoFea > 0 ? '#1D4ED8' : '#DC2626';
+                }
+            }
+        }
 
         // Alternar vista del Banner Principal entre FES y FEA
         function togglePackLine(line) {
@@ -1563,6 +1670,7 @@ if ($externalRef || $orderIdParam) {
                 const payload = {
                     titulo: titulo,
                     template_slug: selectedSlug,
+                    tipo_firma: selectedBatchCertType,
                     rows: rows,
                     company: currentCompany
                 };
@@ -1632,7 +1740,20 @@ if ($externalRef || $orderIdParam) {
                 return;
             }
 
-            if (!confirm(`¿Confirmas la firma masiva en 1 Clic para los ${currentBatch.valid_records} contratos válidos de este lote a nombre de ${currentCompany.razon_social}?`)) {
+            const tipoFirma = (currentBatch.tipo_firma || selectedBatchCertType || 'FES').toUpperCase();
+            const tipoLabel = tipoFirma === 'FEA' ? 'Firma Avanzada ClaveÚnica (FEA)' : 'Firma Simple (FES)';
+            const saldoCol = tipoFirma === 'FEA' ? 'saldo_firmas_fea' : 'saldo_firmas_prepago';
+            const saldoDisp = parseInt(currentCompany[saldoCol] || 0);
+            const modalidad = (currentCompany.modalidad_cobro || 'PREPAGO').toUpperCase();
+
+            // Validación de saldo preventivo en UI
+            if (modalidad === 'PREPAGO' && saldoDisp < currentBatch.valid_records) {
+                alert(`Saldo insuficiente de ${tipoLabel}:\nTienes ${saldoDisp} firmas disponibles y necesitas ${currentBatch.valid_records} para este lote.\n\nPor favor, recarga un pack de ${tipoLabel} para continuar.`);
+                openRechargeModal(tipoFirma === 'FEA' ? 'PACK_FEA_50' : 'PACK_FES_50');
+                return;
+            }
+
+            if (!confirm(`¿Confirmas la emisión y firma masiva en 1 Clic con ${tipoLabel} para los ${currentBatch.valid_records} contratos válidos de este lote a nombre de ${currentCompany.razon_social}?`)) {
                 return;
             }
 
@@ -1851,17 +1972,20 @@ if ($externalRef || $orderIdParam) {
             const docTitle = document.getElementById('broadcastDocTitle').value.trim() || 'Documento Corporativo';
             const categoria = document.getElementById('broadcastDocCategory').value;
 
-            // Validar saldo prepago disponible
-            const saldoDisp = parseInt(currentCompany.saldo_firmas_prepago || 0);
+            // Validar saldo prepago disponible según línea FES vs FEA
+            const tipoFirma = (selectedBroadcastCertType || 'FES').toUpperCase();
+            const tipoLabel = tipoFirma === 'FEA' ? 'Firma Avanzada ClaveÚnica (FEA)' : 'Firma Simple (FES)';
+            const saldoCol = tipoFirma === 'FEA' ? 'saldo_firmas_fea' : 'saldo_firmas_prepago';
+            const saldoDisp = parseInt(currentCompany[saldoCol] || 0);
             const modalidad = (currentCompany.modalidad_cobro || 'PREPAGO').toUpperCase();
 
             if (modalidad === 'PREPAGO' && saldoDisp < broadcastWorkers.length) {
-                alert(`Saldo insuficiente: Tienes ${saldoDisp} firmas disponibles y necesitas ${broadcastWorkers.length} para esta nómina.\n\nPor favor, recarga una bolsa de firmas para continuar.`);
-                openRechargeModal();
+                alert(`Saldo insuficiente de ${tipoLabel}:\nTienes ${saldoDisp} firmas disponibles y necesitas ${broadcastWorkers.length} para esta nómina.\n\nPor favor, recarga una bolsa de firmas de ${tipoLabel} para continuar.`);
+                openRechargeModal(tipoFirma === 'FEA' ? 'PACK_FEA_50' : 'PACK_FES_50');
                 return;
             }
 
-            if (!confirm(`¿Confirmas la emisión y difusión masiva de "${docTitle}" a ${broadcastWorkers.length} colaboradores?\n\nSe certificarán los documentos, se archivarán en el Expediente Digital de cada uno y se despacharán las convocatorias a firma.`)) {
+            if (!confirm(`¿Confirmas la emisión y difusión masiva con ${tipoLabel} de "${docTitle}" a ${broadcastWorkers.length} colaboradores?\n\nSe certificarán los documentos, se archivarán en el Expediente Digital de cada uno y se despacharán las convocatorias a firma.`)) {
                 return;
             }
 
@@ -1876,6 +2000,7 @@ if ($externalRef || $orderIdParam) {
                     user_id: currentCompany.user_id,
                     titulo: docTitle,
                     categoria: categoria,
+                    tipo_firma: tipoFirma,
                     pdf_base64: broadcastPdfBase64,
                     file_name: broadcastPdfFile ? broadcastPdfFile.name : 'documento.pdf',
                     workers: broadcastWorkers,
