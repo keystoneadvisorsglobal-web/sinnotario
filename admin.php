@@ -483,7 +483,7 @@ function resolvePaymentMethodDetail(array $ord): array {
     <title>Consola de Administración | SinNotario.cl</title>
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/style.css?v=20261106_4">
+    <link rel="stylesheet" href="assets/css/style.css?v=20261110_2">
     <style>
         .admin-layout {
             display: grid;
@@ -637,7 +637,7 @@ function resolvePaymentMethodDetail(array $ord): array {
     <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0A1C33; padding: 1.5rem;">
         <div style="background: white; border-radius: 16px; padding: 2.5rem; max-width: 420px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
             <div style="text-align: center; margin-bottom: 1.5rem;">
-                <img src="assets/logos/sinnotario-logo.png" alt="SinNotario" style="height: 54px;">
+                <img src="assets/logos/sinnotario-logo.png" alt="SinNotario" style="height: 72px;">
                 <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--primary); margin-top: 0.75rem;">Consola de Administración</h2>
                 <p style="font-size: 0.85rem; color: #64748B;">Keystone Advisors — Acceso Restringido</p>
             </div>

@@ -121,7 +121,7 @@ if (!empty($code)) {
 
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/style.css?v=20261109_2">
+    <link rel="stylesheet" href="assets/css/style.css?v=20261110_2">
     <style>
         :root {
             --firm-navy: #0F2A4A;
@@ -145,7 +145,8 @@ if (!empty($code)) {
             justify-content: space-between;
         }
         .firm-header img {
-            height: 44px;
+            height: 72px;
+            width: auto;
         }
         .firm-container {
             max-width: 920px;

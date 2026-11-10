@@ -1,5 +1,37 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 03:55 UTC-3] - SOL-0120
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0120`
+- **Alcance de los Cambios:**
+  - **Propagación Global del Logotipo Agrandado al 150% en Todas las Cabeceras y Cache-Busting Universal:**
+    1. **Cache-Busting Universal de la Hoja de Estilos:**
+       - Se sincronizó el llamado a la hoja de estilos maestra con la versión unificada `assets/css/style.css?v=20261110_2` en los 14 archivos PHP del portal:
+         - `index.php` (Portal público)
+         - `empresas.php` (Suite B2B Empresas)
+         - `redactar.php` (Wizard interactivo de redacción)
+         - `subir-documento.php` (Carga y firma de PDF propio)
+         - `verificar.php` (Portal de verificación y cotejo SHA-256)
+         - `login.php` (Acceso seguro de clientes)
+         - `mi-cuenta.php` (Bóveda privada de documentos)
+         - `asesoria-legal.php` (Diagnóstico y Smart Legal Check)
+         - `marco-legal.php` (Biblioteca legal BCN)
+         - `terminos-condiciones.php` (Condiciones del servicio)
+         - `politica-privacidad.php` (Políticas de privacidad y ARCO)
+         - `recuperar.php` (Recuperación de credenciales)
+         - `firmar.php` (Portal de comparecencia y firma digital)
+         - `admin.php` (Consola administrativa y operativa)
+    2. **Homologación de Cabeceras Específicas:**
+       - En `admin.php` (pantalla de autenticación y cabecera administrativa), la imagen del logo se aumentó de 54px a 72px.
+       - En `firmar.php` (`.firm-header img`), se incrementó de 44px a 72px con `width: auto` para mantener la jerarquía de marca en el momento culminante de la firma digital.
+    3. **Pruebas Validadas:**
+       - Transferencia atómica individual SCP por cada archivo hacia `/home/u705937345/domains/sinnotario.cl/public_html/`.
+       - Verificación remota de sintaxis con `php -l`: 0 errores en los 14 archivos PHP.
+       - Batería obligatoria de smoke tests en las 8 rutas maestras: 100% `HTTP 200 OK`.
+       - Comprobación de cabecera con cookie de acceso de pre-lanzamiento: las etiquetas HTML enlazan a `style.css?v=20261110_2` y la regla CSS entrega `.brand-logo img { height: 72px; }`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 03:50 UTC-3] - SOL-0119
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

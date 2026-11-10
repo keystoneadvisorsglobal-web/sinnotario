@@ -61,7 +61,7 @@ if ($externalRef || $orderIdParam) {
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/sinnotario-logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=20261110_2">
     <!-- PapaParse para procesamiento cliente de alta velocidad -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>

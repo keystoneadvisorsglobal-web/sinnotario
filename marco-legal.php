@@ -170,7 +170,7 @@ $item = $leyes[$slug];
     
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/style.css?v=20261106_3">
+    <link rel="stylesheet" href="assets/css/style.css?v=20261110_2">
 
     <style>
         .legal-page-header {
