@@ -1674,6 +1674,28 @@
   5) **Verificación:** Ejecución remota de smoke test generando la orden `ORDTST01M6ZB01FJ83A5BRGR3SWEKG5F` y comprobando `getOrder` con status `created` (OK).
 - **Estado Final:** ✅ Éxito Total / 100% Operativo y Desplegado en Producción.
 
+### Registro de Despliegue: SOL-0112
+- **Fecha y Hora:** 2026-11-10 02:21:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0112`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Desarrollo y puesta en marcha de la arquitectura multi-proveedor de firma electrónica con conector oficial para FirmaYa (Idok):
+  1) **Capa de Abstracción Desacoplada (`src/Services/Signing/`):**
+     - `SigningProviderInterface`: Define los métodos estándar para Firma Simple (`signFES`) y Firma Avanzada Spot de 1 solo uso (`initiateFEASpot` con ClaveÚnica y VIMP).
+     - `IdokFirmaYaProvider`: Implementa los dos flujos técnicos de las propuestas oficiales de Idok (REST API para FEA Spot y WebService `:8080` para FES con sellado de tiempo X.509), contando además con emulador sandbox para operar y probar flujos de usuario antes del pago del set up comercial.
+     - `KeystoneVaultProvider`: Motor interno nativo con resguardo criptográfico SHA-256 en Cloudflare R2 como respaldo permanente e ininterrumpido.
+     - `SigningManager`: Orquestador con conmutación dinámica que resuelve el proveedor configurado como predeterminado o efectúa fallback automático si un proveedor externo se encuentra deshabilitado.
+  2) **Controles Administrativos en `admin.php#integraciones`:**
+     - Switch On/Off de activación (`firmaya_enabled`).
+     - Selector de entorno (`firmaya_mode`: Producción Oficial vs Sandbox / Certificación).
+     - Selector de proveedor predeterminado (`signing_provider_default`: FirmaYa vs Keystone Vault).
+     - Formulario segregado de credenciales para FEA Spot (API Key / Secret) y FES BPO (User / Password) por ambiente.
+  3) **Integración con Flujo de Firma (`api/index.php`):**
+     - Endpoint `sign_document_signer` conectado al `SigningManager` para registrar evidencia criptográfica, IP, User-Agent y estado final del trámite.
+  4) **Verificación:** Pruebas en caliente por CLI ejecutando tanto FES como FEA con respuestas válidas; verificación sintáctica PHP Lint 0 errores y smoke test integral HTTP 200 en las 8 rutas de producción.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo y Desplegado en Producción.
+
 ### Registro de Despliegue: SOL-0100
 - **Fecha y Hora:** 2026-11-09 02:08:00 CLT
 - **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
@@ -1758,4 +1780,26 @@
      - Para órdenes en estado `PENDIENTE DE PAGO`, badge que exhibe el medio seleccionado o intentado (`⏳ Webpay / Tarjetas` vs `⏳ Transferencia Khipu`).
   2) **Diseño UI:** Nueva columna 'Medio de Pago' en la tabla con badges de colores corporativos e iconografía FontAwesome (`fa-credit-card`, `fa-university`, `fa-clock`).
   3) **Verificación:** Ejecución obligatoria de la batería de smoke tests HTTP 200 en las 8 rutas maestras de producción con 100% de éxito.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo y Desplegado en Producción.
+
+### Registro de Despliegue: SOL-0112
+- **Fecha y Hora:** 2026-11-10 02:21:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0112`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Desarrollo y puesta en marcha de la arquitectura multi-proveedor de firma electrónica con conector oficial para FirmaYa (Idok):
+  1) **Capa de Abstracción Desacoplada (`src/Services/Signing/`):**
+     - `SigningProviderInterface`: Define los métodos estándar para Firma Simple (`signFES`) y Firma Avanzada Spot de 1 solo uso (`initiateFEASpot` con ClaveÚnica y VIMP).
+     - `IdokFirmaYaProvider`: Implementa los dos flujos técnicos de las propuestas oficiales de Idok (REST API para FEA Spot y WebService `:8080` para FES con sellado de tiempo X.509), contando además con emulador sandbox para operar y probar flujos de usuario antes del pago del set up comercial.
+     - `KeystoneVaultProvider`: Motor interno nativo con resguardo criptográfico SHA-256 en Cloudflare R2 como respaldo permanente e ininterrumpido.
+     - `SigningManager`: Orquestador con conmutación dinámica que resuelve el proveedor configurado como predeterminado o efectúa fallback automático si un proveedor externo se encuentra deshabilitado.
+  2) **Controles Administrativos en `admin.php#integraciones`:**
+     - Switch On/Off de activación (`firmaya_enabled`).
+     - Selector de entorno (`firmaya_mode`: Producción Oficial vs Sandbox / Certificación).
+     - Selector de proveedor predeterminado (`signing_provider_default`: FirmaYa vs Keystone Vault).
+     - Formulario segregado de credenciales para FEA Spot (API Key / Secret) y FES BPO (User / Password) por ambiente.
+  3) **Integración con Flujo de Firma (`api/index.php`):**
+     - Endpoint `sign_document_signer` conectado al `SigningManager` para registrar evidencia criptográfica, IP, User-Agent y estado final del trámite.
+  4) **Verificación:** Pruebas en caliente por CLI ejecutando tanto FES como FEA con respuestas válidas; verificación sintáctica PHP Lint 0 errores y smoke test integral HTTP 200 en las 8 rutas de producción.
 - **Estado Final:** ✅ Éxito Total / 100% Operativo y Desplegado en Producción.

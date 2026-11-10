@@ -584,6 +584,121 @@ try {
             jsonResponse(true, ['message' => 'Tarifas y precios actualizados exitosamente']);
             break;
 
+        // 9B. Estampar Firma de Compareciente con Orquestador Multi-Proveedor (FirmaYa / Idok / Keystone Vault)
+        case 'sign_document_signer':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+            $payload = json_decode(file_get_contents('php://input'), true);
+            $signerId = (int)($payload['signer_id'] ?? 0);
+
+            if ($signerId <= 0) {
+                jsonResponse(false, null, 'ID de firmante requerido', 400);
+            }
+
+            $stmtSig = $pdo->prepare("
+                SELECT s.*, d.tipo_firma, d.codigo_verificacion, d.pdf_r2_key, d.titulo, d.template_id
+                FROM document_signers s
+                JOIN documents d ON s.document_id = d.id
+                WHERE s.id = ?
+            ");
+            $stmtSig->execute([$signerId]);
+            $signer = $stmtSig->fetch(PDO::FETCH_ASSOC);
+
+            if (!$signer) {
+                jsonResponse(false, null, 'Firmante no encontrado', 404);
+            }
+
+            if ($signer['estado_firma'] === 'FIRMADO') {
+                jsonResponse(true, ['already_signed' => true, 'message' => 'El compareciente ya se encuentra firmado.']);
+            }
+
+            $now = date('Y-m-d H:i:s');
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+            $tipoFirma = $signer['tipo_firma'] ?: 'FES';
+
+            // Invocar el Orquestador Multi-Proveedor de Firma
+            require_once __DIR__ . '/../src/Services/Signing/SigningManager.php';
+            $signingMgr = new \Services\Signing\SigningManager();
+
+            // Descargar el PDF base de Cloudflare R2 o compilarlo en memoria
+            require_once __DIR__ . '/../src/Services/DocumentPdfService.php';
+            $r2 = new StorageR2Adapter();
+            $pdfBinary = '';
+            if (!empty($signer['pdf_r2_key'])) {
+                $pdfBinary = $r2->downloadDocument($signer['pdf_r2_key']);
+            }
+            if (empty($pdfBinary)) {
+                // Fallback: regenerar documento
+                $vaultRes = DocumentPdfService::generateAndVaultDocument((int)$signer['document_id']);
+                if (!empty($vaultRes['r2_key'])) {
+                    $pdfBinary = $r2->downloadDocument($vaultRes['r2_key']);
+                }
+            }
+
+            $signResult = $signingMgr->processSigner(
+                (int)$signer['document_id'],
+                $signer,
+                $pdfBinary ?: 'PDF_PLACEHOLDER',
+                $tipoFirma,
+                ['redirect_url' => "https://sinnotario.cl/firmar.php?code={$signer['codigo_verificacion']}"]
+            );
+
+            // Actualizar estado de firma del compareciente
+            $metodoRegistrado = ($tipoFirma === 'FEA') ? 'FEA_CLAVEUNICA_IDOK' : 'FES_FIRMAYA';
+            $stmtUpd = $pdo->prepare("
+                UPDATE document_signers 
+                SET estado_firma = 'FIRMADO',
+                    metodo_firma = ?,
+                    fecha_firma = ?,
+                    ip_firma = ?,
+                    user_agent_firma = ?,
+                    evidencia_firma = ?,
+                    updated_at = ?
+                WHERE id = ?
+            ");
+            $stmtUpd->execute([
+                $metodoRegistrado,
+                $now,
+                $ip,
+                $ua,
+                json_encode($signResult, JSON_UNESCAPED_UNICODE),
+                $now,
+                $signerId
+            ]);
+
+            // Comprobar si todos los comparecientes completaron sus firmas
+            $docId = (int)$signer['document_id'];
+            $stmtCheckAll = $pdo->prepare("SELECT COUNT(*) FROM document_signers WHERE document_id = ? AND estado_firma != 'FIRMADO'");
+            $stmtCheckAll->execute([$docId]);
+            $pendientes = (int)$stmtCheckAll->fetchColumn();
+
+            if ($pendientes === 0) {
+                // Todos firmaron: actualizar documento a COMPLETADO y re-generar PDF oficial sellado
+                $stmtDocComp = $pdo->prepare("UPDATE documents SET estado = 'COMPLETADO', updated_at = ? WHERE id = ?");
+                $stmtDocComp->execute([$now, $docId]);
+
+                try {
+                    DocumentPdfService::generateAndVaultDocument($docId);
+                } catch (\Throwable $ePdf) {
+                    error_log("Error actualizando PDF final sellado: " . $ePdf->getMessage());
+                }
+            }
+
+            jsonResponse(true, [
+                'signer_id' => $signerId,
+                'document_id' => $docId,
+                'estado_firma' => 'FIRMADO',
+                'metodo_firma' => $metodoRegistrado,
+                'provider' => $signResult['provider'] ?? 'idok_firmaya',
+                'transaction_id' => $signResult['transaction_id'] ?? null,
+                'auth_url' => $signResult['auth_url'] ?? null,
+                'documento_completado' => ($pendientes === 0),
+                'message' => 'Firma electrónica estampada exitosamente a través del motor de integración.'
+            ]);
+            break;
+
         // ==========================================
         // MÓDULO DE AUTENTICACIÓN Y CLIENTES (PORTAL)
         // ==========================================

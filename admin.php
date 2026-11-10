@@ -196,6 +196,30 @@ if (isset($_POST['save_integrations_settings'])) {
         }
     }
 
+    // Parámetros Integración de Firma Electrónica (FirmaYa / Idok y Multi-Proveedor)
+    $firmayaEnabled = isset($_POST['firmaya_enabled']) && $_POST['firmaya_enabled'] === '1' ? '1' : '0';
+    $stmtFyEn = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('firmaya_enabled', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+    $stmtFyEn->execute([$firmayaEnabled]);
+
+    if (isset($_POST['signing_provider_default'])) {
+        $stmtDefProv = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('signing_provider_default', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+        $stmtDefProv->execute([trim($_POST['signing_provider_default'])]);
+    }
+
+    $firmayaFields = [
+        'firmaya_mode',
+        'firmaya_fea_url_production', 'firmaya_fea_key_production', 'firmaya_fea_secret_production',
+        'firmaya_fea_url_sandbox', 'firmaya_fea_key_sandbox', 'firmaya_fea_secret_sandbox',
+        'firmaya_fes_url_production', 'firmaya_fes_user_production', 'firmaya_fes_pass_production',
+        'firmaya_fes_url_sandbox', 'firmaya_fes_user_sandbox', 'firmaya_fes_pass_sandbox'
+    ];
+    $stmtFyFields = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+    foreach ($firmayaFields as $ff) {
+        if (isset($_POST[$ff])) {
+            $stmtFyFields->execute([$ff, trim($_POST[$ff])]);
+        }
+    }
+
     // Modo Sandbox / Pruebas Exclusivo para Wizards (SOL-0106)
     $wizardSandbox = isset($_POST['wizard_sandbox_mode']) && $_POST['wizard_sandbox_mode'] === '1' ? '1' : '0';
     $stmtWizSb = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('wizard_sandbox_mode', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
@@ -1755,6 +1779,107 @@ function resolvePaymentMethodDetail(array $ord): array {
                                             <input type="checkbox" name="wizard_sandbox_mode" value="1" <?= $isWizSandbox ? 'checked' : '' ?> style="width:18px; height:18px; accent-color:#D97706;">
                                             <span>Activar Modo Pruebas / Demo en Wizards</span>
                                         </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MODULO DE INTEGRACION DE FIRMA ELECTRONICA MULTI-PROVEEDOR (FIRMAYA / IDOK) -->
+                        <?php
+                            $isFyActive = ($sysSettings['firmaya_enabled'] ?? '0') === '1';
+                            $fyMode = $sysSettings['firmaya_mode'] ?? 'sandbox';
+                            $signingDefault = $sysSettings['signing_provider_default'] ?? 'idok_firmaya';
+                            $hasFeaCreds = !empty($sysSettings["firmaya_fea_key_{$fyMode}"] ?? '');
+                            $hasFesCreds = !empty($sysSettings["firmaya_fes_user_{$fyMode}"] ?? '');
+                        ?>
+                        <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
+                            <div style="margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                                <div>
+                                    <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem; font-size:1.05rem;">
+                                        <i class="fas fa-signature" style="color:#059669;"></i> Motor de Firma Electrónica: FirmaYa / Idok (FEA Spot & FES)
+                                    </label>
+                                    <p style="font-size:0.78rem; color:#64748B; margin:0.15rem 0 0;">
+                                        Integración desacoplada con Idok para Firma Avanzada Spot (ClaveÚnica / VIMP de 1 uso) y Firma Simple BPO. Arquitectura extensible multi-proveedor.
+                                    </p>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:0.75rem;">
+                                    <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; background:<?= $isFyActive ? '#ECFDF5' : '#F1F5F9' ?>; padding:4px 10px; border-radius:6px; border:1px solid <?= $isFyActive ? '#A7F3D0' : '#CBD5E1' ?>; font-size:0.82rem; font-weight:700; color:<?= $isFyActive ? '#065F46' : '#64748B' ?>;">
+                                        <input type="checkbox" name="firmaya_enabled" value="1" <?= $isFyActive ? 'checked' : '' ?> style="accent-color:#059669;">
+                                        Habilitar Proveedor FirmaYa
+                                    </label>
+                                    <span style="background:<?= $isFyActive ? '#DCFCE7' : '#F1F5F9' ?>; color:<?= $isFyActive ? '#15803D' : '#64748B' ?>; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px;">
+                                        <?= !$isFyActive ? '<i class="fas fa-ban"></i> DESACTIVADO' : '<i class="fas fa-check-circle"></i> ACTIVO (' . strtoupper($fyMode) . ')' ?>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Selector de Modo Sandbox / Producción y Proveedor Predeterminado -->
+                            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span style="font-size:0.85rem; font-weight:800; color:#0F2A4A;"><i class="fas fa-toggle-on" style="color:#059669;"></i> Entorno Activo:</span>
+                                    <select name="firmaya_mode" class="form-control" style="display:inline-block; width:auto; font-weight:700; padding:4px 10px; font-size:0.85rem;">
+                                        <option value="production" <?= $fyMode === 'production' ? 'selected' : '' ?>>🚀 Producción Oficial (FirmaYa Idok)</option>
+                                        <option value="sandbox" <?= $fyMode === 'sandbox' ? 'selected' : '' ?>>🧪 Sandbox / Certificación (Simulador Idok)</option>
+                                    </select>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span style="font-size:0.85rem; font-weight:800; color:#0F2A4A;"><i class="fas fa-sliders-h" style="color:#2563EB;"></i> Proveedor Activo:</span>
+                                    <select name="signing_provider_default" class="form-control" style="display:inline-block; width:auto; font-weight:700; padding:4px 10px; font-size:0.85rem;">
+                                        <option value="idok_firmaya" <?= $signingDefault === 'idok_firmaya' ? 'selected' : '' ?>>FirmaYa / Idok (FEA ClaveÚnica & FES)</option>
+                                        <option value="keystone_vault" <?= $signingDefault === 'keystone_vault' ? 'selected' : '' ?>>Keystone Vault (Firma Criptográfica R2 Nativa)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Bloque 1: Credenciales FEA Spot (Firma Avanzada de Un Solo Uso) -->
+                            <div style="border:1px solid #E2E8F0; border-radius:8px; padding:1rem; margin-bottom:1rem; background:#FFFFFF;">
+                                <div style="font-size:0.85rem; font-weight:800; color:#D97706; margin-bottom:0.75rem; display:flex; align-items:center; justify-content:space-between;">
+                                    <span style="display:flex; align-items:center; gap:6px;">
+                                        <i class="fas fa-award"></i> Credenciales FEA Spot (ClaveÚnica + VIMP REST API)
+                                    </span>
+                                    <span style="font-size:0.72rem; color:#64748B;">Doc: https://firmaya.idok.cl/api_docs_spot.html</span>
+                                </div>
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem;">
+                                    <div class="form-group" style="grid-column:span 2;">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">API Key (Producción)</label>
+                                        <input type="text" name="firmaya_fea_key_production" class="form-control" placeholder="IDOK-PROD-FEA-KEY-..." value="<?= htmlspecialchars($sysSettings['firmaya_fea_key_production'] ?? '') ?>">
+                                    </div>
+                                    <div class="form-group" style="grid-column:span 2;">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">API Secret (Producción)</label>
+                                        <input type="password" name="firmaya_fea_secret_production" class="form-control" placeholder="••••••••••••••••••••" value="<?= htmlspecialchars($sysSettings['firmaya_fea_secret_production'] ?? '') ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">API Key (Sandbox / Certificación)</label>
+                                        <input type="text" name="firmaya_fea_key_sandbox" class="form-control" placeholder="IDOK-TEST-FEA-KEY-..." value="<?= htmlspecialchars($sysSettings['firmaya_fea_key_sandbox'] ?? '') ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">API Secret (Sandbox / Certificación)</label>
+                                        <input type="password" name="firmaya_fea_secret_sandbox" class="form-control" placeholder="••••••••••••••••••••" value="<?= htmlspecialchars($sysSettings['firmaya_fea_secret_sandbox'] ?? '') ?>">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bloque 2: Credenciales FES WebService (Firma Simple BPO M2M) -->
+                            <div style="border:1px solid #E2E8F0; border-radius:8px; padding:1rem; background:#F8FAFC;">
+                                <div style="font-size:0.85rem; font-weight:800; color:#059669; margin-bottom:0.75rem; display:flex; align-items:center; gap:6px;">
+                                    <i class="fas fa-file-signature"></i> Credenciales FES BPO WebService (Firma Simple Machine-to-Machine)
+                                </div>
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem;">
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Usuario BPO (Producción)</label>
+                                        <input type="text" name="firmaya_fes_user_production" class="form-control" placeholder="keystone_bpo_prod" value="<?= htmlspecialchars($sysSettings['firmaya_fes_user_production'] ?? '') ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Contraseña BPO (Producción)</label>
+                                        <input type="password" name="firmaya_fes_pass_production" class="form-control" placeholder="••••••••••••" value="<?= htmlspecialchars($sysSettings['firmaya_fes_pass_production'] ?? '') ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Usuario BPO (Sandbox)</label>
+                                        <input type="text" name="firmaya_fes_user_sandbox" class="form-control" placeholder="keystone_bpo_test" value="<?= htmlspecialchars($sysSettings['firmaya_fes_user_sandbox'] ?? '') ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Contraseña BPO (Sandbox)</label>
+                                        <input type="password" name="firmaya_fes_pass_sandbox" class="form-control" placeholder="••••••••••••" value="<?= htmlspecialchars($sysSettings['firmaya_fes_pass_sandbox'] ?? '') ?>">
                                     </div>
                                 </div>
                             </div>
