@@ -63,7 +63,7 @@ body {
 }
 
 .brand-logo img {
-    height: 48px;
+    height: 72px;
     width: auto;
     display: block;
     transition: transform 0.2s ease;
@@ -654,7 +654,7 @@ body {
 
 @media (max-width: 900px) {
     .brand-logo img {
-        height: 60px;
+        height: 64px;
     }
     .nav-container {
         padding: 0.65rem 1rem;
@@ -706,7 +706,7 @@ body {
         padding: 2.5rem 1rem;
     }
     .brand-logo img {
-        height: 48px;
+        height: 56px;
     }
     .portal-hero-container {
         flex-direction: column;

@@ -1,5 +1,22 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 03:40 UTC-3] - SOL-0118
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0118`
+- **Alcance de los Cambios:**
+  - **Aumento de 50% en la Escala del Logotipo Corporativo (Navbar y Header):**
+    1. **Ajuste de Hoja de Estilos (`assets/css/style.css`):**
+       - La altura base de `.brand-logo img` se incrementó en un **50%** exacto: de **48px a 72px** en vistas desktop.
+       - Escalado responsivo armonizado: de 60px a **64px** en tablets (`max-width: 900px`) y de 48px a **56px** en pantallas móviles (`max-width: 640px`).
+    2. **Cache-Busting en Portada (`index.php`):**
+       - Se actualizó el parámetro de versión a `assets/css/style.css?v=20261110_1` para forzar la recarga inmediata en los navegadores de los usuarios.
+    3. **Pruebas Validadas:**
+       - Transferencia atómica SCP a producción.
+       - Verificación de sintaxis remota: `php -l index.php` (0 errores).
+       - Batería obligatoria de smoke tests (`curl`) sobre las 8 rutas maestras con 100% `HTTP 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 03:35 UTC-3] - SOL-0117
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
