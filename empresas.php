@@ -2671,7 +2671,6 @@ if ($externalRef || $orderIdParam) {
                 alert("Error de comunicación: " + e.message);
             }
         }
-        }
     </script>
 </body>
 </html>

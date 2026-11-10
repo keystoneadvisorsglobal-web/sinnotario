@@ -1,5 +1,30 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 16:10 UTC-3] - SOL-0124
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0124`
+- **Alcance de los Cambios:**
+  - **Reparación de Cierre Sintáctico JavaScript en Suite B2B y Reactivación Total de Botones:**
+    1. **Diagnóstico Técnico de Causa Raíz:**
+       - En `empresas.php`, al final de la función `deleteBatchConfirm()`, quedó un carácter duplicado de cierre de bloque `}` en la línea 2674:
+         ```javascript
+             } catch (e) {
+                 alert("Error de comunicación: " + e.message);
+             }
+         }
+         } // <-- Llave huérfana
+         ```
+       - Este carácter provocaba que el motor de JavaScript del navegador abortara la compilación completa del `<script>` (`Uncaught SyntaxError: Unexpected token '}'`), evitando que se inicializaran los `addEventListener`, las funciones globales `openSimulationModal()`, `downloadSampleCsv()`, la carga de la nómina y el renderizado de la interfaz.
+    2. **Corrección y Validación Estricta:**
+       - Se eliminó la llave redundante en `empresas.php`.
+       - Se auditó todo el bloque JavaScript mediante motor Node.js/V8 arrojando: `ALL SCRIPTS PASS SYNTAX CHECK 100%!`.
+    3. **Despliegue y Pruebas Validadas:**
+       - Transferencia atómica SCP de `empresas.php` a producción.
+       - Inspección de sintaxis remota `php -l empresas.php` (0 errores).
+       - Batería obligatoria de smoke tests en las 8 rutas maestras: 100% `HTTP 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 15:52 UTC-3] - SOL-0123
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
