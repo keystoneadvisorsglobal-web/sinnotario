@@ -1,5 +1,24 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 15:52 UTC-3] - SOL-0123
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0123`
+- **Alcance de los Cambios:**
+  - **Retiro de Enlace Público a Consola Operativa y Hotfix de Base de Datos para Simulador B2B:**
+    1. **Seguridad y Navegación Institucional (`empresas.php`):**
+       - Se retiró de forma permanente el enlace `Consola Operativa` (`admin.php`) del navbar de la Suite Empresas. La consola administrativa queda restringida exclusivamente por URL directa para operadores autorizados con doble autenticación.
+    2. **Diagnóstico y Corrección Causa Raíz Simulador B2B:**
+       - Al presionar *"Generar y Enviar Piloto a Mi Correo"*, la API arrojaba la excepción `table documents has no column named is_simulation` en SQLite.
+       - La adición de la columna en `Database.php` se encontraba en `initSchema()`. Dado que la base de datos de producción ya existía previamente, `Database.php` ejecutaba `migrateSchema()`, por lo que la columna no se había aplicado a la tabla física `documents`.
+       - Se ejecutó la migración manual en `sinnotario.sqlite` y se incluyó la migración automática e idempotente en `Database::migrateSchema()`.
+    3. **Resiliencia en Generación de QR (`lib/phpqrcode/qrlib.php`):**
+       - Se protegió la inclusión del archivo `qrvect.php` mediante `file_exists()` para eliminar warnings de inclusión durante la generación del PDF.
+    4. **Pruebas Validadas:**
+       - Prueba en vivo end-to-end de simulación B2B ejecutada directamente en producción con respuesta `Sign OK` y despacho de correo al destinatario de prueba.
+       - Batería obligatoria de smoke tests en las 8 rutas maestras: 100% `HTTP 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 15:48 UTC-3] - SOL-0122
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

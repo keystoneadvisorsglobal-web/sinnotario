@@ -123,6 +123,19 @@ class Database {
                 }
             }
 
+            // Migrar columnas en documents
+            $docColsStmt = $this->pdo->query("PRAGMA table_info(documents);");
+            $docCols = $docColsStmt ? $docColsStmt->fetchAll(PDO::FETCH_COLUMN, 1) : [];
+            $missingDocCols = [
+                'tipo_firma' => "ALTER TABLE documents ADD COLUMN tipo_firma VARCHAR(10) DEFAULT 'FES';",
+                'is_simulation' => "ALTER TABLE documents ADD COLUMN is_simulation INTEGER DEFAULT 0;"
+            ];
+            foreach ($missingDocCols as $dCol => $dSql) {
+                if (!in_array($dCol, $docCols)) {
+                    $this->pdo->exec($dSql);
+                }
+            }
+
             // Historial de Recargas de Bolsas y Facturaciones B2B
             $this->pdo->exec("CREATE TABLE IF NOT EXISTS b2b_billing_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

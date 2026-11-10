@@ -34,7 +34,9 @@
 	include $QR_BASEDIR."qrtools.php";
 	include $QR_BASEDIR."qrspec.php";
 	include $QR_BASEDIR."qrimage.php";
-	include $QR_BASEDIR."qrvect.php";
+	if (file_exists($QR_BASEDIR."qrvect.php")) {
+		include $QR_BASEDIR."qrvect.php";
+	}
 	include $QR_BASEDIR."qrinput.php";
 	include $QR_BASEDIR."qrbitstream.php";
 	include $QR_BASEDIR."qrsplit.php";

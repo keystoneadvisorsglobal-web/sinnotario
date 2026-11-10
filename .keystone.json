@@ -1,0 +1,18 @@
+{
+  "$schema": "https://gateway.keystoneadvisors.cl/schemas/project-config.v1.json",
+  "project_key": "SinNotario",
+  "project_name": "SinNotario Web & Notaría Digital",
+  "technology": "php",
+  "keyhub": {
+    "project_id": "prj_ksvr_91ff",
+    "project_name": "KS VARIOS",
+    "bug_column_name": "Bugs / Por Corregir",
+    "deploy_column_name": "Listo para QA"
+  },
+  "governance": {
+    "correlative_prefix": "SOL",
+    "syntax_check_command": "php -l",
+    "min_test_coverage": 85
+  }
+}
+

@@ -136,7 +136,6 @@ if ($externalRef || $orderIdParam) {
                 <li><a href="index.php">Portal Público</a></li>
                 <li><a href="empresas.php" class="active">Suite Empresas B2B</a></li>
                 <li><a href="mi-cuenta.php">Mi Bóveda</a></li>
-                <li><a href="admin.php">Consola Operativa</a></li>
             </ul>
             <div>
                 <a href="docs/manual-operativo-empresas.php" target="_blank" class="btn-cta" style="background:#F1F5F9; color:#0A1C33 !important; border:1px solid #CBD5E1; margin-right:8px;">
