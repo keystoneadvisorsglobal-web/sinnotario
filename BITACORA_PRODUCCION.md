@@ -1,5 +1,22 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 15:48 UTC-3] - SOL-0122
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0122`
+- **Alcance de los Cambios:**
+  - **Expansión Horizontal del Navbar (Fluid 96%) y Desahogo Visual de Cabecera:**
+    1. **Ajuste de Hoja de Estilos Maestra (`assets/css/style.css`):**
+       - Se amplió el ancho del contenedor maestro `.nav-container` desde un límite estricto de `1240px` a un diseño fluido panorámico: `max-width: 96%; width: 100%; padding: 0.65rem 1.75rem; gap: 1.5rem;`.
+       - Este cambio elimina la compresión y el aspecto abultado de la cabecera en `empresas.php` y el resto de páginas, permitiendo que el logotipo en alta resolución de 72px, los enlaces de navegación ('Portal Público', 'Suite Empresas B2B', 'Mi Bóveda', 'Consola Operativa') y los botones CTA ('Instructivo PDF' y 'Soporte Empresas') respiren con espacio horizontal óptimo.
+    2. **Cache-Busting Universal de Estilos:**
+       - Actualización en las 14 páginas PHP del portal hacia `style.css?v=20261110_3` para forzar la actualización inmediata en navegadores de clientes.
+    3. **Pruebas Validadas:**
+       - Verificación de sintaxis remota (`php -l`): 0 errores en todos los scripts.
+       - Smoke tests HTTP/2 automáticos: 100% `HTTP 200 OK` en `empresas.php` e `index.php`.
+       - Commit `ef5ca59` sincronizado en la rama `main` de GitHub.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 04:15 UTC-3] - SOL-0121
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
