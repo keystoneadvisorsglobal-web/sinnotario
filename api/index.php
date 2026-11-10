@@ -729,6 +729,39 @@ try {
             }
             break;
 
+        // 10b. Verificación de Código 2FA WhatsApp OTP (SOL-0123)
+        case 'auth_verify_otp':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+            $input = json_decode(file_get_contents('php://input'), true);
+            $email = $input['email'] ?? '';
+            $otp = $input['otp_code'] ?? '';
+
+            try {
+                $sessionData = AuthService::verifyOtp($email, $otp);
+                jsonResponse(true, $sessionData);
+            } catch (Exception $e) {
+                jsonResponse(false, null, $e->getMessage(), 400);
+            }
+            break;
+
+        // 10c. Reenvío de Código 2FA WhatsApp OTP (SOL-0123)
+        case 'auth_resend_otp':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonResponse(false, null, 'Método no permitido', 405);
+            }
+            $input = json_decode(file_get_contents('php://input'), true);
+            $email = $input['email'] ?? '';
+
+            try {
+                AuthService::resendOtp($email);
+                jsonResponse(true, ['message' => 'Código reenviado exitosamente a tu WhatsApp']);
+            } catch (Exception $e) {
+                jsonResponse(false, null, $e->getMessage(), 400);
+            }
+            break;
+
         // 11. Registro de nuevo usuario
         case 'auth_register':
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

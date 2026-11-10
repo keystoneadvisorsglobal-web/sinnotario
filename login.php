@@ -320,6 +320,29 @@ if (empty($googleClientId)) {
                     </button>
                 </form>
 
+                <!-- FORMULARIO 2FA WHATSAPP OTP (SOL-0123) -->
+                <form id="form2FA" style="display:none;" onsubmit="submit2FA(event)">
+                    <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:1.25rem 1rem; margin-bottom:1.5rem; text-align:center;">
+                        <div style="font-size:1.8rem; margin-bottom:0.35rem;">🛡️</div>
+                        <div style="font-weight:800; color:#166534; font-size:1rem; margin-bottom:0.25rem;">Doble Factor Activo (2FA)</div>
+                        <div style="font-size:0.86rem; color:#15803D;" id="txt2FaTargetPhone">Código de seguridad enviado a tu WhatsApp</div>
+                    </div>
+
+                    <div class="form-floating-custom" style="text-align:center;">
+                        <label for="input2FaCode" style="text-align:center; display:block; margin-bottom:0.6rem; font-weight:700; color:#0A1C33;"><i class="fas fa-key"></i> Ingrese el Código de 6 Dígitos:</label>
+                        <input type="text" id="input2FaCode" maxlength="6" pattern="[0-9]{6}" required placeholder="••••••" style="text-align:center; font-size:1.8rem; letter-spacing:0.5rem; font-weight:800; color:#0A1C33; background:#F8FAFC;" autocomplete="one-time-code">
+                    </div>
+
+                    <button type="submit" class="btn-submit-auth" id="btn2FaSubmit" style="background:linear-gradient(135deg, #15803D 0%, #16A34A 100%);">
+                        <i class="fas fa-shield-alt"></i> Verificar y Entrar ➜
+                    </button>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem; font-size:0.85rem;">
+                        <a href="javascript:void(0)" onclick="resend2FaCode()" style="color:#0066CC; text-decoration:none; font-weight:700;"><i class="fas fa-sync-alt"></i> Reenviar Código</a>
+                        <a href="javascript:void(0)" onclick="cancel2Fa()" style="color:#DC2626; text-decoration:none; font-weight:700;"><i class="fas fa-times"></i> Cancelar</a>
+                    </div>
+                </form>
+
                 <!-- FORMULARIO 2: CREAR CUENTA -->
                 <form id="formRegister" style="<?= $tab === 'registro' ? 'display:block;' : 'display:none;' ?>" onsubmit="submitRegister(event)">
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -419,6 +442,8 @@ if (empty($googleClientId)) {
             el.style.display = 'block';
         }
 
+        let active2FaEmail = '';
+
         // 1. Enviar Login
         async function submitLogin(e) {
             e.preventDefault();
@@ -439,10 +464,23 @@ if (empty($googleClientId)) {
                 const data = await res.json();
 
                 if (data.success) {
-                    showAlert('¡Bienvenido! Redirigiendo a tu bóveda...', true);
-                    setTimeout(() => {
-                        window.location.href = redirectTarget;
-                    }, 800);
+                    if (data.data && data.data.requires_2fa) {
+                        // Activar pantalla de Desafío 2FA WhatsApp
+                        active2FaEmail = data.data.email;
+                        document.getElementById('formLogin').style.display = 'none';
+                        document.getElementById('btnGoogleAuth').style.display = 'none';
+                        document.querySelector('.auth-divider').style.display = 'none';
+                        document.querySelector('.auth-tabs').style.display = 'none';
+                        document.getElementById('txt2FaTargetPhone').innerHTML = `Hemos enviado un código a tu WhatsApp <strong>${data.data.masked_phone}</strong>`;
+                        document.getElementById('form2FA').style.display = 'block';
+                        document.getElementById('input2FaCode').focus();
+                        showAlert('Código enviado a tu WhatsApp.', true);
+                    } else {
+                        showAlert('¡Bienvenido! Redirigiendo a tu bóveda...', true);
+                        setTimeout(() => {
+                            window.location.href = redirectTarget;
+                        }, 800);
+                    }
                 } else {
                     showAlert(data.error || 'Credenciales incorrectas');
                     btn.disabled = false;
@@ -453,6 +491,84 @@ if (empty($googleClientId)) {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar a mi Bóveda';
             }
+        }
+
+        // 1b. Enviar Desafío 2FA (SOL-0123)
+        async function submit2FA(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn2FaSubmit');
+            const otpCode = document.getElementById('input2FaCode').value.trim();
+
+            if (otpCode.length !== 6) {
+                showAlert('Por favor ingresa los 6 dígitos del código.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+
+            try {
+                const res = await fetch('api/index.php?action=auth_verify_otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: active2FaEmail, otp_code: otpCode })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showAlert('¡Identidad verificada exitosamente! Entrando a tu bóveda...', true);
+                    setTimeout(() => {
+                        window.location.href = redirectTarget;
+                    }, 800);
+                } else {
+                    showAlert(data.error || 'Código incorrecto o expirado.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-shield-alt"></i> Verificar y Entrar ➜';
+                    document.getElementById('input2FaCode').select();
+                }
+            } catch (err) {
+                showAlert('Error al verificar: ' + err.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-shield-alt"></i> Verificar y Entrar ➜';
+            }
+        }
+
+        // 1c. Reenviar Código 2FA
+        async function resend2FaCode() {
+            if (!active2FaEmail) return;
+            showAlert('Reenviando código a tu WhatsApp...', true);
+            try {
+                const res = await fetch('api/index.php?action=auth_resend_otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: active2FaEmail })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showAlert('Nuevo código despachado a tu WhatsApp.', true);
+                    document.getElementById('input2FaCode').value = '';
+                    document.getElementById('input2FaCode').focus();
+                } else {
+                    showAlert(data.error || 'No fue posible reenviar el código.');
+                }
+            } catch (err) {
+                showAlert('Error al reenviar código: ' + err.message);
+            }
+        }
+
+        // 1d. Cancelar 2FA
+        function cancel2Fa() {
+            active2FaEmail = '';
+            document.getElementById('form2FA').style.display = 'none';
+            document.getElementById('formLogin').style.display = 'block';
+            document.getElementById('btnGoogleAuth').style.display = 'flex';
+            document.querySelector('.auth-divider').style.display = 'flex';
+            document.querySelector('.auth-tabs').style.display = 'grid';
+            document.getElementById('input2FaCode').value = '';
+            const btn = document.getElementById('btnLoginSubmit');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar a mi Bóveda';
+            document.getElementById('authAlert').style.display = 'none';
         }
 
         // 2. Enviar Registro

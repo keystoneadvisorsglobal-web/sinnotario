@@ -136,6 +136,19 @@ class Database {
                 }
             }
 
+            // Migrar columnas 2FA en users (SOL-0123)
+            $userColsStmt = $this->pdo->query("PRAGMA table_info(users);");
+            $userCols = $userColsStmt ? $userColsStmt->fetchAll(PDO::FETCH_COLUMN, 1) : [];
+            $missingUserCols = [
+                'otp_code' => "ALTER TABLE users ADD COLUMN otp_code VARCHAR(255);",
+                'otp_expires_at' => "ALTER TABLE users ADD COLUMN otp_expires_at DATETIME;"
+            ];
+            foreach ($missingUserCols as $uCol => $uSql) {
+                if (!in_array($uCol, $userCols)) {
+                    $this->pdo->exec($uSql);
+                }
+            }
+
             // Historial de Recargas de Bolsas y Facturaciones B2B
             $this->pdo->exec("CREATE TABLE IF NOT EXISTS b2b_billing_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

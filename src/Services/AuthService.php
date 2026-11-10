@@ -68,7 +68,7 @@ class AuthService {
     }
 
     /**
-     * Iniciar sesión con email y contraseña
+     * Iniciar sesión con email y contraseña (Paso 1 del 2FA WhatsApp OTP - SOL-0123)
      */
     public static function loginWithPassword($email, $password, $remember = true) {
         $email = strtolower(trim($email));
@@ -95,7 +95,117 @@ class AuthService {
             throw new Exception("Contraseña incorrecta. Por favor verifica tus credenciales.");
         }
 
+        // Si el usuario tiene teléfono celular registrado, iniciar desafío 2FA vía WhatsApp OTP
+        $userPhone = !empty($user['telefono']) ? trim($user['telefono']) : '';
+        if (!empty($userPhone)) {
+            $otp = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+            $otpHash = password_hash($otp, PASSWORD_BCRYPT);
+
+            $stmtOtp = self::getDb()->prepare("UPDATE users SET otp_code = ?, otp_expires_at = datetime('now', '+5 minutes') WHERE id = ?");
+            $stmtOtp->execute([$otpHash, $user['id']]);
+
+            // Despachar OTP vía WhatsApp
+            try {
+                require_once __DIR__ . '/WhatsAppService.php';
+                $wa = new WhatsAppService();
+                $nombreCompleto = trim($user['nombre'] . ' ' . $user['apellido']);
+                $msg = "🛡️ *SinNotario.cl Security (2FA)*\n\nHola {$nombreCompleto},\nTu código de verificación para ingresar a tu Bóveda es:\n\n👉 *{$otp}*\n\nEste código es válido por 5 minutos.";
+                $wa->sendTextMessage($userPhone, $msg, 'keystone-general', null, $nombreCompleto, '2FA_OTP');
+            } catch (\Throwable $eWa) {
+                error_log("Error despachando 2FA WhatsApp en SinNotario: " . $eWa->getMessage());
+            }
+
+            // Guardar estado pendiente en sesión temporal
+            if (session_status() === PHP_SESSION_NONE) {
+                @session_start();
+            }
+            $_SESSION['2fa_pending_uid'] = $user['id'];
+            $_SESSION['2fa_pending_email'] = $user['email'];
+            $_SESSION['2fa_pending_remember'] = $remember;
+
+            $maskedPhone = substr($userPhone, 0, 4) . '***' . substr($userPhone, -4);
+
+            return [
+                'requires_2fa' => true,
+                'email' => $user['email'],
+                'masked_phone' => $maskedPhone,
+                'message' => "Código de 6 dígitos enviado a tu WhatsApp ({$maskedPhone})"
+            ];
+        }
+
+        // Si no tiene teléfono configurado aún, conceder sesión directa
         return self::establishSession($user, $remember);
+    }
+
+    /**
+     * Verificar código 2FA WhatsApp OTP (Paso 2 - SOL-0123)
+     */
+    public static function verifyOtp($email, $otpEntered) {
+        $email = strtolower(trim($email));
+        $otpEntered = trim($otpEntered);
+
+        if (empty($email) || empty($otpEntered)) {
+            throw new Exception("Debes ingresar el código de 6 dígitos.");
+        }
+
+        $stmt = self::getDb()->prepare("SELECT * FROM users WHERE LOWER(email) = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user || empty($user['otp_code'])) {
+            throw new Exception("Sesión de verificación expirada o inválida. Inicia sesión nuevamente.");
+        }
+
+        // Verificar expiración
+        $stmtExp = self::getDb()->prepare("SELECT datetime('now') > ?");
+        $stmtExp->execute([$user['otp_expires_at']]);
+        if ((int)$stmtExp->fetchColumn() === 1) {
+            throw new Exception("El código de 6 dígitos ha expirado (validez de 5 minutos). Solicita uno nuevo.");
+        }
+
+        if (!password_verify($otpEntered, $user['otp_code'])) {
+            throw new Exception("Código de verificación incorrecto. Revisa tu WhatsApp.");
+        }
+
+        // Limpiar OTP en base de datos
+        $stmtClean = self::getDb()->prepare("UPDATE users SET otp_code = NULL, otp_expires_at = NULL WHERE id = ?");
+        $stmtClean->execute([$user['id']]);
+
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+        $remember = !empty($_SESSION['2fa_pending_remember']);
+        unset($_SESSION['2fa_pending_uid'], $_SESSION['2fa_pending_email'], $_SESSION['2fa_pending_remember']);
+
+        return self::establishSession($user, $remember);
+    }
+
+    /**
+     * Reenviar código OTP 2FA por WhatsApp
+     */
+    public static function resendOtp($email) {
+        $email = strtolower(trim($email));
+        $stmt = self::getDb()->prepare("SELECT * FROM users WHERE LOWER(email) = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user || empty($user['telefono'])) {
+            throw new Exception("Usuario no encontrado o sin celular registrado.");
+        }
+
+        $otp = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+        $otpHash = password_hash($otp, PASSWORD_BCRYPT);
+
+        $stmtOtp = self::getDb()->prepare("UPDATE users SET otp_code = ?, otp_expires_at = datetime('now', '+5 minutes') WHERE id = ?");
+        $stmtOtp->execute([$otpHash, $user['id']]);
+
+        require_once __DIR__ . '/WhatsAppService.php';
+        $wa = new WhatsAppService();
+        $nombreCompleto = trim($user['nombre'] . ' ' . $user['apellido']);
+        $msg = "🛡️ *SinNotario.cl Security (2FA)*\n\nHola {$nombreCompleto},\nTu nuevo código de verificación es:\n\n👉 *{$otp}*\n\nExpira en 5 minutos.";
+        $wa->sendTextMessage($user['telefono'], $msg, 'keystone-general', null, $nombreCompleto, '2FA_OTP');
+
+        return true;
     }
 
     /**
