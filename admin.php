@@ -306,6 +306,119 @@ $currentPrecioUpgradeFea = (int)($sysSettings['precio_upgrade_fea'] ?? 2990);
 // Recargar plantillas
 $stmtTemplates = $pdo->query("SELECT * FROM templates ORDER BY id ASC");
 $allTemplates = $stmtTemplates->fetchAll();
+
+/**
+ * Función auxiliar para parsear y desglosar el medio de pago real / intentado
+ */
+function resolvePaymentMethodDetail(array $ord): array {
+    $gw = strtoupper(trim($ord['gateway'] ?? 'MERCADO_PAGO'));
+    $raw = json_decode($ord['raw_response'] ?? '', true);
+    $estado = $ord['estado'] ?? 'PENDIENTE';
+
+    if ($gw === 'KHIPU') {
+        return [
+            'name' => 'Transferencia Bancaria',
+            'issuer' => 'Khipu',
+            'badge' => 'Transferencia Khipu',
+            'color' => '#4338CA',
+            'bg' => '#EEF2FF',
+            'icon' => 'fa-university'
+        ];
+    }
+
+    // Mercado Pago: inspeccionar transacciones o respuesta directa
+    $pm = null;
+    if (!empty($raw['transactions']['payments'][0]['payment_method'])) {
+        $pm = $raw['transactions']['payments'][0]['payment_method'];
+    } elseif (!empty($raw['payment_method'])) {
+        $pm = $raw['payment_method'];
+    }
+
+    if ($pm) {
+        $id = strtoupper($pm['id'] ?? '');
+        $type = strtolower($pm['type'] ?? '');
+        $cuotas = (int)($pm['installments'] ?? 1);
+
+        $issuerName = $id;
+        if ($id === 'MASTER') $issuerName = 'Mastercard';
+        elseif ($id === 'VISA') $issuerName = 'Visa';
+        elseif ($id === 'AMEX') $issuerName = 'American Express';
+        elseif ($id === 'MAGNA') $issuerName = 'Magna';
+        elseif ($id === 'DINERS') $issuerName = 'Diners';
+        elseif ($id === 'REDPREPAGO') $issuerName = 'Redprepago';
+        elseif ($id === 'WEBPAY' || $id === 'DEBVISA' || $id === 'DEBMAST') $issuerName = 'Redcompra / Débito';
+
+        if (strpos($type, 'credit') !== false) {
+            $cuotaText = $cuotas > 1 ? " ({$cuotas} cuotas)" : " (1 cuota)";
+            return [
+                'name' => "Crédito {$issuerName}{$cuotaText}",
+                'issuer' => $issuerName,
+                'badge' => "💳 {$issuerName} Crédito",
+                'color' => '#1E40AF',
+                'bg' => '#EFF6FF',
+                'icon' => 'fa-credit-card'
+            ];
+        } elseif (strpos($type, 'debit') !== false || strpos($id, 'DEB') !== false) {
+            return [
+                'name' => "Débito / Redcompra {$issuerName}",
+                'issuer' => $issuerName,
+                'badge' => "💳 Débito / Redcompra",
+                'color' => '#065F46',
+                'bg' => '#ECFDF5',
+                'icon' => 'fa-credit-card'
+            ];
+        } elseif ($type === 'ticket' || $type === 'bank_transfer') {
+            return [
+                'name' => "Transferencia Bancaria",
+                'issuer' => $issuerName ?: 'Banco',
+                'badge' => "🏦 Transferencia",
+                'color' => '#0F766E',
+                'bg' => '#F0FDFA',
+                'icon' => 'fa-university'
+            ];
+        } elseif ($type === 'account_money') {
+            return [
+                'name' => "Dinero en Cuenta Mercado Pago",
+                'issuer' => 'MP Wallet',
+                'badge' => "👛 Saldo Mercado Pago",
+                'color' => '#0369A1',
+                'bg' => '#F0F9FF',
+                'icon' => 'fa-wallet'
+            ];
+        }
+
+        return [
+            'name' => "{$issuerName} ({$type})",
+            'issuer' => $issuerName,
+            'badge' => "💳 {$issuerName}",
+            'color' => '#0F2A4A',
+            'bg' => '#F1F5F9',
+            'icon' => 'fa-credit-card'
+        ];
+    }
+
+    // Si la orden está pendiente de pago
+    if ($estado === 'PENDIENTE') {
+        $canal = ($gw === 'KHIPU') ? 'Transferencia Khipu' : 'Webpay / Tarjetas';
+        return [
+            'name' => "Intento Pendiente ({$canal})",
+            'issuer' => $gw === 'KHIPU' ? 'Khipu' : 'Mercado Pago',
+            'badge' => "⏳ {$canal}",
+            'color' => '#B45309',
+            'bg' => '#FEF3C7',
+            'icon' => 'fa-clock'
+        ];
+    }
+
+    return [
+        'name' => 'Pago Online Electrónico',
+        'issuer' => 'Mercado Pago',
+        'badge' => '🌐 Pago Online MP',
+        'color' => '#0369A1',
+        'bg' => '#F0F9FF',
+        'icon' => 'fa-credit-card'
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -1118,6 +1231,7 @@ $allTemplates = $stmtTemplates->fetchAll();
                                 <tr style="background:#F8FAFC; color:#64748B; text-align:left;">
                                     <th style="padding:0.75rem;">ID</th>
                                     <th style="padding:0.75rem;">Referencia / Pasarela</th>
+                                    <th style="padding:0.75rem;">Medio de Pago</th>
                                     <th style="padding:0.75rem;">Tipo / Concepto</th>
                                     <th style="padding:0.75rem;">Cliente / Empresa</th>
                                     <th style="padding:0.75rem;">Monto Neto</th>
@@ -1130,13 +1244,15 @@ $allTemplates = $stmtTemplates->fetchAll();
                             <tbody>
                                 <?php if (empty($allPaymentOrders)): ?>
                                     <tr>
-                                        <td colspan="9" style="padding:2.5rem; text-align:center; color:#94A3B8;">
+                                        <td colspan="10" style="padding:2.5rem; text-align:center; color:#94A3B8;">
                                             <i class="fas fa-cash-register fa-2x" style="margin-bottom:0.5rem; opacity:0.5;"></i><br>
                                             No se han registrado órdenes de pago online aún.
                                         </td>
                                     </tr>
                                 <?php else: ?>
-                                    <?php foreach ($allPaymentOrders as $ord): ?>
+                                    <?php foreach ($allPaymentOrders as $ord): 
+                                        $pmInfo = resolvePaymentMethodDetail($ord);
+                                    ?>
                                         <tr style="border-bottom:1px solid #E2E8F0;">
                                             <td style="padding:0.75rem; font-weight:700;">#<?= $ord['id'] ?></td>
                                             <td style="padding:0.75rem;">
@@ -1145,6 +1261,15 @@ $allTemplates = $stmtTemplates->fetchAll();
                                                     <?= $ord['gateway'] === 'KHIPU' ? 'KHIPU' : 'MERCADO PAGO' ?>
                                                     <?= !empty($ord['mp_payment_id']) ? " (ID: {$ord['mp_payment_id']})" : '' ?>
                                                 </span>
+                                            </td>
+                                            <td style="padding:0.75rem;">
+                                                <div style="display:inline-flex; align-items:center; gap:5px; background:<?= $pmInfo['bg'] ?>; color:<?= $pmInfo['color'] ?>; padding:3px 8px; border-radius:6px; font-weight:700; font-size:0.78rem;">
+                                                    <i class="fas <?= $pmInfo['icon'] ?>"></i>
+                                                    <span><?= htmlspecialchars($pmInfo['name']) ?></span>
+                                                </div>
+                                                <div style="font-size:0.7rem; color:#64748B; margin-top:2px;">
+                                                    Vía <?= htmlspecialchars($pmInfo['issuer']) ?>
+                                                </div>
                                             </td>
                                             <td style="padding:0.75rem;">
                                                 <?php if ($ord['payment_type'] === 'B2B_PACK'): ?>

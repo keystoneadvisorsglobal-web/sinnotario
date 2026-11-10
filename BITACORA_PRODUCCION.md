@@ -1742,3 +1742,20 @@
      - Obligatoriedad de ejecutar una batería completa de smoke tests automatizados con `curl -I` sobre las 8 rutas fundamentales (`/`, `redactar.php`, `subir-documento.php`, `firmar.php`, `admin.php`, `verificar.php`, `empresas.php` y `api/index.php?action=get_pricing_settings`).
   4) **Verificación:** Batería ejecutada arrojando HTTP 200 OK en el 100% de los endpoints.
 - **Estado Final:** ✅ Éxito Total / Error 500 Eliminado y Regla de Blindaje Activa.
+
+### Registro de Despliegue: SOL-0111
+- **Fecha y Hora:** 2026-11-10 02:14:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0111`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Incorporación de columna detallada de Medio de Pago real e intentado en la grilla contable de `admin.php#pagos`:
+  1) **Parser Forense de Pagos:** Creación de `resolvePaymentMethodDetail()` que decodifica `raw_response` y `gateway` identificando de forma unívoca el instrumento financiero:
+     - Tarjetas de Crédito (`Mastercard`, `Visa`, `Amex`, etc.) indicando cantidad de cuotas.
+     - Tarjetas de Débito y Redcompra.
+     - Transferencias directas (Khipu).
+     - Saldo en cuenta Mercado Pago.
+     - Para órdenes en estado `PENDIENTE DE PAGO`, badge que exhibe el medio seleccionado o intentado (`⏳ Webpay / Tarjetas` vs `⏳ Transferencia Khipu`).
+  2) **Diseño UI:** Nueva columna 'Medio de Pago' en la tabla con badges de colores corporativos e iconografía FontAwesome (`fa-credit-card`, `fa-university`, `fa-clock`).
+  3) **Verificación:** Ejecución obligatoria de la batería de smoke tests HTTP 200 en las 8 rutas maestras de producción con 100% de éxito.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo y Desplegado en Producción.
