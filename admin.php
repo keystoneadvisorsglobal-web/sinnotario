@@ -9,18 +9,111 @@ require_once __DIR__ . '/database/Database.php';
 require_once __DIR__ . '/api/adapters/StorageR2Adapter.php';
 require_once __DIR__ . '/src/Services/B2BService.php';
 
-// Control de Sesión Administrativa Básica
+// Control de Sesión Administrativa con 2FA WhatsApp OTP
 $auth = isset($_SESSION['admin_auth']) && $_SESSION['admin_auth'] === true;
+$errorLogin = '';
+$infoLogin = '';
+$is2faStep = isset($_SESSION['admin_2fa_pending']) && $_SESSION['admin_2fa_pending'] === true;
 
+// Acción: Cancelar 2FA
+if (isset($_GET['cancel_2fa'])) {
+    unset($_SESSION['admin_2fa_pending'], $_SESSION['admin_2fa_user'], $_SESSION['admin_2fa_phone']);
+    header('Location: admin.php');
+    exit;
+}
+
+// Acción: Reenviar Código 2FA
+if (isset($_GET['resend_2fa']) && !empty($_SESSION['admin_2fa_pending'])) {
+    $adminPhone = $_SESSION['admin_2fa_phone'] ?? '+56930640431';
+    $otp = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+    $otpHash = password_hash($otp, PASSWORD_BCRYPT);
+
+    $pdoLocal = Database::getInstance();
+    $pdoLocal->query("INSERT OR REPLACE INTO system_settings (key, value) VALUES ('admin_otp_code', '{$otpHash}')");
+    $expTime = date('Y-m-d H:i:s', time() + 300);
+    $pdoLocal->query("INSERT OR REPLACE INTO system_settings (key, value) VALUES ('admin_otp_expires_at', '{$expTime}')");
+
+    try {
+        require_once __DIR__ . '/src/Services/WhatsAppService.php';
+        $wa = new WhatsAppService();
+        $msg = "🛡️ *SinNotario.cl Admin (2FA)*\n\nTu nuevo código de verificación es: *{$otp}*\n\nVálido por 5 minutos.";
+        $wa->sendTextMessage($adminPhone, $msg, 'keystone-general', null, 'Administrador', 'ADMIN_2FA_OTP');
+        $infoLogin = "Nuevo código de 6 dígitos enviado a tu WhatsApp.";
+    } catch (\Throwable $eWa) {
+        $errorLogin = "No se pudo despachar el WhatsApp: " . $eWa->getMessage();
+    }
+}
+
+// Paso 1: Validación de Credenciales Maestras
 if (isset($_POST['login_admin'])) {
-    $user = $_POST['admin_user'] ?? '';
+    $user = trim($_POST['admin_user'] ?? '');
     $pass = $_POST['admin_pass'] ?? '';
+
     if ($user === 'rodrigo' && $pass === 'Keystone2026#SinNotario') {
-        $_SESSION['admin_auth'] = true;
+        $pdoLocal = Database::getInstance();
+        $stmtPh = $pdoLocal->query("SELECT value FROM system_settings WHERE key = 'admin_whatsapp_phone'");
+        $adminPhone = $stmtPh ? $stmtPh->fetchColumn() : '+56930640431';
+        if (empty($adminPhone)) $adminPhone = '+56930640431';
+
+        // Generar OTP de 6 dígitos
+        $otp = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+        $otpHash = password_hash($otp, PASSWORD_BCRYPT);
+        $expTime = date('Y-m-d H:i:s', time() + 300);
+
+        $pdoLocal->query("INSERT OR REPLACE INTO system_settings (key, value) VALUES ('admin_otp_code', '{$otpHash}')");
+        $pdoLocal->query("INSERT OR REPLACE INTO system_settings (key, value) VALUES ('admin_otp_expires_at', '{$expTime}')");
+
+        // Despachar vía WhatsApp Evolution API (keystone-general)
+        try {
+            require_once __DIR__ . '/src/Services/WhatsAppService.php';
+            $wa = new WhatsAppService();
+            $msg = "🛡️ *SinNotario.cl Admin (2FA)*\n\nHola Rodrigo,\nTu código de verificación para ingresar a la Consola Administrativa es:\n\n👉 *{$otp}*\n\nEste código expira en 5 minutos.";
+            $wa->sendTextMessage($adminPhone, $msg, 'keystone-general', null, 'Rodrigo Díaz', 'ADMIN_2FA_OTP');
+        } catch (\Throwable $eWa) {
+            error_log("Error WhatsApp Admin 2FA: " . $eWa->getMessage());
+        }
+
+        $_SESSION['admin_2fa_pending'] = true;
+        $_SESSION['admin_2fa_user'] = $user;
+        $_SESSION['admin_2fa_phone'] = $adminPhone;
+
         header('Location: admin.php');
         exit;
     } else {
         $errorLogin = 'Credenciales administrativas inválidas';
+    }
+}
+
+// Paso 2: Verificación de Código OTP 2FA
+if (isset($_POST['verify_admin_2fa'])) {
+    $enteredOtp = trim($_POST['otp_code'] ?? '');
+    if (empty($_SESSION['admin_2fa_pending'])) {
+        $errorLogin = 'Sesión de validación expirada. Inicie nuevamente.';
+        $is2faStep = false;
+    } elseif (empty($enteredOtp)) {
+        $errorLogin = 'Debe ingresar el código de 6 dígitos.';
+    } else {
+        $pdoLocal = Database::getInstance();
+        $stmtCode = $pdoLocal->query("SELECT value FROM system_settings WHERE key = 'admin_otp_code'");
+        $storedHash = $stmtCode ? $stmtCode->fetchColumn() : null;
+
+        $stmtExp = $pdoLocal->query("SELECT value FROM system_settings WHERE key = 'admin_otp_expires_at'");
+        $storedExp = $stmtExp ? $stmtExp->fetchColumn() : null;
+
+        if (!$storedHash || !$storedExp) {
+            $errorLogin = 'Código de verificación no encontrado o expirado.';
+        } elseif (strtotime($storedExp) < time()) {
+            $errorLogin = 'El código ha expirado. Solicita un nuevo reenvío.';
+        } elseif (!password_verify($enteredOtp, $storedHash)) {
+            $errorLogin = 'Código incorrecto. Verifica los 6 dígitos recibidos en tu WhatsApp.';
+        } else {
+            // OTP Válido: Limpiar códigos y activar sesión administrativa
+            $pdoLocal->query("DELETE FROM system_settings WHERE key IN ('admin_otp_code', 'admin_otp_expires_at')");
+            unset($_SESSION['admin_2fa_pending'], $_SESSION['admin_2fa_user'], $_SESSION['admin_2fa_phone']);
+            $_SESSION['admin_auth'] = true;
+            header('Location: admin.php');
+            exit;
+        }
     }
 }
 
@@ -633,9 +726,9 @@ function resolvePaymentMethodDetail(array $ord): array {
 <body>
 
 <?php if (!$auth): ?>
-    <!-- Modal de Login Administrativo -->
+    <!-- Modal de Login Administrativo con 2FA WhatsApp -->
     <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0A1C33; padding: 1.5rem;">
-        <div style="background: white; border-radius: 16px; padding: 2.5rem; max-width: 420px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+        <div style="background: white; border-radius: 16px; padding: 2.5rem; max-width: 440px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
             <div style="text-align: center; margin-bottom: 1.5rem;">
                 <img src="assets/logos/sinnotario-logo.png" alt="SinNotario" style="height: 72px;">
                 <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--primary); margin-top: 0.75rem;">Consola de Administración</h2>
@@ -643,24 +736,71 @@ function resolvePaymentMethodDetail(array $ord): array {
             </div>
 
             <?php if (!empty($errorLogin)): ?>
-                <div style="background: #FEF2F2; color: #991B1B; padding: 0.65rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1rem; text-align: center;">
+                <div style="background: #FEF2F2; color: #991B1B; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.25rem; text-align: center; border: 1px solid #FECACA;">
                     <?= htmlspecialchars($errorLogin) ?>
                 </div>
             <?php endif; ?>
 
-            <form method="POST">
-                <div class="form-group">
-                    <label>Usuario Administrador</label>
-                    <input type="text" name="admin_user" class="form-control" required placeholder="rodrigo" value="rodrigo">
+            <?php if (!empty($infoLogin)): ?>
+                <div style="background: #ECFDF5; color: #065F46; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.25rem; text-align: center; border: 1px solid #A7F3D0;">
+                    <?= htmlspecialchars($infoLogin) ?>
                 </div>
-                <div class="form-group" style="margin-top: 1rem;">
-                    <label>Contraseña Maestra</label>
-                    <input type="password" name="admin_pass" class="form-control" required placeholder="••••••••••••">
+            <?php endif; ?>
+
+            <?php if ($is2faStep): ?>
+                <!-- PASO 2: DESAFÍO 2FA WHATSAPP OTP -->
+                <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.5rem; text-align: center;">
+                    <span style="display: inline-block; background: #2563EB; color: white; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; margin-bottom: 6px;">
+                        🛡️ Doble Factor Activo (2FA)
+                    </span>
+                    <div style="font-size: 0.88rem; color: #1E3A8A; font-weight: 600;">
+                        Código enviado a tu WhatsApp
+                    </div>
+                    <div style="font-size: 0.82rem; color: #3B82F6; margin-top: 2px;">
+                        <?php
+                            $rawPh = $_SESSION['admin_2fa_phone'] ?? '+56930640431';
+                            echo htmlspecialchars(substr($rawPh, 0, 4) . '***' . substr($rawPh, -4));
+                        ?>
+                    </div>
                 </div>
-                <button type="submit" name="login_admin" class="btn-cta btn-gold" style="width: 100%; margin-top: 1.5rem; justify-content: center;">
-                    <i class="fas fa-lock"></i> Iniciar Sesión Segura
-                </button>
-            </form>
+
+                <form method="POST">
+                    <div class="form-group" style="text-align: center;">
+                        <label style="font-size: 0.88rem; font-weight: 700; color: #334155; margin-bottom: 0.5rem; display: block;">
+                            Ingresa el Código de 6 Dígitos
+                        </label>
+                        <input type="text" name="otp_code" class="form-control" maxlength="6" pattern="[0-9]{6}" required autofocus autocomplete="one-time-code" placeholder="••••••" style="font-size: 1.6rem; letter-spacing: 0.4em; text-align: center; font-weight: 800; color: #0F172A; padding: 0.6rem; font-family: monospace;">
+                    </div>
+                    <button type="submit" name="verify_admin_2fa" class="btn-cta" style="width: 100%; margin-top: 1.25rem; justify-content: center; background: #059669; color: white; border: none; padding: 0.85rem; border-radius: 8px; font-weight: 700; font-size: 0.95rem; cursor: pointer;">
+                        <i class="fas fa-shield-alt"></i> Verificar y Entrar ➜
+                    </button>
+                </form>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #F1F5F9; font-size: 0.82rem;">
+                    <a href="admin.php?resend_2fa=1" style="color: #2563EB; text-decoration: none; font-weight: 600;">
+                        <i class="fas fa-sync-alt"></i> Reenviar Código
+                    </a>
+                    <a href="admin.php?cancel_2fa=1" style="color: #EF4444; text-decoration: none; font-weight: 600;">
+                        ✕ Cancelar
+                    </a>
+                </div>
+
+            <?php else: ?>
+                <!-- PASO 1: CREDENCIALES MAESTRAS -->
+                <form method="POST">
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #334155;">Usuario Administrador</label>
+                        <input type="text" name="admin_user" class="form-control" required placeholder="rodrigo" value="rodrigo">
+                    </div>
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #334155;">Contraseña Maestra</label>
+                        <input type="password" name="admin_pass" class="form-control" required placeholder="••••••••••••">
+                    </div>
+                    <button type="submit" name="login_admin" class="btn-cta btn-gold" style="width: 100%; margin-top: 1.5rem; justify-content: center;">
+                        <i class="fas fa-lock"></i> Iniciar Sesión Segura
+                    </button>
+                </form>
+            <?php endif; ?>
         </div>
     </div>
 <?php else: ?>

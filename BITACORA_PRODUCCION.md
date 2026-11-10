@@ -1,5 +1,25 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 19:40 UTC-3] - SOL-0126
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0126`
+- **Alcance de los Cambios:**
+  - **Doble Factor de Autenticación (2FA WhatsApp OTP) para Consola de Administración (`admin.php`):**
+    1. **Persistencia Dinámica de Códigos en `system_settings`:**
+       - Almacenamiento seguro del hash `bcrypt` del código temporal de 6 dígitos (`admin_otp_code`) y su marca de tiempo de expiración de 5 minutos (`admin_otp_expires_at`).
+       - Teléfono celular administrativo configurado por defecto en `+56930640431` (`admin_whatsapp_phone`).
+    2. **Capa Backend & Flujo Criptográfico (`admin.php`):**
+       - Paso 1: Comprobación de credenciales maestras de superadministrador (`rodrigo`). Si son correctas, genera un OTP aleatorio de 6 dígitos con expiración de 5 minutos y lo envía de inmediato por WhatsApp oficial Evolution API (`keystone-general`).
+       - Paso 2: Desafío interactivo que verifica el código de 6 dígitos con `password_verify()`. Al superarlo con éxito, limpia los valores temporales de la base de datos y concede la sesión `$_SESSION['admin_auth'] = true`.
+       - Métodos de soporte: Botón para reenviar código OTP instantáneamente y botón de cancelación de sesión pendiente.
+    3. **Capa Frontend de Seguridad:**
+       - Interfaz con tarjeta estilizada, indicador visual `🛡️ Doble Factor Activo (2FA)`, máscara de seguridad en celular `(+569***0431)` y campo con autoenfoque.
+    4. **Pruebas Validadas:**
+       - PHP Lint remoto: 0 errores de sintaxis detectados.
+       - Smoke test HTTP 200 OK en `https://sinnotario.cl/admin.php`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 19:33 UTC-3] - SOL-0125
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
