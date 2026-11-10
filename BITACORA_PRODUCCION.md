@@ -1,5 +1,29 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 03:35 UTC-3] - SOL-0117
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0117`
+- **Alcance de los Cambios:**
+  - **Corrección de Codificación Canónica RFC 2047 MIME Header para Asuntos con Emojis en Correos Transaccionales (Eliminación de `<span class="theme-emoji">`):**
+    1. **Diagnóstico Técnico de Causa Raíz:**
+       - En `KeystoneSmtpClient.php`, la cabecera `Subject:` se construía mediante un bloque monolítico: `Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n`.
+       - Cuando el asunto incluía caracteres multibyte y emojis UTF-8 (como `✅`) sumado a títulos largos (ej. *Declaración Jurada Simple de Residencia*), la línea resultante alcanzaba 153 caracteres, violando el estándar **RFC 2822 / RFC 2047** (máximo 76-78 caracteres por línea de encabezado).
+       - Al procesar el mensaje con cabecera no seccionada, clientes webmail modernos y motores de renderizado de correo interpretaban el contenido crudo e inyectaban envolturas de formateo de estilos en el asunto visible: `<span class="theme-emoji">✅</span>`.
+    2. **Implementación de la Solución Canónica:**
+       - Se actualizó `KeystoneSmtpClient.php` implementando la codificación estándar nativa de PHP:
+         ```php
+         $encodedSubject = function_exists('mb_encode_mimeheader')
+             ? mb_encode_mimeheader($subject, 'UTF-8', 'B', "\r\n")
+             : '=?UTF-8?B?' . base64_encode($subject) . '?=';
+         ```
+       - Aplica tanto al `Subject:` como al nombre del remitente (`From: =?UTF-8?B?...`), plegando el encabezado en líneas RFC 2047 válidas separadas por `\r\n ` (folding white space).
+    3. **Pruebas Validadas:**
+       - Verificación de sintaxis en servidor: `php -l KeystoneSmtpClient.php` (0 errores).
+       - Despacho de correo de prueba en vivo vía SMTP autenticado hacia `contacto@sinnotario.cl` con emojis: resultado `bool(true)` y formateo limpio sin inyección de etiquetas HTML.
+       - Batería obligatoria de smoke tests en las 8 rutas maestras de producción: 100% `HTTP 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 03:30 UTC-3] - SOL-0116
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

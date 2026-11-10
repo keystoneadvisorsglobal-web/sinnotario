@@ -141,9 +141,19 @@ class KeystoneSmtpClient {
 
         // Construcción del mensaje MIME
         $boundary = "----=_KeyGuardPart_" . md5(uniqid(time()));
-        $encodedSubject = "=?UTF-8?B?" . base64_encode($subject) . "?=";
+        
+        // Formateo canónico RFC 2047 / RFC 2822 para Subject y From
+        // mb_encode_mimeheader divide en líneas seguras (< 76 chars) evitando que servidores como Titan Mail
+        // o clientes de correo inyecten tags HTML o corrompan emojis y tildes UTF-8.
+        $encodedSubject = function_exists('mb_encode_mimeheader')
+            ? mb_encode_mimeheader($subject, 'UTF-8', 'B', "\r\n")
+            : '=?UTF-8?B?' . base64_encode($subject) . '?=';
 
-        $msg = "From: =?UTF-8?B?" . base64_encode($this->fromName) . "?= <{$this->fromEmail}>\r\n";
+        $encodedFromName = function_exists('mb_encode_mimeheader')
+            ? mb_encode_mimeheader($this->fromName, 'UTF-8', 'B', "\r\n")
+            : '=?UTF-8?B?' . base64_encode($this->fromName) . '?=';
+
+        $msg = "From: {$encodedFromName} <{$this->fromEmail}>\r\n";
         $msg .= "To: <{$toEmail}>\r\n";
         $msg .= "Subject: {$encodedSubject}\r\n";
         $msg .= "Date: " . date('r') . "\r\n";
