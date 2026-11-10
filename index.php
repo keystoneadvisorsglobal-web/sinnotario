@@ -4,10 +4,14 @@
  * Plataforma LegalTech de Contratos Inteligentes, Firma Digital y Validación
  * Keystone Advisors
  */
-require_once __DIR__ . '/config/app.php';
+$config = require __DIR__ . '/config/app.php';
 require_once __DIR__ . '/src/Services/AuthService.php';
 $currentUser = AuthService::getCurrentUser();
 $page = isset($_GET['page']) ? $_GET['page'] : 'home';
+
+$supportWaUrl = 'https://wa.me/' . ($config['support_whatsapp_digits'] ?? '56984180479');
+$supportWaDisplay = $config['support_whatsapp_display'] ?? '+56 9 8418 0479';
+$supportWaRaw = $config['support_whatsapp'] ?? '+56984180479';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -56,7 +60,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
           "logo": "https://sinnotario.cl/assets/logos/sinnotario-logo.png",
           "image": "https://sinnotario.cl/assets/logos/sinnotario-og-banner.png",
           "description": "Plataforma de trámites legales, redacción asistida y firma electrónica avanzada y simple en Chile. Sustituye trámites notariales presenciales conforme a la Ley N° 19.799.",
-          "telephone": "+56984180479",
+          "telephone": "<?= htmlspecialchars($supportWaRaw) ?>",
           "email": "contacto@keystoneadvisors.cl",
           "address": {
             "@type": "PostalAddress",
@@ -160,7 +164,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
                 <li><a href="subir-documento.php" style="color: #0369A1; font-weight: 700;"><i class="fas fa-file-upload"></i> Subir Documento</a></li>
                 <li><a href="verificar.php">Verificar</a></li>
                 <li><a href="#empresas">Empresas</a></li>
-                <li><a href="https://wa.me/56984180479?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
+                <li><a href="<?= $supportWaUrl ?>?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i> <?= htmlspecialchars($supportWaDisplay) ?></a></li>
             </ul>
 
             <div style="display:flex; align-items:center; gap:10px;">
@@ -434,7 +438,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
             <div class="footer-col">
                 <h3>Contacto & Soporte</h3>
                 <ul>
-                    <li><a href="https://wa.me/56984180479" target="_blank"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
+                    <li><a href="<?= $supportWaUrl ?>" target="_blank"><i class="fab fa-whatsapp"></i> <?= htmlspecialchars($supportWaDisplay) ?></a></li>
                     <li><a href="mailto:soporte@sinnotario.cl"><i class="far fa-envelope"></i> soporte@sinnotario.cl</a></li>
                     <li><a href="verificar.php"><i class="fas fa-shield-alt"></i> Validador de Firmas</a></li>
                 </ul>

@@ -5,7 +5,7 @@
  * previsualizarlo, someterlo voluntariamente a Smart Legal Check (IA) si lo desean,
  * registrar a los comparecientes/firmantes con RUT oficial y sellarlo en la Bóveda Cloudflare R2 con código de verificación.
  */
-require_once __DIR__ . '/config/app.php';
+$config = require __DIR__ . '/config/app.php';
 require_once __DIR__ . '/database/Database.php';
 require_once __DIR__ . '/src/Services/AuthService.php';
 
@@ -17,6 +17,10 @@ $settings = [];
 foreach ($settingsRows as $sr) {
     $settings[$sr['key']] = $sr['value'];
 }
+
+$supportWaUrl = 'https://wa.me/' . ($config['support_whatsapp_digits'] ?? '56984180479');
+$supportWaDisplay = $config['support_whatsapp_display'] ?? '+56 9 8418 0479';
+$supportWaRaw = $config['support_whatsapp'] ?? '+56984180479';
 
 $precioFirmaPropia = (int)($settings['precio_base_subir_pdf'] ?? 7990);
 $precioFirmaExtra = (int)($settings['precio_firma_extra'] ?? 2990);
@@ -308,7 +312,7 @@ $isWizardSandbox = ($settings['wizard_sandbox_mode'] ?? '0') === '1';
                 <li><a href="subir-documento.php" style="color: #0369A1; font-weight: 700;"><i class="fas fa-file-upload"></i> Subir Documento</a></li>
                 <li><a href="verificar.php">Verificar</a></li>
                 <li><a href="index.php#empresas">Empresas</a></li>
-                <li><a href="https://wa.me/56984180479?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
+                <li><a href="<?= $supportWaUrl ?>?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i> <?= htmlspecialchars($supportWaDisplay) ?></a></li>
             </ul>
             <div style="display:flex; align-items:center; gap:10px;">
                 <?php if ($currentUser): ?>
@@ -515,7 +519,7 @@ $isWizardSandbox = ($settings['wizard_sandbox_mode'] ?? '0') === '1';
                                 </div>
                                 <div class="form-group">
                                     <label>Teléfono WhatsApp *</label>
-                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 1234 5678" value="<?= $isWizardSandbox ? '+56984180479' : '' ?>">
+                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 1234 5678" value="<?= $isWizardSandbox ? htmlspecialchars($supportWaRaw) : '' ?>">
                                 </div>
                             </div>
                         </div>
@@ -583,7 +587,7 @@ $isWizardSandbox = ($settings['wizard_sandbox_mode'] ?? '0') === '1';
                                 </div>
                                 <div class="form-group">
                                     <label>Teléfono WhatsApp *</label>
-                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 8765 4321" value="<?= $isWizardSandbox ? '+56984180479' : '' ?>">
+                                    <input type="tel" class="form-control sig-tel" placeholder="+56 9 8765 4321" value="<?= $isWizardSandbox ? htmlspecialchars($supportWaRaw) : '' ?>">
                                 </div>
                             </div>
                         </div>
@@ -1162,7 +1166,7 @@ $isWizardSandbox = ($settings['wizard_sandbox_mode'] ?? '0') === '1';
 
         function fillSubirDemoData() {
             const boxes = document.querySelectorAll('.signer-box');
-            const safePhone = '+56984180479';
+            const safePhone = '<?= addslashes($supportWaRaw) ?>';
             if (boxes[0]) {
                 const b = boxes[0];
                 if (b.querySelector('.sig-nombre')) b.querySelector('.sig-nombre').value = 'Juan Andrés Pérez González';

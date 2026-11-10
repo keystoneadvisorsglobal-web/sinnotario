@@ -225,7 +225,24 @@ if (isset($_POST['save_integrations_settings'])) {
     $stmtWizSb = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('wizard_sandbox_mode', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
     $stmtWizSb->execute([$wizardSandbox]);
 
-    $msgIntegrationsSuccess = '¡Configuración de pasarelas de pago, webhooks, credenciales y modo de Wizards actualizada exitosamente!';
+    // Parámetros de Stock, Alarmas de Firma y Teléfono de Contacto Omnicanal (SOL-0114)
+    $stockAlertFields = [
+        'support_whatsapp_phone',
+        'admin_alert_email',
+        'firmaya_stock_fes_total',
+        'firmaya_stock_fes_consumed',
+        'firmaya_stock_fea_total',
+        'firmaya_stock_fea_consumed',
+        'firmaya_alert_threshold'
+    ];
+    $stmtStockFields = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+    foreach ($stockAlertFields as $saf) {
+        if (isset($_POST[$saf])) {
+            $stmtStockFields->execute([$saf, trim($_POST[$saf])]);
+        }
+    }
+
+    $msgIntegrationsSuccess = '¡Configuración de pasarelas, motor de firma, teléfono omnicanal y alertas de stock actualizada exitosamente!';
 }
 
 // Acción administrativa: Conciliar pago manualmente o marcar conciliado bancario
@@ -1880,6 +1897,128 @@ function resolvePaymentMethodDetail(array $ord): array {
                                     <div class="form-group">
                                         <label style="font-size:0.8rem; font-weight:600; color:#334155;">Contraseña BPO (Sandbox)</label>
                                         <input type="password" name="firmaya_fes_pass_sandbox" class="form-control" placeholder="••••••••••••" value="<?= htmlspecialchars($sysSettings['firmaya_fes_pass_sandbox'] ?? '') ?>">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CONTROL DE INVENTARIO Y ALARMAS TEMPRANAS AL 30% (FIRMAYA) & TELEFONO OMNICANAL (SOL-0114) -->
+                            <?php
+                                require_once __DIR__ . '/src/Services/StockAlertService.php';
+                                $stockInfo = StockAlertService::getStockStatus();
+                                $currWaPhone = $sysSettings['support_whatsapp_phone'] ?? '+56984180479';
+                                $currAlertEmail = $sysSettings['admin_alert_email'] ?? 'contacto@keystoneadvisors.cl';
+                            ?>
+                            <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
+                                <div style="margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                                    <div>
+                                        <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem; font-size:1.05rem;">
+                                            <i class="fas fa-boxes" style="color:#D97706;"></i> Control de Inventario de Firmas & Sistema de Alarma Temprana
+                                        </label>
+                                        <p style="font-size:0.78rem; color:#64748B; margin:0.15rem 0 0;">
+                                            Monitoreo de bolsas contratadas con FirmaYa/Idok. Dispara alertas por WhatsApp y Email cuando el stock baja del 30% para reaprovisionar a tiempo.
+                                        </p>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                                        <span style="font-size:0.8rem; font-weight:700; color:#475569;">Umbral Alarma:</span>
+                                        <input type="number" name="firmaya_alert_threshold" value="<?= (int)($sysSettings['firmaya_alert_threshold'] ?? 30) ?>" min="5" max="50" style="width:70px; padding:4px 8px; border:1px solid #CBD5E1; border-radius:6px; font-weight:800; text-align:center; color:#DC2626;">
+                                        <span style="font-size:0.85rem; font-weight:800; color:#DC2626;">%</span>
+                                    </div>
+                                </div>
+
+                                <!-- Cards de Inventario en Tiempo Real -->
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-bottom:1.25rem;">
+                                    <!-- Card FES -->
+                                    <div style="background:#FFFFFF; border:1px solid <?= $stockInfo['fes']['is_alert'] ? '#FCA5A5' : '#E2E8F0' ?>; border-radius:10px; padding:1.2rem; box-shadow:0 1px 3px rgba(0,0,0,0.05); border-left:4px solid <?= $stockInfo['fes']['is_alert'] ? '#DC2626' : '#059669' ?>;">
+                                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                            <div>
+                                                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:#64748B;">Bolsa Simple (FES)</span>
+                                                <h4 style="font-size:1.35rem; font-weight:800; color:#0F2A4A; margin:0.2rem 0;">
+                                                    <?= $stockInfo['fes']['remaining'] ?> <span style="font-size:0.85rem; font-weight:600; color:#64748B;">/ <?= $stockInfo['fes']['total'] ?> firmas</span>
+                                                </h4>
+                                            </div>
+                                            <span style="background:<?= $stockInfo['fes']['is_alert'] ? '#FEE2E2' : '#DCFCE7' ?>; color:<?= $stockInfo['fes']['is_alert'] ? '#DC2626' : '#15803D' ?>; font-size:0.72rem; font-weight:800; padding:3px 8px; border-radius:9999px;">
+                                                <?= $stockInfo['fes']['is_alert'] ? '🚨 STOCK CRÍTICO' : '🟢 STOCK DISPONIBLE' ?>
+                                            </span>
+                                        </div>
+                                        <!-- Barra de Progreso FES -->
+                                        <div style="margin:0.75rem 0 0.35rem; background:#E2E8F0; border-radius:9999px; height:8px; overflow:hidden;">
+                                            <div style="background:<?= $stockInfo['fes']['is_alert'] ? '#DC2626' : '#059669' ?>; width:<?= min(100, $stockInfo['fes']['percent']) ?>%; height:100%;"></div>
+                                        </div>
+                                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#64748B;">
+                                            <span>Disponible: <strong><?= $stockInfo['fes']['percent'] ?>%</strong></span>
+                                            <span>Consumidas: <strong><?= $stockInfo['fes']['consumed'] ?></strong></span>
+                                        </div>
+                                        <!-- Inputs para modificar paquete FES -->
+                                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:0.75rem; padding-top:0.75rem; border-top:1px dashed #E2E8F0;">
+                                            <div>
+                                                <label style="font-size:0.7rem; color:#64748B; font-weight:600;">Total Contratado</label>
+                                                <input type="number" name="firmaya_stock_fes_total" value="<?= $stockInfo['fes']['total'] ?>" class="form-control" style="padding:4px 8px; font-size:0.85rem; font-weight:700;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size:0.7rem; color:#64748B; font-weight:600;">Contador Consumo</label>
+                                                <input type="number" name="firmaya_stock_fes_consumed" value="<?= $stockInfo['fes']['consumed'] ?>" class="form-control" style="padding:4px 8px; font-size:0.85rem; font-weight:700;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Card FEA Spot -->
+                                    <div style="background:#FFFFFF; border:1px solid <?= $stockInfo['fea']['is_alert'] ? '#FCA5A5' : '#E2E8F0' ?>; border-radius:10px; padding:1.2rem; box-shadow:0 1px 3px rgba(0,0,0,0.05); border-left:4px solid <?= $stockInfo['fea']['is_alert'] ? '#DC2626' : '#2563EB' ?>;">
+                                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                            <div>
+                                                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:#64748B;">Bolsa Avanzada (FEA Spot)</span>
+                                                <h4 style="font-size:1.35rem; font-weight:800; color:#0F2A4A; margin:0.2rem 0;">
+                                                    <?= $stockInfo['fea']['remaining'] ?> <span style="font-size:0.85rem; font-weight:600; color:#64748B;">/ <?= $stockInfo['fea']['total'] ?> firmas</span>
+                                                </h4>
+                                            </div>
+                                            <span style="background:<?= $stockInfo['fea']['is_alert'] ? '#FEE2E2' : '#DBEAFE' ?>; color:<?= $stockInfo['fea']['is_alert'] ? '#DC2626' : '#1D4ED8' ?>; font-size:0.72rem; font-weight:800; padding:3px 8px; border-radius:9999px;">
+                                                <?= $stockInfo['fea']['is_alert'] ? '🚨 STOCK CRÍTICO' : '🔵 STOCK DISPONIBLE' ?>
+                                            </span>
+                                        </div>
+                                        <!-- Barra de Progreso FEA -->
+                                        <div style="margin:0.75rem 0 0.35rem; background:#E2E8F0; border-radius:9999px; height:8px; overflow:hidden;">
+                                            <div style="background:<?= $stockInfo['fea']['is_alert'] ? '#DC2626' : '#2563EB' ?>; width:<?= min(100, $stockInfo['fea']['percent']) ?>%; height:100%;"></div>
+                                        </div>
+                                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#64748B;">
+                                            <span>Disponible: <strong><?= $stockInfo['fea']['percent'] ?>%</strong></span>
+                                            <span>Consumidas: <strong><?= $stockInfo['fea']['consumed'] ?></strong></span>
+                                        </div>
+                                        <!-- Inputs para modificar paquete FEA -->
+                                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:0.75rem; padding-top:0.75rem; border-top:1px dashed #E2E8F0;">
+                                            <div>
+                                                <label style="font-size:0.7rem; color:#64748B; font-weight:600;">Total Contratado</label>
+                                                <input type="number" name="firmaya_stock_fea_total" value="<?= $stockInfo['fea']['total'] ?>" class="form-control" style="padding:4px 8px; font-size:0.85rem; font-weight:700;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size:0.7rem; color:#64748B; font-weight:600;">Contador Consumo</label>
+                                                <input type="number" name="firmaya_stock_fea_consumed" value="<?= $stockInfo['fea']['consumed'] ?>" class="form-control" style="padding:4px 8px; font-size:0.85rem; font-weight:700;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Canales de Notificación y Teléfono Omnicanal -->
+                                <div style="border:1px solid #CBD5E1; border-radius:8px; padding:1.2rem; background:#F8FAFC;">
+                                    <div style="font-size:0.88rem; font-weight:800; color:#0F2A4A; margin-bottom:0.75rem; display:flex; align-items:center; gap:6px;">
+                                        <i class="fab fa-whatsapp" style="color:#059669;"></i> Teléfono Omnicanal & Destinatarios de Alerta de Abastecimiento
+                                    </div>
+                                    <p style="font-size:0.76rem; color:#64748B; margin-bottom:1rem;">
+                                        Al cambiar este número se actualiza inmediatamente en <strong>toda la plataforma</strong>: botones de WhatsApp en cabecera y pie de página, notificaciones al cliente, WhatsApp Gateway y alertas de stock de inventario.
+                                    </p>
+                                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;">
+                                        <div class="form-group">
+                                            <label style="font-size:0.8rem; font-weight:700; color:#334155;">
+                                                <i class="fab fa-whatsapp" style="color:#059669;"></i> Celular / WhatsApp Oficial (Omnicanal)
+                                            </label>
+                                            <input type="text" name="support_whatsapp_phone" class="form-control" placeholder="+56984180479" value="<?= htmlspecialchars($currWaPhone) ?>" style="font-weight:700; color:#0F2A4A;">
+                                            <small style="font-size:0.7rem; color:#64748B;">Formato internacional con código país: +569XXXXXXXX</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label style="font-size:0.8rem; font-weight:700; color:#334155;">
+                                                <i class="fas fa-envelope" style="color:#2563EB;"></i> Correo de Alerta de Abastecimiento
+                                            </label>
+                                            <input type="email" name="admin_alert_email" class="form-control" placeholder="contacto@keystoneadvisors.cl" value="<?= htmlspecialchars($currAlertEmail) ?>" style="font-weight:600;">
+                                            <small style="font-size:0.7rem; color:#64748B;">Recibirá el informe de quiebre de stock al llegar al 30%</small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

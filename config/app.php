@@ -26,11 +26,14 @@ if (!file_exists($envFile)) {
 loadEnv($envFile);
 
 require_once __DIR__ . '/gate.php';
+require_once __DIR__ . '/settings.php';
 
 return [
     'app_name' => 'SinNotario.cl',
     'app_url' => getenv('APP_URL') ?: 'https://sinnotario.cl',
-    'support_whatsapp' => '+56984180479',
+    'support_whatsapp' => AppSettings::getWhatsAppPhone(),
+    'support_whatsapp_display' => AppSettings::getWhatsAppPhoneDisplay(),
+    'support_whatsapp_digits' => AppSettings::getWhatsAppPhone(true),
     'support_email' => 'soporte@sinnotario.cl',
     'r2' => [
         'account_id' => getenv('CLOUDFLARE_ACCOUNT_ID') ?: 'cf9641882a84e35bbf80ae7681d7ee71',

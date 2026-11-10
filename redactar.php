@@ -4,13 +4,17 @@
  * Cubre el 100% de las 13 plantillas legales de la plataforma:
  * Inmobiliario, Laboral, Comercial y Declaraciones Juradas
  */
-require_once __DIR__ . '/config/app.php';
+$config = require __DIR__ . '/config/app.php';
 require_once __DIR__ . '/database/Database.php';
 require_once __DIR__ . '/src/Services/AuthService.php';
 
 $currentUser = AuthService::getCurrentUser();
 $slug = isset($_GET['slug']) ? trim($_GET['slug']) : (isset($_GET['doc']) ? trim($_GET['doc']) : 'contrato-arriendo-ley-21461');
 $pdo = Database::getInstance();
+
+$supportWaUrl = 'https://wa.me/' . ($config['support_whatsapp_digits'] ?? '56984180479');
+$supportWaDisplay = $config['support_whatsapp_display'] ?? '+56 9 8418 0479';
+$supportWaRaw = $config['support_whatsapp'] ?? '+56984180479';
 
 $stmt = $pdo->prepare("SELECT * FROM templates WHERE slug = ?");
 $stmt->execute([$slug]);
@@ -547,7 +551,7 @@ $canonicalUrl = 'https://sinnotario.cl/redactar.php?slug=' . urlencode($slug);
                         </div>
                         <div class="form-group">
                             <label>Teléfono WhatsApp *</label>
-                            <input type="tel" id="f_parte_a_tel" class="form-control" placeholder="+56 9 1234 5678" value="<?= $isWizardSandbox ? '+56984180479' : '' ?>">
+                            <input type="tel" id="f_parte_a_tel" class="form-control" placeholder="+56 9 1234 5678" value="<?= $isWizardSandbox ? htmlspecialchars($supportWaRaw) : '' ?>">
                         </div>
                     </div>
 
@@ -656,7 +660,7 @@ $canonicalUrl = 'https://sinnotario.cl/redactar.php?slug=' . urlencode($slug);
                             </div>
                             <div class="form-group">
                                 <label>WhatsApp de la Contraparte *</label>
-                                <input type="tel" id="f_parte_b_tel" class="form-control" placeholder="+56 9 8765 4321" value="<?= $isWizardSandbox ? '+56984180479' : '' ?>">
+                                <input type="tel" id="f_parte_b_tel" class="form-control" placeholder="+56 9 8765 4321" value="<?= $isWizardSandbox ? htmlspecialchars($supportWaRaw) : '' ?>">
                             </div>
                         </div>
                     </div>
@@ -4154,7 +4158,7 @@ $canonicalUrl = 'https://sinnotario.cl/redactar.php?slug=' . urlencode($slug);
 
         function fillDemoData() {
             // Relleno rápido seguro para pruebas (SOL-0106)
-            const safePhone = '+56984180479';
+            const safePhone = '<?= addslashes($supportWaRaw) ?>';
             if (document.getElementById('f_parte_a_nombre')) document.getElementById('f_parte_a_nombre').value = 'Juan Andrés Pérez González';
             if (document.getElementById('f_parte_a_rut')) document.getElementById('f_parte_a_rut').value = '10.993.031-8';
             if (document.getElementById('f_parte_a_civil')) document.getElementById('f_parte_a_civil').value = 'chileno, soltero';

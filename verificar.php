@@ -8,6 +8,9 @@
  * 3. Cotejo Forense por Carga de Archivo PDF (Cálculo y Contraste de Hash SHA-256).
  */
 require_once __DIR__ . '/database/Database.php';
+$config = require __DIR__ . '/config/app.php';
+$supportWaUrl = 'https://wa.me/' . ($config['support_whatsapp_digits'] ?? '56984180479');
+$supportWaDisplay = $config['support_whatsapp_display'] ?? '+56 9 8418 0479';
 
 $code = isset($_GET['code']) ? trim($_GET['code']) : (isset($_GET['doc']) ? trim($_GET['doc']) : '');
 $hashParam = isset($_GET['hash']) ? trim($_GET['hash']) : '';
@@ -394,7 +397,7 @@ if ($externalRef || $orderIdParam || $collectionIdParam) {
                 <li><a href="subir-documento.php" style="color:#0369A1; font-weight:700;"><i class="fas fa-file-upload"></i> Subir Documento</a></li>
                 <li><a href="verificar.php" class="active">Verificar</a></li>
                 <li><a href="index.php#empresas">Empresas</a></li>
-                <li><a href="https://wa.me/56984180479?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i> +56 9 8418 0479</a></li>
+                <li><a href="<?= $supportWaUrl ?>?text=Hola,%20necesito%20asistencia%20legal%20en%20SinNotario.cl" target="_blank" class="nav-whatsapp"><i class="fab fa-whatsapp"></i> <?= htmlspecialchars($supportWaDisplay) ?></a></li>
             </ul>
             <div>
                 <a href="index.php#catalogo" class="btn-cta btn-primary" style="padding:0.5rem 1.1rem; font-size:0.88rem;">

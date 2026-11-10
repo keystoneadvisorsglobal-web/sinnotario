@@ -1,5 +1,28 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 03:00 UTC-3] - SOL-0114
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0114`
+- **Alcance de los Cambios:**
+  - **Sistema de Alarma de Stock Temprana al 30% (FES/FEA) y Control Backend de Celular Omnicanal:**
+    1. **Monitoreo de Bolsas de Firmas (`StockAlertService.php`):**
+       - Seguimiento en tiempo real de bolsas contratadas con FirmaYa/Idok (`firmaya_stock_fes_total`, `firmaya_stock_fes_consumed`, `firmaya_stock_fea_total`, `firmaya_stock_fea_consumed`).
+       - Umbral de alerta configurable por el administrador (por defecto **30%**).
+       - Despacho automático de alerta por WhatsApp y Correo Electrónico al caer bajo el 30% con resumen de saldo remanente y recomendación de recarga para evitar quiebres.
+       - Deducción atómica por firma completada en el endpoint `api/index.php?action=sign_document_signer`.
+    2. **Teléfono Omnicanal Gestionable desde Backend:**
+       - Nueva opción en `admin.php#integraciones` para actualizar el número de soporte/WhatsApp corporativo (`support_whatsapp_phone`).
+       - Propagación reactiva e inmediata en toda la plataforma: enlaces `wa.me` de cabecera y pie de página, Schema.org `telephone`, asistentes `redactar.php` y `subir-documento.php`, WhatsApp Gateway y despachos de alerta.
+       - Helper global de lectura y formateo `AppSettings` en `config/settings.php`.
+    3. **Telemetría Visual de Stock en `admin.php#integraciones`:**
+       - Tarjetas KPI para FES y FEA con barras de progreso coloreadas (verde, azul, rojo), contadores de firmas y campos para asentar nuevas bolsas con un clic.
+- **Pruebas Validadas:**
+  - Inspección sintáctica PHP Lint (`php -l`): 0 errores en todos los archivos modificados.
+  - Verificación de enlaces dinámicos WhatsApp en homepage vía cURL (`https://wa.me/...`).
+  - Batería de smoke tests de 8 rutas obligatorias con 100% `HTTP 200 OK`.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 02:45 UTC-3] - SOL-0113
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)

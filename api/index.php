@@ -668,6 +668,14 @@ try {
                 $signerId
             ]);
 
+            // Deducción automática de inventario y monitoreo de stock al 30%
+            require_once __DIR__ . '/../src/Services/StockAlertService.php';
+            try {
+                StockAlertService::consumeSignature($tipoFirma, 1, $docId);
+            } catch (\Throwable $eStock) {
+                error_log("Error deduciendo stock de firma: " . $eStock->getMessage());
+            }
+
             // Comprobar si todos los comparecientes completaron sus firmas
             $docId = (int)$signer['document_id'];
             $stmtCheckAll = $pdo->prepare("SELECT COUNT(*) FROM document_signers WHERE document_id = ? AND estado_firma != 'FIRMADO'");
