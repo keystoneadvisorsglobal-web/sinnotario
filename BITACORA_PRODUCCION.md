@@ -1,5 +1,27 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
+### [2026-11-10 19:33 UTC-3] - SOL-0125
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0125`
+- **Alcance de los Cambios:**
+  - **Doble Factor de Autenticación (2FA WhatsApp OTP) para Usuarios y Empresas:**
+    1. **Migración de Esquema en Base de Datos (`Database.php` y SQLite):**
+       - Se agregaron las columnas `otp_code VARCHAR(255)` y `otp_expires_at DATETIME` en la tabla `users`.
+    2. **Capa Backend & Lógica Criptográfica (`src/Services/AuthService.php`):**
+       - `AuthService::loginWithPassword()` verifica usuario y clave; si el usuario tiene teléfono celular asociado, no otorga acceso directo: genera un código numérico aleatorio de 6 dígitos con hash `bcrypt`, caducidad de 5 minutos y retorna `requires_2fa: true` con el teléfono enmascarado.
+       - Despacho automático e instantáneo vía `WhatsAppService` a través del canal oficial `keystone-general`.
+       - Métodos `verifyOtp()` para validar el código y `resendOtp()` para reenviar uno nuevo.
+    3. **Endpoints REST API (`api/index.php`):**
+       - Nuevos endpoints `auth_verify_otp` y `auth_resend_otp`.
+    4. **Capa Frontend Interactiva (`login.php`):**
+       - Nueva pantalla de desafío 2FA con caja verde esmeralda `🛡️ Doble Factor Activo (2FA)`, autoenfoque en el campo de 6 dígitos, botón interactivo para reenviar código y botón de cancelación.
+    5. **Pruebas Validadas:**
+       - PHP Lint remoto: 0 errores en todos los scripts tocados.
+       - Smoke tests HTTP 200 OK en `login.php` y endpoints de API.
+       - Commit `a3bffe4` sincronizado en la rama `main` de GitHub.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
 ### [2026-11-10 16:10 UTC-3] - SOL-0124
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
