@@ -602,8 +602,6 @@ if (empty($googleClientId)) {
                 showAlert('Error al reenviar código: ' + err.message);
             }
         }
-            }
-        }
 
         // 1d. Cancelar 2FA
         function cancel2Fa() {
