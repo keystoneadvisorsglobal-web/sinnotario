@@ -17,3 +17,6 @@ Allow: /marco-legal.php
 Allow: /terminos-condiciones.php
 Allow: /politica-privacidad.php
 Allow: /asesoria-legal.php
+
+# Sitemap Oficial
+Sitemap: https://sinnotario.cl/sitemap.xml

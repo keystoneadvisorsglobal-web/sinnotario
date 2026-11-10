@@ -42,13 +42,128 @@ $mpRetailActive = ($sysSettings['mp_enabled'] ?? '1') === '1';
 $khipuRetailActive = ($sysSettings['khipu_enabled'] ?? '1') === '1';
 $defaultRetailGateway = $mpRetailActive ? 'MERCADO_PAGO' : ($khipuRetailActive ? 'KHIPU' : 'NONE');
 $isWizardSandbox = ($sysSettings['wizard_sandbox_mode'] ?? '0') === '1';
+
+// Metadatos SEO enriquecidos por plantilla para Google Search y Redes Sociales
+$seoMeta = [
+    'contrato-arriendo-ley-21461' => [
+        'title' => 'Contrato de Arriendo Ley 21.461 Online (Devuélveme Mi Casa) | SinNotario.cl',
+        'desc' => 'Genera y firma tu contrato de arriendo con cláusula express de restitución de 10 días Ley 21.461. Firma electrónica 100% legal sin ir a notaría.',
+        'keywords' => 'contrato de arriendo chile, ley 21461, devuélveme mi casa, contrato arriendo online, firma digital arriendo'
+    ],
+    'declaracion-jurada-residencia' => [
+        'title' => 'Declaración Jurada de Residencia Online con Firma Digital | SinNotario.cl',
+        'desc' => 'Emite tu certificado o declaración jurada simple de domicilio y residencia en minutos. Válida para bancos, colegios y trámites en Chile (Ley 19.799).',
+        'keywords' => 'declaracion jurada de residencia, certificado de residencia online, declaracion jurada domicilio notaria chile'
+    ],
+    'salvoconducto-mudanza' => [
+        'title' => 'Declaración Jurada de Mudanza y Traslado de Enseres (Ley 20.227) | SinNotario.cl',
+        'desc' => 'Obtén tu salvoconducto y declaración jurada para mudanza conforme a la Ley N° 20.227. Válido ante Carabineros de Chile de forma inmediata.',
+        'keywords' => 'salvoconducto mudanza online, declaracion jurada traslado enseres, mudanza carabineros'
+    ],
+    'finiquito-laboral-mutuo-acuerdo' => [
+        'title' => 'Finiquito Laboral por Mutuo Acuerdo Online | SinNotario.cl',
+        'desc' => 'Redacta y ratifica el finiquito de trabajo según Arts. 159 y 177 del Código del Trabajo con firma electrónica avanzada y certificación.',
+        'keywords' => 'finiquito laboral online, finiquito mutuo acuerdo chile, firma finiquito digital'
+    ],
+    'declaracion-jurada-ingresos-informales' => [
+        'title' => 'Declaración Jurada de Ingresos Independientes / Informales | SinNotario.cl',
+        'desc' => 'Acredita tus ingresos percibidos sin contrato laboral formal para bancos, subsidios o arriendos. Documento legal certificado al instante.',
+        'keywords' => 'declaracion jurada de ingresos, acreditar ingresos informales chile, certificado de ingresos'
+    ],
+    'poder-especial-privado' => [
+        'title' => 'Poder Especial Simple y Mandato Administrativo Online | SinNotario.cl',
+        'desc' => 'Delega facultades y autorizaciones para trámites ante colegios, municipalidades, retiro de paquetes y gestiones privadas en Chile.',
+        'keywords' => 'poder especial simple, poder notarial online, mandato privado chile'
+    ],
+    'promesa-compraventa-inmueble' => [
+        'title' => 'Promesa de Compraventa de Inmueble Online (Art. 1554) | SinNotario.cl',
+        'desc' => 'Contrato preparatorio de compraventa inmobiliaria con arras y penalidades bajo Art. 1554 Código Civil con firma digital certificada.',
+        'keywords' => 'promesa compraventa inmueble, promesa de compraventa online chile'
+    ],
+    'contrato-individual-trabajo' => [
+        'title' => 'Contrato Individual de Trabajo Online (Presencial o Teletrabajo) | SinNotario.cl',
+        'desc' => 'Redacta el contrato laboral conforme a Arts. 9 y 10 del Código del Trabajo chileno. Firma electrónica válida entre empleador y trabajador.',
+        'keywords' => 'contrato de trabajo chile, contrato laboral online, modelo contrato de trabajo'
+    ],
+    'reconocimiento-deuda-pagare-privado' => [
+        'title' => 'Reconocimiento de Deuda y Pagaré Privado Online | SinNotario.cl',
+        'desc' => 'Formaliza deudas con calendario de cuotas, intereses moratorios y valor probatorio mercantil con firma digital.',
+        'keywords' => 'reconocimiento de deuda chile, pagare privado online, compromiso de pago'
+    ],
+    'acuerdo-confidencialidad-nda' => [
+        'title' => 'Acuerdo de Confidencialidad y No Divulgación (NDA) | SinNotario.cl',
+        'desc' => 'Protege secretos comerciales, software, ideas y datos sensibles con validez legal vinculante en Chile.',
+        'keywords' => 'acuerdo de confidencialidad chile, contrato nda online'
+    ],
+    'prestacion-servicios-honorarios' => [
+        'title' => 'Contrato de Prestación de Servicios a Honorarios | SinNotario.cl',
+        'desc' => 'Contrato civil regulado por Arts. 2006 Código Civil. Blindaje contra subordinación laboral con firma electrónica inmediata.',
+        'keywords' => 'contrato de prestacion de servicios, contrato a honorarios chile'
+    ],
+    'autorizacion-domicilio-tributario-sii' => [
+        'title' => 'Autorización de Domicilio Tributario para el SII Online | SinNotario.cl',
+        'desc' => 'Autorización de uso de inmueble para constitución de sociedad o cambio de domicilio ante el Servicio de Impuestos Internos.',
+        'keywords' => 'domicilio tributario sii, autorizacion de uso inmueble sii'
+    ],
+    'acta-entrega-llaves-e-inventario' => [
+        'title' => 'Acta de Entrega de Inmueble e Inventario de Propiedad | SinNotario.cl',
+        'desc' => 'Constancia formal de recepción física y estado de conservación de inmuebles arrendados o vendidos con firma digital.',
+        'keywords' => 'acta entrega llaves, inventario arriendo chile'
+    ]
+];
+
+$currSeo = $seoMeta[$slug] ?? [
+    'title' => htmlspecialchars($tpl['nombre']) . ' | SinNotario.cl',
+    'desc' => htmlspecialchars($tpl['descripcion']),
+    'keywords' => 'contratos online chile, notaria digital, firma electronica ley 19799'
+];
+$canonicalUrl = 'https://sinnotario.cl/redactar.php?slug=' . urlencode($slug);
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($tpl['nombre']) ?> | SinNotario.cl</title>
+    <title><?= htmlspecialchars($currSeo['title']) ?></title>
+    <meta name="description" content="<?= htmlspecialchars($currSeo['desc']) ?>">
+    <meta name="keywords" content="<?= htmlspecialchars($currSeo['keywords']) ?>">
+    <link rel="canonical" href="<?= $canonicalUrl ?>">
+
+    <!-- OpenGraph / Redes Sociales y WhatsApp -->
+    <meta property="og:type" content="article">
+    <meta property="og:locale" content="es_CL">
+    <meta property="og:site_name" content="SinNotario.cl">
+    <meta property="og:title" content="<?= htmlspecialchars($currSeo['title']) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($currSeo['desc']) ?>">
+    <meta property="og:url" content="<?= $canonicalUrl ?>">
+    <meta property="og:image" content="https://sinnotario.cl/assets/logos/sinnotario-og-banner.png">
+
+    <!-- Schema.org Product / Service para Rich Snippets en Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": "<?= addslashes($tpl['nombre']) ?>",
+      "description": "<?= addslashes($currSeo['desc']) ?>",
+      "brand": {
+        "@type": "Brand",
+        "name": "SinNotario.cl"
+      },
+      "offers": {
+        "@type": "Offer",
+        "url": "<?= $canonicalUrl ?>",
+        "priceCurrency": "CLP",
+        "price": "<?= (int)$tpl['precio_base'] ?>",
+        "priceValidUntil": "2027-12-31",
+        "availability": "https://schema.org/InStock",
+        "seller": {
+          "@type": "LegalService",
+          "name": "SinNotario.cl"
+        }
+      }
+    }
+    </script>
+
     <link rel="icon" type="image/png" sizes="32x32" href="assets/logos/cropped-sinnotario-logo2-32x32.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/style.css?v=20261106_6">

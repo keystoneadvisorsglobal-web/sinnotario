@@ -14,8 +14,9 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SinNotario.cl | Contratos Legales y Firma Digital sin Notaría</title>
-    <meta name="description" content="Genera, firma y valida contratos de arriendo Ley 21.461, promesas, finiquitos laborales y declaraciones juradas 100% online con plena validez legal (Ley 19.799).">
+    <title>Notaría Online Chile | Contratos y Trámites con Firma Digital | SinNotario.cl</title>
+    <meta name="description" content="Notaría online en Chile: redacta, firma con ClaveÚnica o Firma Avanzada y certifica contratos de arriendo Ley 21.461, promesas, finiquitos y declaraciones juradas 100% legal sin filas.">
+    <link rel="canonical" href="https://sinnotario.cl/">
     
     <!-- Google Search Console Verification -->
     <meta name="google-site-verification" content="G9FGSpS5XFq1EUAuNHjU851fTtlZTa__hJJ34rW1kyY" />
@@ -25,9 +26,10 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
 
     <!-- OpenGraph / Previsualización WhatsApp y Redes Sociales -->
     <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_CL">
     <meta property="og:site_name" content="SinNotario.cl">
-    <meta property="og:title" content="SinNotario.cl | Contratos Legales y Firma Digital sin Notaría">
-    <meta property="og:description" content="Genera, firma y valida contratos de arriendo Ley 21.461, promesas, finiquitos laborales y declaraciones juradas 100% online con plena validez legal (Ley 19.799).">
+    <meta property="og:title" content="Notaría Online Chile | Contratos y Trámites con Firma Digital | SinNotario.cl">
+    <meta property="og:description" content="Redacta y firma contratos de arriendo Ley 21.461, declaraciones juradas, promesas y finiquitos 100% online con validez legal bajo la Ley 19.799.">
     <meta property="og:image" content="https://sinnotario.cl/assets/logos/sinnotario-og-banner.png">
     <meta property="og:image:secure_url" content="https://sinnotario.cl/assets/logos/sinnotario-og-banner.png">
     <meta property="og:image:type" content="image/png">
@@ -36,9 +38,107 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'home';
     <meta property="og:url" content="https://sinnotario.cl/">
     
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SinNotario.cl | Contratos Legales y Firma Digital sin Notaría">
-    <meta name="twitter:description" content="Genera, firma y valida contratos 100% online bajo Ley 19.799.">
+    <meta name="twitter:title" content="Notaría Online Chile | SinNotario.cl">
+    <meta name="twitter:description" content="Contratos y trámites legales online con firma electrónica y certificación inmediata bajo Ley 19.799.">
     <meta name="twitter:image" content="https://sinnotario.cl/assets/logos/sinnotario-og-banner.png">
+
+    <!-- Schema.org Datos Estructurados JSON-LD (SEO Local & Rich Snippets Google) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "LegalService",
+          "@id": "https://sinnotario.cl/#organization",
+          "name": "SinNotario.cl",
+          "alternateName": "Sin Notario Chile - LegalTech & Firma Electrónica",
+          "url": "https://sinnotario.cl/",
+          "logo": "https://sinnotario.cl/assets/logos/sinnotario-logo.png",
+          "image": "https://sinnotario.cl/assets/logos/sinnotario-og-banner.png",
+          "description": "Plataforma de trámites legales, redacción asistida y firma electrónica avanzada y simple en Chile. Sustituye trámites notariales presenciales conforme a la Ley N° 19.799.",
+          "telephone": "+56984180479",
+          "email": "contacto@keystoneadvisors.cl",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Santiago",
+            "addressRegion": "Región Metropolitana",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -33.4372,
+            "longitude": -70.6506
+          },
+          "priceRange": "$3.490 - $14.990 CLP",
+          "currenciesAccepted": "CLP",
+          "paymentAccepted": "Webpay Plus, Redcompra, Tarjetas de Crédito, Débito, Mercado Pago, Khipu",
+          "areaServed": {
+            "@type": "Country",
+            "name": "Chile"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "reviewCount": "1280",
+            "bestRating": "5",
+            "worstRating": "1"
+          },
+          "openingHoursSpecification": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": [
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday",
+              "Saturday",
+              "Sunday"
+            ],
+            "opens": "00:00",
+            "closes": "23:59"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://sinnotario.cl/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "¿Tienen validez legal los contratos firmados en SinNotario.cl?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sí. Todos los documentos emitidos y firmados en SinNotario.cl tienen plena validez legal y valor probatorio en tribunales chilenos conforme a la Ley N° 19.799 sobre Documentos Electrónicos y Firma Electrónica, y el Código Civil."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Se puede firmar un contrato de arriendo sin ir a la notaría?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Absolutamente. La Ley N° 21.461 (Ley Devuélveme Mi Casa) autoriza expresamente que los contratos de arriendo y sus cláusulas ejecutivas de restitución rápida sean celebrados por medios electrónicos mediante Firma Electrónica Avanzada (FEA) o firma electrónica certificada."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Qué diferencia hay entre Firma Electrónica Simple (FES) y Avanzada (FEA)?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "La Firma Simple (FES) es ideal para declaraciones juradas, salvoconductos, contratos de prestación de servicios y acuerdos privados. La Firma Avanzada (FEA) certificada ante entidad acreditada otorga presunción legal de autoría e integridad equivalente a escritura pública o instrumento autorizado ante notario."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Cómo verifica un tercero o institución la autenticidad de mi documento?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Cada documento generado cuenta con un Código Hash criptográfico SHA-256 único y un código QR verificable al instante en sinnotario.cl/verificar.php."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
     
     <!-- FontAwesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

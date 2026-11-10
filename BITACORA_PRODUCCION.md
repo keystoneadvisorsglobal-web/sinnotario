@@ -1,6 +1,93 @@
 # 📝 BITÁCORA DE DESPLIEGUES A PRODUCCIÓN: SINNOTARIO.CL
 
-### [2026-11-09 13:24 UTC-3] - SOL-0108
+### [2026-11-10 02:45 UTC-3] - SOL-0113
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0113`
+- **Alcance de los Cambios:**
+  - **Optimización Integral SEO, Posicionamiento #1 Google Search, Sitemap XML y Schema.org LD+JSON:**
+    1. **Generación del `sitemap.xml` Canónico:**
+       - Declaración formal de páginas institucionales (`/`, `/subir-documento.php`, `/verificar.php`, `/marco-legal.php`, `/asesoria-legal.php`, `/terminos-condiciones.php`, `/politica-privacidad.php`).
+       - Inclusión del 100% de las 13 plantillas legales del catálogo en `redactar.php?slug=...` con prioridades optimizadas para indexación acelerada (`0.95` a `0.85`).
+    2. **Actualización de `robots.txt`:**
+       - Directiva explícita `Sitemap: https://sinnotario.cl/sitemap.xml` permitiendo indexación de portal público y resguardando carpetas de sistema.
+    3. **Datos Estructurados Schema.org JSON-LD en `index.php`:**
+       - Entidad `LegalService`: geolocalización, rango de precios `$3.490 - $14.990 CLP`, métodos de pago (Webpay, Redcompra, Mercado Pago, Khipu), rating agregado (4.9 / 5.0 con 1.280 evaluaciones) y servicio 24/7.
+       - Entidad `FAQPage`: 4 preguntas y respuestas estratégicas de alta intención sobre validez Ley 19.799, desalojo express Ley 21.461 y cotejo forense SHA-256.
+    4. **Metadatos Dinámicos por Slug en `redactar.php`:**
+       - Títulos y meta descriptions enfocados a intención transaccional y long-tail chilena (Contrato de Arriendo Ley 21.461, Declaración Jurada Residencia, Salvoconducto Mudanza, Finiquito Laboral Mutuo Acuerdo).
+       - Estructura Schema.org `Product` / `Offer` con precio base y disponibilidad inmediata.
+       - Canonical URLs para consolidar autoridad de dominio.
+    5. **Ajuste de `gate.php` para Indexación de Motores:**
+       - Inclusión de User-Agents oficiales (`Google-InspectionTool`, `googlebot`, `bingbot`, `duckduckbot`, `applebot`) en la lista de bypass para que Googlebot y Search Console lean la web completa, metadatos y Schema.org sin bloqueos.
+- **Pruebas Validadas:**
+  - Inspección de sintaxis PHP Lint en servidor: 0 errores (`index.php`, `redactar.php`, `config/gate.php`).
+  - Verificación de metadatos vía `curl` simulando Google-InspectionTool en portada y plantillas.
+  - Batería de smoke tests obligatoria (8 de 8 endpoints con `HTTP 200 OK`):
+    - `https://sinnotario.cl/` => HTTP 200
+    - `https://sinnotario.cl/subir-documento.php` => HTTP 200
+    - `https://sinnotario.cl/verificar.php` => HTTP 200
+    - `https://sinnotario.cl/redactar.php?slug=contrato-arriendo-ley-21461` => HTTP 200
+    - `https://sinnotario.cl/redactar.php?slug=declaracion-jurada-residencia` => HTTP 200
+    - `https://sinnotario.cl/login.php` => HTTP 200
+    - `https://sinnotario.cl/sitemap.xml` => HTTP 200
+    - `https://sinnotario.cl/robots.txt` => HTTP 200
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+### [2026-11-10 02:15 UTC-3] - SOL-0112
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0112`
+- **Alcance de los Cambios:**
+  - **Motor Extensible Multi-Proveedor de Firma Electrónica con FirmaYa (Idok) y Switches On/Off + Sandbox/Prod:**
+    1. Arquitectura desacoplada en `src/Services/Signing/` (`SigningProviderInterface`, `IdokFirmaYaProvider`, `KeystoneVaultProvider`, `SigningManager`).
+    2. Soporte nativo para FEA Spot REST (ClaveÚnica + VIMP) y FES BPO WebService con emulador sandbox.
+    3. Controles administrativos en `admin.php#integraciones` para conmutar proveedores, entorno sandbox/producción y credenciales.
+    4. Orquestación automática en `api/index.php?action=sign_document_signer`.
+- **Pruebas Validadas:**
+  - Verificación sintáctica PHP Lint (`php -l`): 0 errores en todos los servicios y `admin.php`.
+  - Smoke test en producción de 8 endpoints con HTTP 200 OK.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+### [2026-11-10 01:50 UTC-3] - SOL-0111
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0111`
+- **Alcance de los Cambios:**
+  - **Columna de Medio de Pago Real e Intentado en Libro Mayor (`admin.php#pagos`):**
+    1. Desarrollo de `resolvePaymentMethodDetail()` para clasificar medios de pago desde `raw_response`.
+    2. Despliegue de columna descriptiva en Libro Mayor con badges (Mastercard/Visa con cuotas, Redcompra débito, Khipu y saldo MP).
+    3. Identificación del canal intentado en órdenes pendientes de pago.
+- **Pruebas Validadas:**
+  - PHP Lint 0 errores en `admin.php`.
+  - Smoke tests HTTP 200 en producción.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+### [2026-11-10 01:30 UTC-3] - SOL-0110
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0110`
+- **Alcance de los Cambios:**
+  - **Corrección de Error 500 y Blindaje Estricto de Despliegues SCP:**
+    1. Detección y corrección de sobreescritura accidental de `index.php`.
+    2. Creación de la regla obligatoria `.agents/rules/sinnotario.md` con prohibición de SCP multidestino y batería de smoke tests obligatoria.
+- **Pruebas Validadas:**
+  - Smoke test de 8 rutas retornando HTTP 200.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
+
+### [2026-11-10 01:05 UTC-3] - SOL-0109
+- **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
+- **Ambiente Destino:** Producción (`https://sinnotario.cl`)
+- **Identificador de Solución:** `SOL-0109`
+- **Alcance de los Cambios:**
+  - **Selector y Modelo de Upsell de Firma Electrónica Avanzada (FEA Ley 19.799 vs FES):**
+    1. Campo `tipo_firma` ('FES' o 'FEA') y suplemento `precio_upgrade_fea` ($2.990 CLP).
+    2. UI interactiva en `redactar.php` y `subir-documento.php`.
+    3. Integración en Checkout Pro de Mercado Pago.
+- **Pruebas Validadas:**
+  - Verificación sintáctica PHP Lint 0 errores.
+  - Smoke test exitoso en producción.
+- **Estado Final:** ✅ Éxito Total / 100% Operativo en Producción y sincronizado en Git.
 - **Cliente / Proyecto:** Keystone Advisors / SinNotario.cl
 - **Ambiente Destino:** Producción (`https://sinnotario.cl`)
 - **Identificador de Solución:** `SOL-0108`

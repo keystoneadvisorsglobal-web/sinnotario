@@ -53,8 +53,8 @@ if (!empty($_SESSION['sinnotario_preview_auth'])) {
     return;
 }
 
-// Permitir a crawlers de previsualización (WhatsApp, Facebook, Twitter, Telegram, LinkedIn, Slack)
-// obtener las etiquetas OpenGraph y el título oficial sin ser bloqueados por la pantalla de mantención
+// Permitir a crawlers de previsualización y motores de búsqueda (Google, Bing, WhatsApp, etc.)
+// indexar metadatos OpenGraph, Schema.org y catálogo oficial
 $ua = strtolower($_SERVER['HTTP_USER_AGENT'] ?? '');
 if (
     strpos($ua, 'whatsapp') !== false ||
@@ -63,7 +63,13 @@ if (
     strpos($ua, 'twitterbot') !== false ||
     strpos($ua, 'telegrambot') !== false ||
     strpos($ua, 'linkedinbot') !== false ||
-    strpos($ua, 'slackbot') !== false
+    strpos($ua, 'slackbot') !== false ||
+    strpos($ua, 'google-inspectiontool') !== false ||
+    strpos($ua, 'googlebot') !== false ||
+    strpos($ua, 'bingbot') !== false ||
+    strpos($ua, 'applebot') !== false ||
+    strpos($ua, 'duckduckbot') !== false ||
+    strpos($ua, 'yandexbot') !== false
 ) {
     return;
 }
