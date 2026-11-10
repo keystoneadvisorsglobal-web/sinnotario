@@ -398,12 +398,23 @@ class MercadoPagoService {
             }
         }
 
+        // Determinar si el documento tiene upgrade a FEA (Firma Avanzada Spot)
+        $pdo = Database::getInstance();
+        $stmtDocType = $pdo->prepare("SELECT tipo_firma FROM documents WHERE id = ?");
+        $stmtDocType->execute([$docId]);
+        $tipoFirmaDoc = $stmtDocType->fetchColumn() ?: 'FES';
+        $esFea = ($tipoFirmaDoc === 'FEA');
+
+        $descFirma = $esFea 
+            ? "Firma Electrónica Avanzada (FEA Ley 19.799 con ClaveÚnica Idok) - Cód: {$verifCode}"
+            : "Certificación digital de documento privado Ley N° 19.799 (Cód: {$verifCode})";
+
         $preferenceData = [
             'items' => [
                 [
                     'id' => "DOC-{$docId}",
-                    'title' => "SinNotario - {$docTitle}",
-                    'description' => "Certificación digital de documento privado Ley N° 19.799 (Cód: {$verifCode})",
+                    'title' => "SinNotario - {$docTitle}" . ($esFea ? ' [Firma Avanzada FEA]' : ''),
+                    'description' => $descFirma,
                     'category_id' => 'services',
                     'quantity' => 1,
                     'currency_id' => 'CLP',
@@ -443,6 +454,7 @@ class MercadoPagoService {
                 'payment_type' => 'DOCUMENT_RETAIL',
                 'document_id' => $docId,
                 'codigo_verificacion' => $verifCode,
+                'tipo_firma' => $tipoFirmaDoc,
                 'monto_total' => $montoTotal,
                 'user_id' => $userId
             ]

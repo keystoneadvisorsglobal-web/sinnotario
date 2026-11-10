@@ -333,6 +333,7 @@ class Database {
                 contenido_html TEXT,
                 pdf_r2_key VARCHAR(255),
                 pdf_sha256 VARCHAR(64),
+                tipo_firma VARCHAR(10) DEFAULT 'FES', -- FES (Firma Simple) o FEA (Firma Avanzada Spot)
                 monto_pagado INTEGER DEFAULT 0,
                 estado_pago VARCHAR(20) DEFAULT 'PENDIENTE', -- PENDIENTE, PAGADO, FALLIDO
                 token_pago VARCHAR(100),
@@ -407,6 +408,23 @@ class Database {
 
         foreach ($queries as $sql) {
             $this->pdo->exec($sql);
+        }
+
+        // Migración idempotente: columna tipo_firma en documents si no existe
+        try {
+            $colsDoc = $this->pdo->query("PRAGMA table_info(documents)")->fetchAll(PDO::FETCH_ASSOC);
+            $hasTipoFirma = false;
+            foreach ($colsDoc as $cd) {
+                if (($cd['name'] ?? '') === 'tipo_firma') {
+                    $hasTipoFirma = true;
+                    break;
+                }
+            }
+            if (!$hasTipoFirma) {
+                $this->pdo->exec("ALTER TABLE documents ADD COLUMN tipo_firma VARCHAR(10) DEFAULT 'FES';");
+            }
+        } catch (Exception $eCol) {
+            // Ignorar si ya existe
         }
 
         // Sembrar catálogo de plantillas inicial

@@ -251,7 +251,7 @@ try {
                 jsonResponse(false, null, 'Plantilla inexistente', 404);
             }
 
-            // Obtener configuración de precio extra por firmante
+            // Obtener configuración de precio extra por firmante y upgrade FEA
             $precioExtraPorFirmante = 2990;
             $stmtExtra = $pdo->prepare("SELECT value FROM system_settings WHERE key = 'precio_firma_extra'");
             $stmtExtra->execute();
@@ -260,20 +260,35 @@ try {
                 $precioExtraPorFirmante = (int)$valExtra;
             }
 
+            $precioUpgradeFea = 2990;
+            $stmtFea = $pdo->prepare("SELECT value FROM system_settings WHERE key = 'precio_upgrade_fea'");
+            $stmtFea->execute();
+            $valFea = $stmtFea->fetchColumn();
+            if ($valFea !== false && is_numeric($valFea)) {
+                $precioUpgradeFea = (int)$valFea;
+            }
+
+            $tipoFirma = strtoupper(trim($payload['tipo_firma'] ?? 'FES'));
+            if (!in_array($tipoFirma, ['FES', 'FEA'])) {
+                $tipoFirma = 'FES';
+            }
+
             // Cálculo dinámico de precio: Precio base incluye 1 firmante. Cada firmante adicional suma $precioExtraPorFirmante
             $numFirmantes = count($payload['signers'] ?? []);
             $firmantesExtra = max(0, $numFirmantes - 1);
-            $montoTotal = (int)$tpl['precio_base'] + ($firmantesExtra * $precioExtraPorFirmante);
+            $suplementoFea = ($tipoFirma === 'FEA') ? $precioUpgradeFea : 0;
+            $montoTotal = (int)$tpl['precio_base'] + ($firmantesExtra * $precioExtraPorFirmante) + $suplementoFea;
 
             // Generar código único de verificación: SN-XXXX-XXXX
             $verifCode = 'SN-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 4)) . '-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 4, 4));
 
-            $stmtInsert = $pdo->prepare("INSERT INTO documents (codigo_verificacion, template_id, titulo, estado, datos_formulario, monto_pagado, estado_pago) VALUES (?, ?, ?, 'BORRADOR', ?, ?, 'PENDIENTE')");
+            $stmtInsert = $pdo->prepare("INSERT INTO documents (codigo_verificacion, template_id, titulo, estado, datos_formulario, tipo_firma, monto_pagado, estado_pago) VALUES (?, ?, ?, 'BORRADOR', ?, ?, ?, 'PENDIENTE')");
             $stmtInsert->execute([
                 $verifCode,
                 $tpl['id'],
                 $tpl['nombre'],
                 json_encode($payload['form_data'] ?? [], JSON_UNESCAPED_UNICODE),
+                $tipoFirma,
                 $montoTotal
             ]);
 
@@ -317,6 +332,9 @@ try {
                 'codigo_verificacion' => $verifCode,
                 'precio_base' => (int)$tpl['precio_base'],
                 'precio_extra_por_firmante' => $precioExtraPorFirmante,
+                'precio_upgrade_fea' => $precioUpgradeFea,
+                'tipo_firma' => $tipoFirma,
+                'suplemento_fea' => $suplementoFea,
                 'firmantes_count' => $numFirmantes,
                 'precio_total' => $montoTotal,
                 'precio' => $montoTotal,
@@ -391,10 +409,24 @@ try {
                 $precioExtraPorFirmante = (int)$valExtra;
             }
 
+            $precioUpgradeFea = 2990;
+            $stmtFea = $pdo->prepare("SELECT value FROM system_settings WHERE key = 'precio_upgrade_fea'");
+            $stmtFea->execute();
+            $valFea = $stmtFea->fetchColumn();
+            if ($valFea !== false && is_numeric($valFea)) {
+                $precioUpgradeFea = (int)$valFea;
+            }
+
+            $tipoFirma = strtoupper(trim($payload['tipo_firma'] ?? 'FES'));
+            if (!in_array($tipoFirma, ['FES', 'FEA'])) {
+                $tipoFirma = 'FES';
+            }
+
             $rawSigners = (!empty($payload['signers']) && is_array($payload['signers'])) ? $payload['signers'] : [];
             $numSigners = count($rawSigners);
             $extraSigners = max(0, $numSigners - 1);
-            $montoTotal = $precioBaseUpload + ($extraSigners * $precioExtraPorFirmante);
+            $suplementoFea = ($tipoFirma === 'FEA') ? $precioUpgradeFea : 0;
+            $montoTotal = $precioBaseUpload + ($extraSigners * $precioExtraPorFirmante) + $suplementoFea;
 
             // Generar código único de verificación: SN-XXXX-XXXX
             $verifCode = 'SN-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 4)) . '-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 4, 4));
@@ -405,7 +437,7 @@ try {
             $r2Upload = $r2Adapter->uploadDocument($r2Key, $binaryPdf, 'application/pdf');
 
             // Determinar si hay template o asociar a NULL
-            $stmtInsert = $pdo->prepare("INSERT INTO documents (codigo_verificacion, template_id, titulo, estado, pdf_r2_key, pdf_sha256, datos_formulario, monto_pagado, estado_pago) VALUES (?, NULL, ?, 'PENDIENTE_FIRMAS', ?, ?, ?, ?, 'PENDIENTE')");
+            $stmtInsert = $pdo->prepare("INSERT INTO documents (codigo_verificacion, template_id, titulo, estado, pdf_r2_key, pdf_sha256, datos_formulario, tipo_firma, monto_pagado, estado_pago) VALUES (?, NULL, ?, 'PENDIENTE_FIRMAS', ?, ?, ?, ?, ?, 'PENDIENTE')");
             $formData = [
                 'tipo_origen' => 'DOCUMENTO_PROPIO_PDF',
                 'nombre_archivo_original' => $fileName,
@@ -413,6 +445,9 @@ try {
                 'r2_subida_exitosa' => ($r2Upload !== false),
                 'precio_base' => $precioBaseUpload,
                 'precio_extra_por_firmante' => $precioExtraPorFirmante,
+                'precio_upgrade_fea' => $precioUpgradeFea,
+                'tipo_firma' => $tipoFirma,
+                'suplemento_fea' => $suplementoFea,
                 'firmantes_total' => $numSigners
             ];
             $stmtInsert->execute([
@@ -421,6 +456,7 @@ try {
                 $r2Key,
                 $sha256,
                 json_encode($formData, JSON_UNESCAPED_UNICODE),
+                $tipoFirma,
                 $montoTotal
             ]);
 
@@ -483,6 +519,9 @@ try {
                 'r2_key' => $r2Key,
                 'precio_base' => $precioBaseUpload,
                 'precio_extra_por_firmante' => $precioExtraPorFirmante,
+                'precio_upgrade_fea' => $precioUpgradeFea,
+                'tipo_firma' => $tipoFirma,
+                'suplemento_fea' => $suplementoFea,
                 'signers_count' => count($insertedSigners),
                 'precio' => $montoTotal,
                 'precio_total' => $montoTotal,
@@ -502,6 +541,7 @@ try {
             jsonResponse(true, [
                 'precio_firma_extra' => (int)($settings['precio_firma_extra'] ?? 2990),
                 'precio_base_subir_pdf' => (int)($settings['precio_base_subir_pdf'] ?? 7990),
+                'precio_upgrade_fea' => (int)($settings['precio_upgrade_fea'] ?? 2990),
                 'all' => $settings
             ]);
             break;
@@ -523,6 +563,12 @@ try {
             if (isset($payload['precio_base_subir_pdf'])) {
                 $val = (int)$payload['precio_base_subir_pdf'];
                 $stmt = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('precio_base_subir_pdf', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+                $stmt->execute([$val]);
+            }
+
+            if (isset($payload['precio_upgrade_fea'])) {
+                $val = (int)$payload['precio_upgrade_fea'];
+                $stmt = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('precio_upgrade_fea', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
                 $stmt->execute([$val]);
             }
 

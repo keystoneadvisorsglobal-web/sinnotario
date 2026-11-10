@@ -120,12 +120,16 @@ $msgPricingSuccess = '';
 if (isset($_POST['save_pricing_settings'])) {
     $precioFirmaExtra = (int)($_POST['precio_firma_extra'] ?? 2990);
     $precioBasePdf = (int)($_POST['precio_base_subir_pdf'] ?? 7990);
+    $precioUpgradeFea = (int)($_POST['precio_upgrade_fea'] ?? 2990);
 
     $stmtUpdExtra = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('precio_firma_extra', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
     $stmtUpdExtra->execute([$precioFirmaExtra]);
 
     $stmtUpdBase = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('precio_base_subir_pdf', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
     $stmtUpdBase->execute([$precioBasePdf]);
+
+    $stmtUpdFea = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES ('precio_upgrade_fea', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+    $stmtUpdFea->execute([$precioUpgradeFea]);
 
     if (!empty($_POST['tpl_prices']) && is_array($_POST['tpl_prices'])) {
         $stmtUpdTpl = $pdo->prepare("UPDATE templates SET precio_base = ? WHERE id = ?");
@@ -297,6 +301,7 @@ if ($stmtSets) {
 }
 $currentPrecioExtra = (int)($sysSettings['precio_firma_extra'] ?? 2990);
 $currentPrecioBasePdf = (int)($sysSettings['precio_base_subir_pdf'] ?? 7990);
+$currentPrecioUpgradeFea = (int)($sysSettings['precio_upgrade_fea'] ?? 2990);
 
 // Recargar plantillas
 $stmtTemplates = $pdo->query("SELECT * FROM templates ORDER BY id ASC");
@@ -1272,6 +1277,16 @@ $allTemplates = $stmtTemplates->fetchAll();
                                     Tarifa base para documentos redactados por el cliente (incluye 1 firmante + bóveda R2).
                                 </p>
                                 <input type="number" name="precio_base_subir_pdf" class="form-control" style="font-weight:800; font-size:1.1rem; color:#065F46;" value="<?= $currentPrecioBasePdf ?>" min="0" step="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem;">
+                                    <i class="fas fa-stamp" style="color:#D97706;"></i> Suplemento Upgrade FEA Spot (CLP) *
+                                </label>
+                                <p style="font-size:0.78rem; color:#64748B; margin:0.15rem 0 0.4rem;">
+                                    Monto adicional si el cliente elige Firma Electrónica Avanzada (ClaveÚnica Idok).
+                                </p>
+                                <input type="number" name="precio_upgrade_fea" class="form-control" style="font-weight:800; font-size:1.1rem; color:#B45309;" value="<?= $currentPrecioUpgradeFea ?>" min="0" step="1" required>
                             </div>
                         </div>
                     </div>

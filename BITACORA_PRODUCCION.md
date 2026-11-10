@@ -1712,3 +1712,18 @@
   4) **Sincronización por Retorno:** `verificar.php` ahora captura `collection_id` (`188625710458`) y valida el pago en caliente contra Mercado Pago si el webhook experimenta demoras.
   5) **Resultado Operativo:** Orden `#29` (`RETAIL_DOC_16_1794225063`) acreditada en SQLite a `PAGADO` con `mp_payment_id = 188625710458` y Documento `#16` (`SN-73A9-1635`) pasado a `PENDIENTE_FIRMA` y `PAGADO`.
 - **Estado Final:** ✅ Éxito Total / Circuito 100% Funcional y Blindado en Producción.
+
+### Registro de Despliegue: SOL-0109
+- **Fecha y Hora:** 2026-11-10 02:05:00 CLT
+- **Cliente / Proyecto:** SinNotario.cl (Keystone Advisors SpA)
+- **Ambiente Destino:** Producción (`156.67.72.209:65002`)
+- **Identificador de la Solución:** `SOL-0109`
+- **Párrafo Resumen y Resultado de la Ejecución:**
+  Puesta en marcha del modelo de monetización y upgrade legal de Firma Electrónica Avanzada (FEA Ley 19.799 vs FES):
+  1) **Estructura y Esquema:** Creación de columna `tipo_firma` (`VARCHAR(10) DEFAULT 'FES'`) en la tabla `documents` y nuevo parámetro en `system_settings` (`precio_upgrade_fea = 2990`).
+  2) **Administración Centralizada:** Ajuste en `admin.php#tarifas` permitiendo editar en caliente el suplemento cobrado por FEA Spot con guardado seguro en backend.
+  3) **Selector Interactivo en Wizards:** Incorporación en `redactar.php` (Paso 4) y `subir-documento.php` (Paso 3) de un selector tipo tarjeta comparando los atributos probatorios de FES vs FEA, con preselección inteligente para contratos bajo Ley N° 21.461 ('Devuélveme Mi Casa').
+  4) **Recálculo y Pasarela:** Actualización de `create_draft` y `upload_custom_document` para totalizar el suplemento y derivarlo a Mercado Pago (`MercadoPagoService.php`), reflejando 'Firma Avanzada FEA' en el Checkout Pro.
+  5) **Portal de Firma:** Despliegue en `firmar.php` de insignia dorada destacando el mérito de fe pública para documentos emitidos con FEA.
+  6) **Pruebas en Vivo:** Emisión exitosa de borrador #18 (`SN-BCBB-0764`) con upgrade FEA ($6.480 CLP) y orden #33 generada en Mercado Pago con init_point oficial. Verificación PHP Lint 0 errores y HTTP 200 OK en producción.
+- **Estado Final:** ✅ Éxito Total / Desplegado y 100% Operativo en Producción.

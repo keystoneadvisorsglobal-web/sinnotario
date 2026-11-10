@@ -37,6 +37,7 @@ foreach ($settingsRows as $sr) {
     $sysSettings[$sr['key']] = $sr['value'];
 }
 $precioFirmaExtraRedactar = (int)($sysSettings['precio_firma_extra'] ?? 2990);
+$precioUpgradeFea = (int)($sysSettings['precio_upgrade_fea'] ?? 2990);
 $mpRetailActive = ($sysSettings['mp_enabled'] ?? '1') === '1';
 $khipuRetailActive = ($sysSettings['khipu_enabled'] ?? '1') === '1';
 $defaultRetailGateway = $mpRetailActive ? 'MERCADO_PAGO' : ($khipuRetailActive ? 'KHIPU' : 'NONE');
@@ -612,6 +613,62 @@ $isWizardSandbox = ($sysSettings['wizard_sandbox_mode'] ?? '0') === '1';
                         Al confirmar, se emitirá el borrador protegido con sellado criptográfico y código único QR.
                     </p>
 
+                    <!-- Selector de Nivel de Certificación Legal (FES vs FEA) -->
+                    <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:12px; padding:1.25rem; margin-bottom:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                        <label style="display:block; font-size:0.92rem; font-weight:800; color:#0F2A4A; margin-bottom:0.25rem;">
+                            <i class="fas fa-stamp" style="color:var(--accent);"></i> Selecciona el Nivel de Certificación Legal:
+                        </label>
+                        <p style="font-size:0.8rem; color:#64748B; margin-bottom:1rem;">
+                            Elige la modalidad probatoria según el destino de tu instrumento privado (Ley N° 19.799).
+                        </p>
+
+                        <div style="display:grid; grid-template-columns:1fr; gap:0.85rem;">
+                            <!-- Opción 1: FES -->
+                            <label id="lblFirmaFES" style="border:2px solid #059669; background:#F0FDF4; border-radius:10px; padding:1rem; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.2s;">
+                                <input type="radio" name="tipo_firma_choice" value="FES" checked onchange="onSignatureTypeChanged()" style="margin-top:3px; accent-color:#059669; width:18px; height:18px;">
+                                <div style="flex:1;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                                        <span style="font-weight:800; font-size:0.92rem; color:#065F46;">
+                                            Firma Electrónica Simple (FES Certificada)
+                                        </span>
+                                        <span style="background:#DCFCE7; color:#166534; font-size:0.75rem; font-weight:800; padding:3px 8px; border-radius:6px;">
+                                            INCLUIDA
+                                        </span>
+                                    </div>
+                                    <p style="font-size:0.78rem; color:#475569; margin:0 0 0.35rem; line-height:1.35;">
+                                        • Plena validez legal y valor probatorio entre las partes privadas (Art. 1545 C.C.).<br>
+                                        • Sellado criptográfico SHA-256 con Bóveda Cloudflare R2 y trazabilidad de IP y dispositivo.<br>
+                                        • <strong>Ideal para:</strong> Acuerdos comerciales, declaraciones juradas simples, contratos de trabajo y prestaciones.
+                                    </p>
+                                </div>
+                            </label>
+
+                            <!-- Opción 2: FEA Upgrade -->
+                            <label id="lblFirmaFEA" style="border:2px solid #CBD5E1; background:#FFFFFF; border-radius:10px; padding:1rem; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.2s;">
+                                <input type="radio" name="tipo_firma_choice" value="FEA" onchange="onSignatureTypeChanged()" style="margin-top:3px; accent-color:#D97706; width:18px; height:18px;">
+                                <div style="flex:1;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                                        <span style="font-weight:800; font-size:0.92rem; color:#92400E; display:flex; align-items:center; gap:6px;">
+                                            <i class="fas fa-award" style="color:#D97706;"></i> Firma Electrónica Avanzada (FEA Spot Idok)
+                                        </span>
+                                        <span style="background:#FEF3C7; color:#B45309; font-size:0.75rem; font-weight:800; padding:3px 8px; border-radius:6px;" id="badgeFeaPrice">
+                                            + $<?= number_format($precioUpgradeFea, 0, ',', '.') ?> CLP
+                                        </span>
+                                    </div>
+                                    <div style="display:inline-block; background:#FEF3C7; color:#92400E; border:1px solid #FDE68A; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:700; margin-bottom:0.4rem;">
+                                        🛡️ RECOMENDADA PARA CONTRATOS DE ARRIENDO (Ley N° 21.461 Devuélveme Mi Casa)
+                                    </div>
+                                    <p style="font-size:0.78rem; color:#475569; margin:0; line-height:1.35;">
+                                        • <strong>Equivalencia plena a Notario Público:</strong> Inversión de la carga probatoria por ley.<br>
+                                        • Certificado oficial acreditado ante el <strong>Ministerio de Economía</strong> emitido por Idok.<br>
+                                        • Autenticación del firmante mediante <strong>ClaveÚnica del Estado de Chile</strong> y PIN de seguridad.<br>
+                                        • Permite solicitar restitución y desalojo express directo en tribunales sin juicio sumario largo.
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:10px; padding:1.25rem; margin-bottom:1.5rem; font-size:0.88rem;">
                         <div style="display:flex; justify-content:space-between; margin-bottom:0.6rem;">
                             <span><strong>Trámite Base:</strong> <?= htmlspecialchars($tpl['nombre']) ?></span>
@@ -621,9 +678,9 @@ $isWizardSandbox = ($sysSettings['wizard_sandbox_mode'] ?? '0') === '1';
                             <span id="summaryRedactarExtraLabel">Firmantes Adicionales (0 extras)</span>
                             <strong id="summaryRedactarExtraPrice">$0 CLP</strong>
                         </div>
-                        <div style="display:flex; justify-content:space-between; margin-bottom:0.6rem; color:#64748B;">
-                            <span>Firma Electrónica Avanzada / Simple (Ley 19.799)</span>
-                            <strong style="color:#059669;">INCLUIDA</strong>
+                        <div id="summaryRedactarFeaRow" style="display:none; justify-content:space-between; margin-bottom:0.6rem; color:#D97706;">
+                            <span>Suplemento Firma Electrónica Avanzada (FEA Ley 19.799)</span>
+                            <strong id="summaryRedactarFeaPrice">+$0 CLP</strong>
                         </div>
                         <div style="display:flex; justify-content:space-between; margin-bottom:0.6rem; color:#64748B;">
                             <span>Custodia Cifrada en Bóveda Cloudflare R2</span>
@@ -744,6 +801,7 @@ $isWizardSandbox = ($sysSettings['wizard_sandbox_mode'] ?? '0') === '1';
 
         const PRECIO_BASE_REDACTAR = <?= (int)$tpl['precio_base'] ?>;
         const PRECIO_FIRMA_EXTRA_REDACTAR = <?= (int)$precioFirmaExtraRedactar ?>;
+        const PRECIO_UPGRADE_FEA_REDACTAR = <?= (int)$precioUpgradeFea ?>;
         let redactarExtraSigners = [];
 
                 // Funciones defensivas para evitar excepciones al manipular el DOM
@@ -920,14 +978,40 @@ $isWizardSandbox = ($sysSettings['wizard_sandbox_mode'] ?? '0') === '1';
             }
         }
 
+        function onSignatureTypeChanged() {
+            const isFea = document.querySelector('input[name="tipo_firma_choice"]:checked')?.value === 'FEA';
+            const lblFes = document.getElementById('lblFirmaFES');
+            const lblFea = document.getElementById('lblFirmaFEA');
+
+            if (lblFes && lblFea) {
+                if (isFea) {
+                    lblFea.style.borderColor = '#D97706';
+                    lblFea.style.background = '#FFFBEB';
+                    lblFes.style.borderColor = '#CBD5E1';
+                    lblFes.style.background = '#FFFFFF';
+                } else {
+                    lblFes.style.borderColor = '#059669';
+                    lblFes.style.background = '#F0FDF4';
+                    lblFea.style.borderColor = '#CBD5E1';
+                    lblFea.style.background = '#FFFFFF';
+                }
+            }
+
+            updateRedactarPricing();
+        }
+
         function updateRedactarPricing() {
             const extraCount = redactarExtraSigners.length;
             const extraCost = extraCount * PRECIO_FIRMA_EXTRA_REDACTAR;
-            const total = PRECIO_BASE_REDACTAR + extraCost;
+            const isFea = document.querySelector('input[name="tipo_firma_choice"]:checked')?.value === 'FEA';
+            const feaCost = isFea ? PRECIO_UPGRADE_FEA_REDACTAR : 0;
+            const total = PRECIO_BASE_REDACTAR + extraCost + feaCost;
 
             const extraRow = document.getElementById('summaryRedactarExtraSignersRow');
             const extraLbl = document.getElementById('summaryRedactarExtraLabel');
             const extraPr = document.getElementById('summaryRedactarExtraPrice');
+            const feaRow = document.getElementById('summaryRedactarFeaRow');
+            const feaPr = document.getElementById('summaryRedactarFeaPrice');
             const totalPr = document.getElementById('summaryRedactarTotalPrice');
 
             if (extraRow && extraCount > 0) {
@@ -938,6 +1022,15 @@ $isWizardSandbox = ($sysSettings['wizard_sandbox_mode'] ?? '0') === '1';
                 extraRow.style.display = 'none';
             }
 
+            if (feaRow) {
+                if (isFea) {
+                    feaRow.style.display = 'flex';
+                    if (feaPr) feaPr.innerText = `+$${feaCost.toLocaleString('es-CL')} CLP`;
+                } else {
+                    feaRow.style.display = 'none';
+                }
+            }
+
             if (totalPr) totalPr.innerText = `$${total.toLocaleString('es-CL')} CLP`;
         }
 
@@ -946,6 +1039,19 @@ $isWizardSandbox = ($sysSettings['wizard_sandbox_mode'] ?? '0') === '1';
         const isUnipersonal = ['declaracion-jurada-residencia', 'declaracion-jurada-ingresos-informales', 'salvoconducto-mudanza'].includes(CURRENT_TEMPLATE.slug);
 
         function initUniversalWizard() {
+            // Si la plantilla es de arriendo (Ley 21.461 Devuélveme Mi Casa), premarcar FEA por defecto
+            try {
+                if (CURRENT_TEMPLATE.slug === 'contrato-arriendo-ley-21461') {
+                    const rFea = document.querySelector('input[name="tipo_firma_choice"][value="FEA"]');
+                    if (rFea) {
+                        rFea.checked = true;
+                        onSignatureTypeChanged();
+                    }
+                }
+            } catch (errFea) {
+                console.warn('Advertencia en selector FEA inicial:', errFea);
+            }
+
             // Asegurar que el selector de variantes de plantilla en el Paso 1 se renderice de forma prioritaria
             try {
                 renderStep1ModalidadSelector();
@@ -4320,8 +4426,11 @@ $isWizardSandbox = ($sysSettings['wizard_sandbox_mode'] ?? '0') === '1';
                 }
             });
 
+            const chosenTipoFirma = document.querySelector('input[name="tipo_firma_choice"]:checked')?.value || 'FES';
+
             const payload = {
                 template_slug: CURRENT_TEMPLATE.slug,
+                tipo_firma: chosenTipoFirma,
                 signers: signers,
                 form_data: {
                     parte_a_nombre: document.getElementById('f_parte_a_nombre').value,

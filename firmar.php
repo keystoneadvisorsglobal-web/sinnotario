@@ -305,8 +305,19 @@ if (!empty($code)) {
             <div class="firm-card">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 1.25rem; margin-bottom: 1.5rem;">
                     <div>
-                        <div class="meta-pill">
-                            <i class="fas fa-file-contract"></i> Folio Oficial: <?= htmlspecialchars($document['codigo_verificacion']) ?>
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                            <div class="meta-pill">
+                                <i class="fas fa-file-contract"></i> Folio Oficial: <?= htmlspecialchars($document['codigo_verificacion']) ?>
+                            </div>
+                            <?php if (($document['tipo_firma'] ?? 'FES') === 'FEA'): ?>
+                                <span style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A; font-size:0.75rem; font-weight:800; padding:4px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;">
+                                    <i class="fas fa-award" style="color:#D97706;"></i> Firma Electrónica Avanzada (FEA Ley 19.799)
+                                </span>
+                            <?php else: ?>
+                                <span style="background:#DCFCE7; color:#166534; border:1px solid #BBF7D0; font-size:0.75rem; font-weight:800; padding:4px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;">
+                                    <i class="fas fa-check-circle" style="color:#16A34A;"></i> Firma Electrónica Simple (FES)
+                                </span>
+                            <?php endif; ?>
                         </div>
                         <h2 style="margin: 0; color: var(--firm-navy); font-size: 1.4rem; font-weight: 900;">
                             <?= htmlspecialchars($document['titulo'] ?: $document['template_nombre']) ?>

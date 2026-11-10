@@ -20,6 +20,7 @@ foreach ($settingsRows as $sr) {
 
 $precioFirmaPropia = (int)($settings['precio_base_subir_pdf'] ?? 7990);
 $precioFirmaExtra = (int)($settings['precio_firma_extra'] ?? 2990);
+$precioUpgradeFea = (int)($settings['precio_upgrade_fea'] ?? 2990);
 $precioFormateado = '$' . number_format($precioFirmaPropia, 0, ',', '.');
 $mpSubirActive = ($settings['mp_enabled'] ?? '1') === '1';
 $khipuSubirActive = ($settings['khipu_enabled'] ?? '1') === '1';
@@ -634,6 +635,62 @@ $isWizardSandbox = ($settings['wizard_sandbox_mode'] ?? '0') === '1';
                         </div>
                     </div>
 
+                    <!-- Selector de Nivel de Certificación Legal (FES vs FEA) -->
+                    <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:12px; padding:1.25rem; margin-bottom:1.5rem; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                        <label style="display:block; font-size:0.92rem; font-weight:800; color:#0F2A4A; margin-bottom:0.25rem;">
+                            <i class="fas fa-stamp" style="color:var(--upload-accent);"></i> Nivel de Certificación Legal de las Firmas:
+                        </label>
+                        <p style="font-size:0.8rem; color:#64748B; margin-bottom:1rem;">
+                            Elige la jerarquía probatoria para este documento bajo la Ley N° 19.799 de Firma Electrónica:
+                        </p>
+
+                        <div style="display:grid; grid-template-columns:1fr; gap:0.85rem;">
+                            <!-- Opción 1: FES -->
+                            <label id="lblSubirFES" style="border:2px solid #059669; background:#F0FDF4; border-radius:10px; padding:1rem; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.2s;">
+                                <input type="radio" name="subir_tipo_firma" value="FES" checked onchange="onSubirSignatureTypeChanged()" style="margin-top:3px; accent-color:#059669; width:18px; height:18px;">
+                                <div style="flex:1;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                                        <span style="font-weight:800; font-size:0.92rem; color:#065F46;">
+                                            Firma Electrónica Simple (FES Estándar Certificada)
+                                        </span>
+                                        <span style="background:#DCFCE7; color:#166534; font-size:0.75rem; font-weight:800; padding:3px 8px; border-radius:6px;">
+                                            INCLUIDA
+                                        </span>
+                                    </div>
+                                    <p style="font-size:0.78rem; color:#475569; margin:0; line-height:1.35;">
+                                        • Plena validez y fuerza obligatoria entre las partes privadas (Art. 1545 del Código Civil).<br>
+                                        • Sellado criptográfico SHA-256 en Bóveda Cloudflare R2 con trazabilidad de IP y dispositivo.<br>
+                                        • Recomendada para contratos privados, acuerdos comerciales, poderes simples y autorizaciones.
+                                    </p>
+                                </div>
+                            </label>
+
+                            <!-- Opción 2: FEA -->
+                            <label id="lblSubirFEA" style="border:2px solid #CBD5E1; background:#FFFFFF; border-radius:10px; padding:1rem; cursor:pointer; display:flex; gap:12px; align-items:flex-start; transition:all 0.2s;">
+                                <input type="radio" name="subir_tipo_firma" value="FEA" onchange="onSubirSignatureTypeChanged()" style="margin-top:3px; accent-color:#D97706; width:18px; height:18px;">
+                                <div style="flex:1;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                                        <span style="font-weight:800; font-size:0.92rem; color:#92400E; display:flex; align-items:center; gap:6px;">
+                                            <i class="fas fa-award" style="color:#D97706;"></i> Firma Electrónica Avanzada (FEA Spot Idok)
+                                        </span>
+                                        <span style="background:#FEF3C7; color:#B45309; font-size:0.75rem; font-weight:800; padding:3px 8px; border-radius:6px;">
+                                            + $<?= number_format($precioUpgradeFea, 0, ',', '.') ?> CLP
+                                        </span>
+                                    </div>
+                                    <div style="display:inline-block; background:#FEF3C7; color:#92400E; border:1px solid #FDE68A; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:700; margin-bottom:0.4rem;">
+                                        🛡️ PLENA FE PÚBLICA EQUIVALENTE A NOTARIO PÚBLICO (Art. 4° Ley 19.799)
+                                    </div>
+                                    <p style="font-size:0.78rem; color:#475569; margin:0; line-height:1.35;">
+                                        • <strong>Valor de instrumento público:</strong> Inversión de la carga probatoria por mandato legal.<br>
+                                        • Certificado oficial emitido por entidad acreditada ante el <strong>Ministerio de Economía</strong> (Idok).<br>
+                                        • Verificación biométrica / <strong>ClaveÚnica del Estado</strong> de cada compareciente con PIN de 2 dígitos.<br>
+                                        • Ideal para contratos de arriendo (Desalojo Express Ley 21.461) o trámites judiciales.
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:1.25rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <div style="font-size:0.8rem; font-weight:700; color:#1E40AF; text-transform:uppercase;">Tarifa Total Calculada</div>
@@ -1016,12 +1073,37 @@ $isWizardSandbox = ($settings['wizard_sandbox_mode'] ?? '0') === '1';
 
         const PRECIO_BASE_SUBIR_PDF = <?= (int)($settings['precio_base_subir_pdf'] ?? 7990) ?>;
         const PRECIO_FIRMA_EXTRA = <?= (int)($settings['precio_firma_extra'] ?? 2990) ?>;
+        const PRECIO_UPGRADE_FEA = <?= (int)$precioUpgradeFea ?>;
+
+        function onSubirSignatureTypeChanged() {
+            const isFea = document.querySelector('input[name="subir_tipo_firma"]:checked')?.value === 'FEA';
+            const lFes = document.getElementById('lblSubirFES');
+            const lFea = document.getElementById('lblSubirFEA');
+
+            if (lFes && lFea) {
+                if (isFea) {
+                    lFea.style.borderColor = '#D97706';
+                    lFea.style.background = '#FFFBEB';
+                    lFes.style.borderColor = '#CBD5E1';
+                    lFes.style.background = '#FFFFFF';
+                } else {
+                    lFes.style.borderColor = '#059669';
+                    lFes.style.background = '#F0FDF4';
+                    lFea.style.borderColor = '#CBD5E1';
+                    lFea.style.background = '#FFFFFF';
+                }
+            }
+
+            updatePricingCalculation();
+        }
 
         function updatePricingCalculation() {
             const signers = getSignersData();
             const totalSigners = Math.max(1, signers.length);
             const extraSigners = Math.max(0, totalSigners - 1);
-            const totalPrice = PRECIO_BASE_SUBIR_PDF + (extraSigners * PRECIO_FIRMA_EXTRA);
+            const isFea = document.querySelector('input[name="subir_tipo_firma"]:checked')?.value === 'FEA';
+            const feaCost = isFea ? PRECIO_UPGRADE_FEA : 0;
+            const totalPrice = PRECIO_BASE_SUBIR_PDF + (extraSigners * PRECIO_FIRMA_EXTRA) + feaCost;
             
             const formatted = '$' + totalPrice.toLocaleString('es-CL') + ' CLP';
             const priceEl = document.getElementById('summaryCalculatedPrice');
@@ -1029,11 +1111,16 @@ $isWizardSandbox = ($settings['wizard_sandbox_mode'] ?? '0') === '1';
 
             const breakdownEl = document.getElementById('summaryPricingBreakdown');
             if (breakdownEl) {
+                let parts = [`1 firmante base ($${PRECIO_BASE_SUBIR_PDF.toLocaleString('es-CL')})`];
                 if (extraSigners > 0) {
-                    breakdownEl.innerText = `1 firmante base ($${PRECIO_BASE_SUBIR_PDF.toLocaleString('es-CL')}) + ${extraSigners} firmante(s) extra ($${(extraSigners * PRECIO_FIRMA_EXTRA).toLocaleString('es-CL')})`;
-                } else {
-                    breakdownEl.innerText = `Incluye 1 firmante base ($${PRECIO_BASE_SUBIR_PDF.toLocaleString('es-CL')}) y custodia en Bóveda R2`;
+                    parts.push(`${extraSigners} firmante(s) extra ($${(extraSigners * PRECIO_FIRMA_EXTRA).toLocaleString('es-CL')})`);
                 }
+                if (isFea) {
+                    parts.push(`Firma Avanzada FEA (+$${feaCost.toLocaleString('es-CL')})`);
+                } else {
+                    parts.push(`Firma Simple FES`);
+                }
+                breakdownEl.innerText = parts.join(' + ') + ' y custodia en Bóveda R2';
             }
         }
 
@@ -1521,9 +1608,12 @@ $isWizardSandbox = ($settings['wizard_sandbox_mode'] ?? '0') === '1';
                     const base64Data = reader.result.split(',')[1];
                     const docTitle = document.getElementById('customDocTitle').value.trim() || currentUploadedFile.name;
 
+                    const chosenTipoFirma = document.querySelector('input[name="subir_tipo_firma"]:checked')?.value || 'FES';
+
                     const payload = {
                         action: 'upload_custom_document',
                         titulo: docTitle,
+                        tipo_firma: chosenTipoFirma,
                         file_name: currentUploadedFile.name,
                         pdf_base64: base64Data,
                         sha256: currentCalculatedHash,
