@@ -15,7 +15,8 @@ sitiowebold/*.zip
 .DS_Store
 Thumbs.db
 .idea/
-.vscode/
+.vscode/*
+!.vscode/keystone.code-snippets
 
 # Logs y temporales
 *.log
