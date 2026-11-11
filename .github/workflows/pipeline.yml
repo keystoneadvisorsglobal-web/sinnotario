@@ -41,3 +41,20 @@ jobs:
         run: |
           echo "📡 Verificando estado del Gateway Keystone..."
           curl -sI -H "Authorization: Bearer $KEYSTONE_TOKEN" https://gateway.keystoneadvisors.cl/mcp/v1 || true
+
+      - name: 🧠 Sincronización de Aprendizajes de Agentes IA (Active Learning)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/qa'
+        env:
+          KEYSTONE_TOKEN: ${{ secrets.KEYSTONE_DEVELOPER_TOKEN }}
+        run: |
+          echo "🔄 Verificando si hay aprendizajes en .agents/ para sincronizar al Gateway central..."
+          if git diff --name-only HEAD~1 HEAD | grep -q "^\.agents/"; then
+            echo "🚀 Sincronizando lecciones aprendidas al Keystone Gateway..."
+            curl -s -X POST https://gateway.keystoneadvisors.cl/mcp/v1 \
+              -H "Authorization: Bearer $KEYSTONE_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"sync_agent_learnings","arguments":{"agent_id":"dev-php","lesson":"Actualización de reglas desde commit QA","project_key":"SN"}}}' || true
+            echo "✅ Aprendizajes sincronizados exitosamente."
+          else
+            echo "ℹ️ No hay modificaciones en .agents/ en este commit."
+          fi
