@@ -1,0 +1,26 @@
+# 🧭 KEYSTONE ADVISORS - REGLAS DE GOBERNANZA & ESCUADRÓN IA
+# Dominio Gateway: https://gateway.keystoneadvisors.cl
+# Proyecto: SN (prj_sn_d342)
+
+### 1. REGLA ESTRICTA DE CORRELATIVOS (SOL-XXXX)
+Toda modificación de código, commit o PR debe identificarse con un correlativo secuencial `SOL-XXXX` registrado en `CONTROL_CORRELATIVOS.md`.
+
+### 2. CALIDAD DE CÓDIGO & QUALITY GATES
+- Linter obligatorio antes de finalizar: `php -l <archivo.php>`.
+- Prohibición de despliegues directos a Producción. Producción solo recibe código vía PR aprobado desde QA.
+
+### 3. ESCUADRÓN DE AGENTES DISPONIBLES EN ESTE PROYECTO
+Los siguientes especialistas están activos y sincronizados con Keystone Gateway:
+- @product-architect (.agents/product-architect/INSTRUCTIONS.md)
+- @db-migration-architect (.agents/db-migration-architect/INSTRUCTIONS.md)
+- @correlative-guardian (.agents/correlative-guardian/INSTRUCTIONS.md)
+- @dev-php (.agents/dev-php/INSTRUCTIONS.md)
+- @dev-frontend (.agents/dev-frontend/INSTRUCTIONS.md)
+- @integrations-security (.agents/integrations-security/INSTRUCTIONS.md)
+- @qa-test-data-generator (.agents/qa-test-data-generator/INSTRUCTIONS.md)
+- @qa-code-reviewer (.agents/qa-code-reviewer/INSTRUCTIONS.md)
+- @secops-guardian (.agents/secops-guardian/INSTRUCTIONS.md)
+- @qa-visual-e2e (.agents/qa-visual-e2e/INSTRUCTIONS.md)
+- @qa-smoke-tester (.agents/qa-smoke-tester/INSTRUCTIONS.md)
+- @release-manager (.agents/release-manager/INSTRUCTIONS.md)
+- @doc-tech-writer (.agents/doc-tech-writer/INSTRUCTIONS.md)

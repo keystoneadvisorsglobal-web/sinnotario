@@ -1,18 +1,38 @@
 {
   "$schema": "https://gateway.keystoneadvisors.cl/schemas/project-config.v1.json",
-  "project_key": "SinNotario",
-  "project_name": "SinNotario Web & Notaría Digital",
+  "project_key": "SN",
+  "project_name": "Sin Notario",
   "technology": "php",
   "keyhub": {
-    "project_id": "prj_ksvr_91ff",
-    "project_name": "KS VARIOS",
+    "project_id": "prj_sn_d342",
+    "project_name": "Sin Notario",
     "bug_column_name": "Bugs / Por Corregir",
     "deploy_column_name": "Listo para QA"
   },
   "governance": {
     "correlative_prefix": "SOL",
     "syntax_check_command": "php -l",
-    "min_test_coverage": 85
+    "min_test_coverage": 85,
+    "scan_master_branch": "qa",
+    "environments": [
+      {
+        "name": "DEV",
+        "branch": "develop",
+        "url": "http://localhost:8000",
+        "is_graph_source": false
+      },
+      {
+        "name": "QA",
+        "branch": "qa",
+        "url": "https://qa.sinnotario.cl",
+        "is_graph_source": true
+      },
+      {
+        "name": "PROD",
+        "branch": "main",
+        "url": "https://sinnotario.cl",
+        "is_graph_source": false
+      }
+    ]
   }
 }
-
