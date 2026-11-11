@@ -285,8 +285,12 @@ if (!empty($code)) {
             </div>
         <?php else: ?>
 
-            <!-- Banner de Pago Confirmado -->
-            <?php if ($paymentStatus === 'success' || $document['estado_pago'] === 'PAGADO'): ?>
+            <!-- Banner de Pago Confirmado (Solo para pagador en retorno directo de pasarela, no para empleados de nómina) -->
+            <?php 
+            $isB2BOrPayroll = !empty($document['origen']) && in_array(strtoupper($document['origen']), ['B2B', 'EMPRESAS', 'NOMINA', 'SIMULACION']);
+            $isDirectCheckoutReturn = ($paymentStatus === 'success' || !empty($_GET['collection_id']) || !empty($_GET['order_id']));
+            ?>
+            <?php if (!$isB2BOrPayroll && $isDirectCheckoutReturn && ($document['estado_pago'] === 'PAGADO' || $paymentStatus === 'success')): ?>
                 <div class="badge-success-banner">
                     <div class="badge-icon">
                         <i class="fas fa-check"></i>
@@ -331,6 +335,28 @@ if (!empty($code)) {
                         <div style="font-size: 0.78rem; color: #64748B; margin-top: 4px;">
                             Emitido: <?= date('d/m/Y H:i', strtotime($document['created_at'])) ?>
                         </div>
+                    </div>
+                </div>
+
+                <!-- [SOL-0224 / SN-103] Visor y Lectura Previa del Documento (Ley 19.799) -->
+                <div style="background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 44px; height: 44px; border-radius: 10px; background: var(--firm-navy); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0 0 2px; color: var(--firm-navy); font-size: 1rem; font-weight: 800;">
+                                Lectura Íntegra del Documento (Ley 19.799)
+                            </h4>
+                            <p style="margin: 0; font-size: 0.82rem; color: #64748B;">
+                                Conforme a la legislación chilena, examine las cláusulas y contenido antes de estampar su firma.
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        <button type="button" onclick="openDocumentPreviewModal()" style="background: #FFFFFF; color: var(--firm-navy); border: 1.5px solid var(--firm-navy); padding: 9px 18px; border-radius: 8px; font-weight: 800; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.background='var(--firm-navy)'; this.style.color='#FFFFFF';" onmouseout="this.style.background='#FFFFFF'; this.style.color='var(--firm-navy)';">
+                            <i class="fas fa-eye"></i> Leer / Previsualizar Documento
+                        </button>
                     </div>
                 </div>
 
@@ -393,6 +419,63 @@ if (!empty($code)) {
         <?php endif; ?>
     </div>
 
+    <!-- Modal Visor de Lectura Íntegra del Documento (SOL-0224 / SN-103) -->
+    <div id="modalDocumentPreview" style="display: none; position: fixed; inset: 0; background: rgba(15,42,74,0.65); z-index: 10000; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(5px);">
+        <div style="background: #FFFFFF; border-radius: 16px; max-width: 820px; width: 100%; height: 90vh; max-height: 850px; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden;">
+            <!-- Cabecera Visor -->
+            <div style="padding: 1.25rem 1.75rem; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; background: #F8FAFC;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(15,42,74,0.1); color: var(--firm-navy); display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; color: var(--firm-navy); font-size: 1.1rem; font-weight: 800;">
+                            <?= htmlspecialchars($document['titulo'] ?: 'Documento Legal') ?>
+                        </h3>
+                        <span style="font-size: 0.75rem; color: #64748B;">
+                            Código de Verificación: <code><?= htmlspecialchars($document['codigo_verificacion']) ?></code>
+                        </span>
+                    </div>
+                </div>
+                <button type="button" onclick="closeDocumentPreviewModal()" style="background: none; border: none; font-size: 1.5rem; color: #64748B; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+
+            <!-- Cuerpo / Texto del Documento -->
+            <div style="flex: 1; padding: 2rem; overflow-y: auto; background: #FFFFFF; font-family: 'Georgia', serif; font-size: 1.05rem; line-height: 1.8; color: #1E293B;">
+                <?php if (!empty($document['contenido_html'])): ?>
+                    <div class="legal-document-content">
+                        <?= $document['contenido_html'] ?>
+                    </div>
+                <?php else: ?>
+                    <div style="text-align: center; padding: 3rem 1rem; color: #64748B;">
+                        <i class="fas fa-file-pdf fa-3x" style="color: #94A3B8; margin-bottom: 1rem;"></i>
+                        <h4 style="margin: 0 0 0.5rem; color: #334155;">Documento Generado y Resguardado en Bóveda R2</h4>
+                        <p style="font-size: 0.9rem; max-width: 480px; margin: 0 auto 1.5rem;">
+                            El contenido legal de este trámite se encuentra certificado criptográficamente con hash SHA-256 en la bóveda inmutable de SinNotario.cl.
+                        </p>
+                        <?php if (!empty($document['pdf_r2_key'])): ?>
+                            <a href="api/index.php?action=download_document_pdf&code=<?= urlencode($document['codigo_verificacion']) ?>" target="_blank" style="background: var(--firm-navy); color: #FFFFFF; padding: 10px 20px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-download"></i> Descargar PDF Oficial
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Pie Visor con Aceptación de Lectura -->
+            <div style="padding: 1rem 1.75rem; border-top: 1px solid #E2E8F0; background: #F8FAFC; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                <div style="font-size: 0.8rem; color: #64748B; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-balance-scale" style="color: var(--firm-gold);"></i> Certificación bajo Ley N° 19.799 sobre Documentos Electrónicos
+                </div>
+                <div>
+                    <button type="button" onclick="closeDocumentPreviewModal()" style="background: var(--firm-navy); color: #FFFFFF; border: none; padding: 9px 20px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer;">
+                        Entendido / Cerrar Visor
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Confirmación y Estampa de Firma -->
     <div id="modalSign" style="display: none; position: fixed; inset: 0; background: rgba(15,42,74,0.6); z-index: 9999; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px);">
         <div style="background: #FFFFFF; border-radius: 16px; max-width: 520px; width: 100%; padding: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
@@ -424,6 +507,14 @@ if (!empty($code)) {
 
     <script>
         let currentSignerId = null;
+
+        function openDocumentPreviewModal() {
+            document.getElementById('modalDocumentPreview').style.display = 'flex';
+        }
+
+        function closeDocumentPreviewModal() {
+            document.getElementById('modalDocumentPreview').style.display = 'none';
+        }
 
         function openSignatureModal(signerId, name, rut) {
             currentSignerId = signerId;
