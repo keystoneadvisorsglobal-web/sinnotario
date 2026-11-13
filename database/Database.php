@@ -123,6 +123,31 @@ class Database {
                 }
             }
 
+            // Migrar columnas DTE y Facturación Electrónica en payment_orders (SOL-0248)
+            $orderColsStmt = $this->pdo->query("PRAGMA table_info(payment_orders);");
+            $orderCols = $orderColsStmt ? $orderColsStmt->fetchAll(PDO::FETCH_COLUMN, 1) : [];
+            $missingOrderCols = [
+                'billing_doc_type' => "ALTER TABLE payment_orders ADD COLUMN billing_doc_type VARCHAR(20) DEFAULT 'boleta';",
+                'billing_rut' => "ALTER TABLE payment_orders ADD COLUMN billing_rut VARCHAR(20);",
+                'billing_razon_social' => "ALTER TABLE payment_orders ADD COLUMN billing_razon_social VARCHAR(200);",
+                'billing_giro' => "ALTER TABLE payment_orders ADD COLUMN billing_giro VARCHAR(200);",
+                'billing_direccion' => "ALTER TABLE payment_orders ADD COLUMN billing_direccion VARCHAR(255);",
+                'billing_comuna' => "ALTER TABLE payment_orders ADD COLUMN billing_comuna VARCHAR(100);",
+                'billing_ciudad' => "ALTER TABLE payment_orders ADD COLUMN billing_ciudad VARCHAR(100);",
+                'billing_email' => "ALTER TABLE payment_orders ADD COLUMN billing_email VARCHAR(150);",
+                'dte_provider' => "ALTER TABLE payment_orders ADD COLUMN dte_provider VARCHAR(50);",
+                'dte_tipo' => "ALTER TABLE payment_orders ADD COLUMN dte_tipo INTEGER;",
+                'dte_folio' => "ALTER TABLE payment_orders ADD COLUMN dte_folio VARCHAR(50);",
+                'dte_pdf_url' => "ALTER TABLE payment_orders ADD COLUMN dte_pdf_url TEXT;",
+                'dte_status' => "ALTER TABLE payment_orders ADD COLUMN dte_status VARCHAR(30) DEFAULT 'NOT_REQUESTED';",
+                'dte_emitted_at' => "ALTER TABLE payment_orders ADD COLUMN dte_emitted_at DATETIME;"
+            ];
+            foreach ($missingOrderCols as $oCol => $oSql) {
+                if (!in_array($oCol, $orderCols)) {
+                    $this->pdo->exec($oSql);
+                }
+            }
+
             // Migrar columnas en documents
             $docColsStmt = $this->pdo->query("PRAGMA table_info(documents);");
             $docCols = $docColsStmt ? $docColsStmt->fetchAll(PDO::FETCH_COLUMN, 1) : [];

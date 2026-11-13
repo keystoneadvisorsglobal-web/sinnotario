@@ -708,6 +708,66 @@ $isWizardSandbox = ($settings['wizard_sandbox_mode'] ?? '0') === '1';
                         </div>
                     </div>
 
+                    <!-- Selector DTE: Boleta vs Factura Electrónica (SOL-0248) -->
+                    <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:10px; padding:1.25rem; margin-bottom:1.5rem;">
+                        <label style="display:block; font-size:0.88rem; font-weight:800; color:#0F2A4A; margin-bottom:0.75rem;">
+                            <i class="fas fa-file-invoice-dollar" style="color:#10B981;"></i> Tipo de Documento Tributario (DTE SII):
+                        </label>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+                            <label style="border:2px solid #10B981; background:#F0FDF4; border-radius:8px; padding:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px;" id="labelSubirDocBoleta">
+                                <input type="radio" name="subir_billing_type" value="boleta" checked style="accent-color:#10B981;" onchange="updateSubirBillingDocUI()">
+                                <div>
+                                    <div style="font-weight:700; color:#065F46; font-size:0.88rem;">Boleta Electrónica</div>
+                                    <div style="font-size:0.72rem; color:#64748B;">Consumidor final / Persona natural</div>
+                                </div>
+                            </label>
+                            <label style="border:2px solid #CBD5E1; background:#FFFFFF; border-radius:8px; padding:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px;" id="labelSubirDocFactura">
+                                <input type="radio" name="subir_billing_type" value="factura" style="accent-color:#2563EB;" onchange="updateSubirBillingDocUI()">
+                                <div>
+                                    <div style="font-weight:700; color:#1E40AF; font-size:0.88rem;">Factura Electrónica</div>
+                                    <div style="font-size:0.72rem; color:#64748B;">Empresa / Crédito fiscal IVA 19%</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Formulario Desplegable para Factura Electrónica -->
+                        <div id="wrapSubirBillingFacturaFields" style="display:none; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:1rem;">
+                            <div style="font-size:0.8rem; font-weight:700; color:#1E3A8A; margin-bottom:0.75rem;">
+                                <i class="fas fa-building"></i> Datos Tributarios de Facturación
+                            </div>
+                            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:0.75rem;">
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">RUT Empresa *</label>
+                                    <input type="text" id="subir_billing_rut" class="form-control" placeholder="76.123.456-7" style="font-size:0.85rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">Razón Social *</label>
+                                    <input type="text" id="subir_billing_razon_social" class="form-control" placeholder="Empresa SpA" style="font-size:0.85rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">Giro Comercial *</label>
+                                    <input type="text" id="subir_billing_giro" class="form-control" placeholder="Servicios Notariales" style="font-size:0.85rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">Dirección Tributaria *</label>
+                                    <input type="text" id="subir_billing_direccion" class="form-control" placeholder="Av. Andrés Bello 2457" style="font-size:0.85rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">Comuna *</label>
+                                    <input type="text" id="subir_billing_comuna" class="form-control" placeholder="Providencia" style="font-size:0.85rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">Ciudad *</label>
+                                    <input type="text" id="subir_billing_ciudad" class="form-control" placeholder="Santiago" style="font-size:0.85rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">Correo Facturación *</label>
+                                    <input type="email" id="subir_billing_email" class="form-control" placeholder="contacto@empresa.cl" style="font-size:0.85rem;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Selector de Pasarela de Pago para Documento Propio -->
                     <!-- Selector de Pasarela de Pago para Subir Documento -->
                     <?php if (!$mpSubirActive && !$khipuSubirActive): ?>
@@ -1572,6 +1632,25 @@ $isWizardSandbox = ($settings['wizard_sandbox_mode'] ?? '0') === '1';
             return signers;
         }
 
+        function updateSubirBillingDocUI() {
+            const isFactura = document.querySelector('input[name="subir_billing_type"]:checked')?.value === 'factura';
+            const wrapFactura = document.getElementById('wrapSubirBillingFacturaFields');
+            const lBol = document.getElementById('labelSubirDocBoleta');
+            const lFac = document.getElementById('labelSubirDocFactura');
+
+            if (wrapFactura) {
+                wrapFactura.style.display = isFactura ? 'block' : 'none';
+            }
+            if (lBol) {
+                lBol.style.borderColor = !isFactura ? '#10B981' : '#CBD5E1';
+                lBol.style.background = !isFactura ? '#F0FDF4' : '#FFFFFF';
+            }
+            if (lFac) {
+                lFac.style.borderColor = isFactura ? '#2563EB' : '#CBD5E1';
+                lFac.style.background = isFactura ? '#EFF6FF' : '#FFFFFF';
+            }
+        }
+
         function updateSubirGatewayUI() {
             const isMP = document.querySelector('input[name="subir_gateway"]:checked')?.value === 'MERCADO_PAGO';
             const lMP = document.getElementById('labelSubirMP');
@@ -1637,13 +1716,27 @@ $isWizardSandbox = ($settings['wizard_sandbox_mode'] ?? '0') === '1';
                         const docId = json.data.document_id;
                         const vCode = json.data.codigo_verificacion;
                         const chosenGw = document.querySelector('input[name="subir_gateway"]:checked')?.value || 'MERCADO_PAGO';
+                        const billingType = document.querySelector('input[name="subir_billing_type"]:checked')?.value || 'boleta';
+
+                        const payPayload = {
+                            document_id: docId,
+                            gateway: chosenGw,
+                            billing_doc_type: billingType,
+                            billing_rut: document.getElementById('subir_billing_rut')?.value || '',
+                            billing_razon_social: document.getElementById('subir_billing_razon_social')?.value || '',
+                            billing_giro: document.getElementById('subir_billing_giro')?.value || '',
+                            billing_direccion: document.getElementById('subir_billing_direccion')?.value || '',
+                            billing_comuna: document.getElementById('subir_billing_comuna')?.value || '',
+                            billing_ciudad: document.getElementById('subir_billing_ciudad')?.value || '',
+                            billing_email: document.getElementById('subir_billing_email')?.value || ''
+                        };
 
                         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando con pasarela segura...';
                         try {
                             const payRes = await fetch('api/index.php?action=pay_document', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ document_id: docId, gateway: chosenGw })
+                                body: JSON.stringify(payPayload)
                             });
                             const payJson = await payRes.json();
 

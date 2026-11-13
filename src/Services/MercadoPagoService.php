@@ -204,8 +204,10 @@ class MercadoPagoService {
         $stmtOrder = $pdo->prepare("
             INSERT INTO payment_orders (
                 external_reference, payment_type, company_id, user_id,
-                pack_key, monto_neto, monto_total, moneda, estado, metadata_json
-            ) VALUES (?, 'B2B_PACK', ?, ?, ?, ?, ?, 'CLP', 'PENDIENTE', ?)
+                pack_key, monto_neto, monto_total, moneda, estado, metadata_json,
+                billing_doc_type, billing_rut, billing_razon_social, billing_giro,
+                billing_direccion, billing_comuna, billing_ciudad, billing_email
+            ) VALUES (?, 'B2B_PACK', ?, ?, ?, ?, ?, 'CLP', 'PENDIENTE', ?, 'factura', ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmtOrder->execute([
             $externalReference,
@@ -214,7 +216,14 @@ class MercadoPagoService {
             $packKey,
             $packData['total'],
             $totalConIva,
-            json_encode($preferenceData['metadata'], JSON_UNESCAPED_UNICODE)
+            json_encode($preferenceData['metadata'], JSON_UNESCAPED_UNICODE),
+            $companyData['rut'] ?? null,
+            $companyData['razon_social'] ?? null,
+            $companyData['giro'] ?? 'Servicios',
+            $companyData['direccion'] ?? 'Santiago',
+            $companyData['comuna'] ?? 'Santiago',
+            $companyData['ciudad'] ?? 'Santiago',
+            $companyData['email'] ?? ($companyData['rep_legal_email'] ?? null)
         ]);
         $orderId = $pdo->lastInsertId();
 
@@ -466,8 +475,10 @@ class MercadoPagoService {
         $stmtOrder = $pdo->prepare("
             INSERT INTO payment_orders (
                 external_reference, payment_type, document_id, user_id,
-                monto_neto, monto_total, moneda, estado, metadata_json
-            ) VALUES (?, 'DOCUMENT_RETAIL', ?, ?, ?, ?, 'CLP', 'PENDIENTE', ?)
+                monto_neto, monto_total, moneda, estado, metadata_json,
+                billing_doc_type, billing_rut, billing_razon_social, billing_giro,
+                billing_direccion, billing_comuna, billing_ciudad, billing_email
+            ) VALUES (?, 'DOCUMENT_RETAIL', ?, ?, ?, ?, 'CLP', 'PENDIENTE', ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmtOrder->execute([
             $externalReference,
@@ -475,7 +486,15 @@ class MercadoPagoService {
             $validUserId,
             (int)round($montoTotal / 1.19),
             $montoTotal,
-            json_encode($preferenceData['metadata'], JSON_UNESCAPED_UNICODE)
+            json_encode($preferenceData['metadata'], JSON_UNESCAPED_UNICODE),
+            $payerData['billing_doc_type'] ?? 'boleta',
+            $payerData['billing_rut'] ?? ($payerData['rut'] ?? null),
+            $payerData['billing_razon_social'] ?? ($payerData['nombre'] ?? null),
+            $payerData['billing_giro'] ?? null,
+            $payerData['billing_direccion'] ?? null,
+            $payerData['billing_comuna'] ?? null,
+            $payerData['billing_ciudad'] ?? null,
+            $payerData['billing_email'] ?? ($payerData['email'] ?? null)
         ]);
         $orderId = $pdo->lastInsertId();
 
@@ -723,6 +742,16 @@ class MercadoPagoService {
             }
 
             $pdo->commit();
+
+            // Emisión Automática y Conmutada de Boleta o Factura Electrónica DTE ante el SII (SOL-0248)
+            try {
+                require_once __DIR__ . '/Dte/DteManager.php';
+                $dteManager = new \Services\Dte\DteManager();
+                $dteManager->emitirComprobanteOrden((int)$order['id']);
+            } catch (\Throwable $eDte) {
+                error_log("Error emitiendo DTE para orden {$order['id']}: " . $eDte->getMessage());
+            }
+
             return ['success' => true, 'order' => $order];
         } catch (Exception $e) {
             $pdo->rollBack();

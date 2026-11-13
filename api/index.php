@@ -128,13 +128,42 @@ try {
             $docTitle = $doc['titulo'] ?: 'Certificación Digital de Documento';
             $sessionUser = $_SESSION['user_id'] ?? ($doc['user_id'] ?? null);
 
+            // Captura de datos tributarios para Boleta / Factura Electrónica (SOL-0248)
+            $input = json_decode(file_get_contents('php://input'), true) ?? [];
+            $billingDocType = trim($input['billing_doc_type'] ?? ($_POST['billing_doc_type'] ?? 'boleta'));
+            $billingRut = trim($input['billing_rut'] ?? ($_POST['billing_rut'] ?? ''));
+            $billingRazonSocial = trim($input['billing_razon_social'] ?? ($_POST['billing_razon_social'] ?? ''));
+            $billingGiro = trim($input['billing_giro'] ?? ($_POST['billing_giro'] ?? ''));
+            $billingDireccion = trim($input['billing_direccion'] ?? ($_POST['billing_direccion'] ?? ''));
+            $billingComuna = trim($input['billing_comuna'] ?? ($_POST['billing_comuna'] ?? ''));
+            $billingCiudad = trim($input['billing_ciudad'] ?? ($_POST['billing_ciudad'] ?? ''));
+            $billingEmail = trim($input['billing_email'] ?? ($_POST['billing_email'] ?? ''));
+
+            if ($billingDocType === 'factura') {
+                require_once __DIR__ . '/../src/Services/Dte/DteManager.php';
+                if (empty($billingRut) || !\Services\Dte\DteManager::validarRut($billingRut)) {
+                    jsonResponse(false, null, 'El RUT ingresado para la factura electrónica es inválido.', 400);
+                }
+                if (empty($billingRazonSocial)) {
+                    jsonResponse(false, null, 'La Razón Social es obligatoria para emitir Factura Electrónica.', 400);
+                }
+            }
+
             $payerData = [
                 'nombre' => $payer['nombre_completo'],
                 'email' => $payer['email'],
                 'rut' => $payer['rut'] ?: ($payer['numero_identificacion'] ?? '11111111-1'),
                 'telefono' => $payer['telefono'] ?? '',
                 'tipo_documento' => $payer['tipo_documento'] ?? 'RUT',
-                'pais_emisor' => $payer['pais_emisor'] ?? 'Chile'
+                'pais_emisor' => $payer['pais_emisor'] ?? 'Chile',
+                'billing_doc_type' => $billingDocType,
+                'billing_rut' => $billingRut ?: ($payer['rut'] ?? ''),
+                'billing_razon_social' => $billingRazonSocial ?: $payer['nombre_completo'],
+                'billing_giro' => $billingGiro,
+                'billing_direccion' => $billingDireccion,
+                'billing_comuna' => $billingComuna,
+                'billing_ciudad' => $billingCiudad,
+                'billing_email' => $billingEmail ?: $payer['email']
             ];
 
             if ($gateway === 'KHIPU') {

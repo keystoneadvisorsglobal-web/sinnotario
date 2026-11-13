@@ -812,6 +812,66 @@ $canonicalUrl = 'https://sinnotario.cl/redactar.php?slug=' . urlencode($slug);
                     </div>
 
                     <!-- Selector de Pasarela de Pago para Persona Natural -->
+                    <!-- Selector DTE: Boleta vs Factura Electrónica (SOL-0248) -->
+                    <div style="background:#FFFFFF; border:1px solid #CBD5E1; border-radius:10px; padding:1.25rem; margin-bottom:1.5rem;">
+                        <label style="display:block; font-size:0.88rem; font-weight:800; color:#0F2A4A; margin-bottom:0.75rem;">
+                            <i class="fas fa-file-invoice-dollar" style="color:#10B981;"></i> Tipo de Documento Tributario (DTE SII):
+                        </label>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+                            <label style="border:2px solid #10B981; background:#F0FDF4; border-radius:8px; padding:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px;" id="labelDocBoleta">
+                                <input type="radio" name="retail_billing_type" value="boleta" checked style="accent-color:#10B981;" onchange="updateBillingDocUI()">
+                                <div>
+                                    <div style="font-weight:700; color:#065F46; font-size:0.88rem;">Boleta Electrónica</div>
+                                    <div style="font-size:0.72rem; color:#64748B;">Consumidor final / Persona natural</div>
+                                </div>
+                            </label>
+                            <label style="border:2px solid #CBD5E1; background:#FFFFFF; border-radius:8px; padding:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px;" id="labelDocFactura">
+                                <input type="radio" name="retail_billing_type" value="factura" style="accent-color:#2563EB;" onchange="updateBillingDocUI()">
+                                <div>
+                                    <div style="font-weight:700; color:#1E40AF; font-size:0.88rem;">Factura Electrónica</div>
+                                    <div style="font-size:0.72rem; color:#64748B;">Empresa / Crédito fiscal IVA 19%</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Formulario Desplegable para Factura Electrónica -->
+                        <div id="wrapBillingFacturaFields" style="display:none; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:1rem;">
+                            <div style="font-size:0.8rem; font-weight:700; color:#1E3A8A; margin-bottom:0.75rem;">
+                                <i class="fas fa-building"></i> Datos Tributarios de Facturación
+                            </div>
+                            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:0.75rem;">
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">RUT Empresa *</label>
+                                    <input type="text" id="billing_rut" class="form-control" placeholder="76.123.456-7" style="font-size:0.85rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">Razón Social *</label>
+                                    <input type="text" id="billing_razon_social" class="form-control" placeholder="Empresa SpA" style="font-size:0.85rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">Giro Comercial *</label>
+                                    <input type="text" id="billing_giro" class="form-control" placeholder="Servicios Tecnológicos" style="font-size:0.85rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">Dirección Tributaria *</label>
+                                    <input type="text" id="billing_direccion" class="form-control" placeholder="Av. Providencia 1234, Of. 501" style="font-size:0.85rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">Comuna *</label>
+                                    <input type="text" id="billing_comuna" class="form-control" placeholder="Providencia" style="font-size:0.85rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">Ciudad *</label>
+                                    <input type="text" id="billing_ciudad" class="form-control" placeholder="Santiago" style="font-size:0.85rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.75rem; font-weight:700; color:#334155;">Correo para Facturación *</label>
+                                    <input type="email" id="billing_email" class="form-control" placeholder="facturas@empresa.cl" style="font-size:0.85rem;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <?php if (!$mpRetailActive && !$khipuRetailActive): ?>
                         <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:1.25rem; margin-bottom:1.5rem; text-align:center;">
                             <div style="color:#B45309; font-weight:700; margin-bottom:4px;">
@@ -4458,6 +4518,25 @@ $canonicalUrl = 'https://sinnotario.cl/redactar.php?slug=' . urlencode($slug);
             window.scrollTo({ top: 80, behavior: 'smooth' });
         }
 
+        function updateBillingDocUI() {
+            const isFactura = document.querySelector('input[name="retail_billing_type"]:checked')?.value === 'factura';
+            const wrapFactura = document.getElementById('wrapBillingFacturaFields');
+            const lBol = document.getElementById('labelDocBoleta');
+            const lFac = document.getElementById('labelDocFactura');
+
+            if (wrapFactura) {
+                wrapFactura.style.display = isFactura ? 'block' : 'none';
+            }
+            if (lBol) {
+                lBol.style.borderColor = !isFactura ? '#10B981' : '#CBD5E1';
+                lBol.style.background = !isFactura ? '#F0FDF4' : '#FFFFFF';
+            }
+            if (lFac) {
+                lFac.style.borderColor = isFactura ? '#2563EB' : '#CBD5E1';
+                lFac.style.background = isFactura ? '#EFF6FF' : '#FFFFFF';
+            }
+        }
+
         function updateRetailGatewayUI() {
             const isMP = document.querySelector('input[name="retail_gateway"]:checked')?.value === 'MERCADO_PAGO';
             const lMP = document.getElementById('labelRetailMP');
@@ -4624,6 +4703,20 @@ $canonicalUrl = 'https://sinnotario.cl/redactar.php?slug=' . urlencode($slug);
                     const docId = json.data.document_id;
                     const vCode = json.data.codigo_verificacion;
                     const chosenGw = document.querySelector('input[name="retail_gateway"]:checked')?.value || 'MERCADO_PAGO';
+                    const billingType = document.querySelector('input[name="retail_billing_type"]:checked')?.value || 'boleta';
+
+                    const payPayload = {
+                        document_id: docId,
+                        gateway: chosenGw,
+                        billing_doc_type: billingType,
+                        billing_rut: document.getElementById('billing_rut')?.value || '',
+                        billing_razon_social: document.getElementById('billing_razon_social')?.value || '',
+                        billing_giro: document.getElementById('billing_giro')?.value || '',
+                        billing_direccion: document.getElementById('billing_direccion')?.value || '',
+                        billing_comuna: document.getElementById('billing_comuna')?.value || '',
+                        billing_ciudad: document.getElementById('billing_ciudad')?.value || '',
+                        billing_email: document.getElementById('billing_email')?.value || ''
+                    };
 
                     // Iniciar pago automático hacia la pasarela elegida
                     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando con pasarela segura...';
@@ -4631,7 +4724,7 @@ $canonicalUrl = 'https://sinnotario.cl/redactar.php?slug=' . urlencode($slug);
                         const payRes = await fetch('api/index.php?action=pay_document', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ document_id: docId, gateway: chosenGw })
+                            body: JSON.stringify(payPayload)
                         });
                         const payJson = await payRes.json();
 

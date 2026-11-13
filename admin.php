@@ -335,7 +335,24 @@ if (isset($_POST['save_integrations_settings'])) {
         }
     }
 
-    $msgIntegrationsSuccess = '¡Configuración de pasarelas, motor de firma, teléfono omnicanal y alertas de stock actualizada exitosamente!';
+    // Parámetros DTE y Facturación Electrónica SII (SOL-0248)
+    $dteFields = [
+        'dte_active_provider',
+        'dte_emisor_rut',
+        'dte_emisor_razon_social',
+        'dte_libredte_apikey',
+        'dte_libredte_sandbox',
+        'dte_openfactura_apikey',
+        'dte_openfactura_sandbox'
+    ];
+    $stmtDteFields = $pdo->prepare("INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP");
+    foreach ($dteFields as $df) {
+        if (isset($_POST[$df])) {
+            $stmtDteFields->execute([$df, trim($_POST[$df])]);
+        }
+    }
+
+    $msgIntegrationsSuccess = '¡Configuración de pasarelas, motor DTE, motor de firma, teléfono omnicanal y alertas de stock actualizada exitosamente!';
 }
 
 // Acción administrativa: Conciliar pago manualmente o marcar conciliado bancario
@@ -2345,6 +2362,99 @@ function resolvePaymentMethodDetail(array $ord): array {
                                             <input type="email" name="admin_alert_email" class="form-control" placeholder="contacto@keystoneadvisors.cl" value="<?= htmlspecialchars($currAlertEmail) ?>" style="font-weight:600;">
                                             <small style="font-size:0.7rem; color:#64748B;">Recibirá el informe de quiebre de stock al llegar al 30%</small>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Módulo DTE: Facturación y Boleta Electrónica SII (SOL-0248) -->
+                        <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px dashed #CBD5E1;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
+                                <div>
+                                    <label style="font-weight:700; color:#0F2A4A; display:flex; align-items:center; gap:0.4rem; font-size:1.05rem;">
+                                        <i class="fas fa-file-invoice-dollar" style="color:#10B981;"></i> Facturación y Boleta Electrónica (DTE SII)
+                                    </label>
+                                    <p style="font-size:0.78rem; color:#64748B; margin:0.15rem 0 0;">
+                                        Emisión automatizada de Boleta (DTE 39) y Factura (DTE 33) bajo la razón social <strong>Keystone Advisors SpA</strong> con conmutador en caliente entre proveedores.
+                                    </p>
+                                </div>
+                                <span style="background:#ECFDF5; color:#059669; border:1px solid #A7F3D0; font-size:0.75rem; font-weight:800; padding:4px 10px; border-radius:9999px; display:inline-flex; align-items:center; gap:5px;">
+                                    <i class="fas fa-check-circle"></i> IVA 19% Afecto
+                                </span>
+                            </div>
+
+                            <!-- Selector Switch Maestro de Proveedor DTE -->
+                            <?php 
+                                $activeDteProv = $sysSettings['dte_active_provider'] ?? 'mock';
+                            ?>
+                            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:0.85rem 1rem; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span style="font-size:0.85rem; font-weight:800; color:#0F2A4A;"><i class="fas fa-toggle-on" style="color:#10B981;"></i> Proveedor DTE Activo:</span>
+                                    <select name="dte_active_provider" class="form-control" style="display:inline-block; width:auto; font-weight:700; padding:5px 12px; font-size:0.88rem; border-color:#10B981; color:#065F46; background:#F0FDF4;">
+                                        <option value="libredte" <?= $activeDteProv === 'libredte' ? 'selected' : '' ?>>🇨🇱 LibreDTE (Open Source / Cloud)</option>
+                                        <option value="openfactura" <?= $activeDteProv === 'openfactura' ? 'selected' : '' ?>>⚡ OpenFactura (Haulmer REST API)</option>
+                                        <option value="mock" <?= $activeDteProv === 'mock' ? 'selected' : '' ?>>🧪 Modo Simulación / Mock (Sandbox Seguro)</option>
+                                    </select>
+                                </div>
+                                <div style="font-size:0.75rem; color:#64748B;">
+                                    Razón Social Emisora: <strong><?= htmlspecialchars($sysSettings['dte_emisor_razon_social'] ?? 'Keystone Advisors SpA') ?></strong> (<?= htmlspecialchars($sysSettings['dte_emisor_rut'] ?? '77.892.450-K') ?>)
+                                </div>
+                            </div>
+
+                            <!-- Parámetros Emisor Global Keystone -->
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; margin-bottom:1rem;">
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">RUT Emisor Keystone</label>
+                                    <input type="text" name="dte_emisor_rut" class="form-control" placeholder="77892450-K" value="<?= htmlspecialchars($sysSettings['dte_emisor_rut'] ?? '77892450-K') ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem; font-weight:600; color:#334155;">Razón Social Emisora</label>
+                                    <input type="text" name="dte_emisor_razon_social" class="form-control" placeholder="Keystone Advisors SpA" value="<?= htmlspecialchars($sysSettings['dte_emisor_razon_social'] ?? 'Keystone Advisors SpA') ?>">
+                                </div>
+                            </div>
+
+                            <!-- Bloque 1: Configuración LibreDTE -->
+                            <div style="border:1px solid #E2E8F0; border-radius:8px; padding:1rem; margin-bottom:1rem; background:#FFFFFF;">
+                                <div style="font-size:0.85rem; font-weight:800; color:#2563EB; margin-bottom:0.75rem; display:flex; align-items:center; justify-content:space-between;">
+                                    <span style="display:flex; align-items:center; gap:6px;">
+                                        <i class="fas fa-plug"></i> Credenciales LibreDTE (libredte.cl)
+                                    </span>
+                                    <span style="font-size:0.72rem; color:#64748B;">Doc: https://www.libredte.cl/docs/api</span>
+                                </div>
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem;">
+                                    <div class="form-group" style="grid-column:span 2;">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">API Key / Bearer Token LibreDTE</label>
+                                        <input type="password" name="dte_libredte_apikey" class="form-control" placeholder="••••••••••••••••••••" value="<?= htmlspecialchars($sysSettings['dte_libredte_apikey'] ?? '') ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Ambiente LibreDTE</label>
+                                        <select name="dte_libredte_sandbox" class="form-control">
+                                            <option value="1" <?= ($sysSettings['dte_libredte_sandbox'] ?? '1') === '1' ? 'selected' : '' ?>>Sandbox (sandbox.libredte.cl)</option>
+                                            <option value="0" <?= ($sysSettings['dte_libredte_sandbox'] ?? '') === '0' ? 'selected' : '' ?>>Producción (libredte.cl)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bloque 2: Configuración OpenFactura (Haulmer) -->
+                            <div style="border:1px solid #E2E8F0; border-radius:8px; padding:1rem; margin-bottom:1rem; background:#F8FAFC;">
+                                <div style="font-size:0.85rem; font-weight:800; color:#059669; margin-bottom:0.75rem; display:flex; align-items:center; justify-content:space-between;">
+                                    <span style="display:flex; align-items:center; gap:6px;">
+                                        <i class="fas fa-bolt"></i> Credenciales OpenFactura / Haulmer (openfactura.cl)
+                                    </span>
+                                    <span style="font-size:0.72rem; color:#64748B;">Doc: https://www.openfactura.cl/factura-electronica/api/</span>
+                                </div>
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem;">
+                                    <div class="form-group" style="grid-column:span 2;">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">API Key OpenFactura</label>
+                                        <input type="password" name="dte_openfactura_apikey" class="form-control" placeholder="••••••••••••••••••••" value="<?= htmlspecialchars($sysSettings['dte_openfactura_apikey'] ?? '') ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label style="font-size:0.8rem; font-weight:600; color:#334155;">Ambiente OpenFactura</label>
+                                        <select name="dte_openfactura_sandbox" class="form-control">
+                                            <option value="1" <?= ($sysSettings['dte_openfactura_sandbox'] ?? '1') === '1' ? 'selected' : '' ?>>Sandbox (dev-api.haulmer.com)</option>
+                                            <option value="0" <?= ($sysSettings['dte_openfactura_sandbox'] ?? '') === '0' ? 'selected' : '' ?>>Producción (api.haulmer.com)</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
