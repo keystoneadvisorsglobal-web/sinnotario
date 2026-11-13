@@ -296,11 +296,13 @@ try {
                 $pdfContent = $r2->getDocumentContent($doc['pdf_r2_key']);
             }
 
-            // Si R2 no está disponible o es local, intentar regenerar binario en memoria
+            // Si R2 no está disponible o no devolvió el archivo, regenerar binario en memoria
             if (empty($pdfContent)) {
                 require_once __DIR__ . '/../src/Services/DocumentPdfService.php';
-                // Generar en caliente si no pudo obtener de R2
-                $pdfOutput = DocumentPdfService::generateAndVaultDocument((int)$doc['id']);
+                $genRes = DocumentPdfService::generateAndVaultDocument((int)$doc['id']);
+                if (!empty($genRes['pdf_binary'])) {
+                    $pdfContent = $genRes['pdf_binary'];
+                }
             }
 
             if (!empty($pdfContent)) {

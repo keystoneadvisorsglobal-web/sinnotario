@@ -219,7 +219,8 @@ class DocumentPdfService {
             'r2_key' => $r2Key,
             'sha256' => $sha256Hash,
             'r2_uploaded' => $uploadResult['success'] ?? false,
-            'size_bytes' => strlen($pdfOutput)
+            'size_bytes' => strlen($pdfOutput),
+            'pdf_binary' => $pdfOutput
         ];
     }
 
