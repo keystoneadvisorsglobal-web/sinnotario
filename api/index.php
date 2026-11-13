@@ -262,6 +262,62 @@ try {
             ]);
             break;
 
+        // Descarga / visualización segura de PDF oficial de documento (SOL-0257 / SN-110)
+        case 'download_document_pdf':
+        case 'download_pdf':
+            $code = isset($_GET['code']) ? trim($_GET['code']) : '';
+            if (empty($code)) {
+                header('Content-Type: application/json');
+                jsonResponse(false, null, 'Código de verificación requerido', 400);
+            }
+
+            $stmt = $pdo->prepare("SELECT * FROM documents WHERE codigo_verificacion = ?");
+            $stmt->execute([$code]);
+            $doc = $stmt->fetch();
+
+            if (!$doc) {
+                header('Content-Type: application/json');
+                jsonResponse(false, null, 'Documento no encontrado', 404);
+            }
+
+            // Si aún no tiene PDF generado o r2_key vacía, intentar generarlo en caliente
+            if (empty($doc['pdf_r2_key'])) {
+                require_once __DIR__ . '/../src/Services/DocumentPdfService.php';
+                $genRes = DocumentPdfService::generateAndVaultDocument((int)$doc['id']);
+                if (!empty($genRes['r2_key'])) {
+                    $doc['pdf_r2_key'] = $genRes['r2_key'];
+                }
+            }
+
+            $pdfContent = null;
+            if (!empty($doc['pdf_r2_key'])) {
+                require_once __DIR__ . '/adapters/StorageR2Adapter.php';
+                $r2 = new StorageR2Adapter();
+                $pdfContent = $r2->getDocumentContent($doc['pdf_r2_key']);
+            }
+
+            // Si R2 no está disponible o es local, intentar regenerar binario en memoria
+            if (empty($pdfContent)) {
+                require_once __DIR__ . '/../src/Services/DocumentPdfService.php';
+                // Generar en caliente si no pudo obtener de R2
+                $pdfOutput = DocumentPdfService::generateAndVaultDocument((int)$doc['id']);
+            }
+
+            if (!empty($pdfContent)) {
+                $filename = 'Documento_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $code) . '.pdf';
+                header('Content-Type: application/pdf');
+                header('Content-Disposition: inline; filename="' . $filename . '"');
+                header('Content-Length: ' . strlen($pdfContent));
+                header('Cache-Control: private, max-age=0, must-revalidate');
+                header('Pragma: public');
+                echo $pdfContent;
+                exit;
+            } else {
+                header('Content-Type: application/json');
+                jsonResponse(false, null, 'El archivo PDF no pudo ser recuperado de la bóveda de almacenamiento.', 500);
+            }
+            break;
+
         // 4. Crear o guardar borrador de documento
         case 'create_draft':
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

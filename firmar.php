@@ -441,25 +441,25 @@ if (!empty($code)) {
             </div>
 
             <!-- Cuerpo / Texto del Documento -->
-            <div style="flex: 1; padding: 2rem; overflow-y: auto; background: #FFFFFF; font-family: 'Georgia', serif; font-size: 1.05rem; line-height: 1.8; color: #1E293B;">
+            <div style="flex: 1; padding: 1.5rem; overflow-y: auto; background: #FFFFFF;">
                 <?php if (!empty($document['contenido_html'])): ?>
-                    <div class="legal-document-content">
+                    <div class="legal-document-content" style="font-family: 'Georgia', serif; font-size: 1.05rem; line-height: 1.8; color: #1E293B; margin-bottom: 1.5rem;">
                         <?= $document['contenido_html'] ?>
                     </div>
-                <?php else: ?>
-                    <div style="text-align: center; padding: 3rem 1rem; color: #64748B;">
-                        <i class="fas fa-file-pdf fa-3x" style="color: #94A3B8; margin-bottom: 1rem;"></i>
-                        <h4 style="margin: 0 0 0.5rem; color: #334155;">Documento Generado y Resguardado en Bóveda R2</h4>
-                        <p style="font-size: 0.9rem; max-width: 480px; margin: 0 auto 1.5rem;">
-                            El contenido legal de este trámite se encuentra certificado criptográficamente con hash SHA-256 en la bóveda inmutable de SinNotario.cl.
-                        </p>
-                        <?php if (!empty($document['pdf_r2_key'])): ?>
-                            <a href="api/index.php?action=download_document_pdf&code=<?= urlencode($document['codigo_verificacion']) ?>" target="_blank" style="background: var(--firm-navy); color: #FFFFFF; padding: 10px 20px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-download"></i> Descargar PDF Oficial
-                            </a>
-                        <?php endif; ?>
-                    </div>
                 <?php endif; ?>
+
+                <!-- Visor PDF embebido para lectura íntegra oficial (SOL-0257 / SN-110) -->
+                <div style="border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; background: #F8FAFC;">
+                    <div style="background: #0F2A4A; color: #FFFFFF; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem;">
+                        <span style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-file-pdf" style="color: var(--firm-gold);"></i> Documento PDF Oficial Resguardado en Bóveda R2
+                        </span>
+                        <a href="api/index.php?action=download_document_pdf&code=<?= urlencode($document['codigo_verificacion']) ?>" target="_blank" style="color: #FFFFFF; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); padding: 4px 12px; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-external-link-alt"></i> Abrir en Pestaña Nueva
+                        </a>
+                    </div>
+                    <iframe src="api/index.php?action=download_document_pdf&code=<?= urlencode($document['codigo_verificacion']) ?>#toolbar=0" style="width: 100%; height: 600px; border: none; display: block;" title="Visor Documento PDF"></iframe>
+                </div>
             </div>
 
             <!-- Pie Visor con Aceptación de Lectura -->

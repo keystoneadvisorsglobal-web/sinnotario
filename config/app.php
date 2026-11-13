@@ -28,9 +28,22 @@ loadEnv($envFile);
 require_once __DIR__ . '/gate.php';
 require_once __DIR__ . '/settings.php';
 
+// Helper de resolución dinámica de URL base según ambiente en runtime (SOL-0257)
+if (!class_exists('AppUrl')) {
+    class AppUrl {
+        public static function getBaseUrl(): string {
+            if (!empty($_SERVER['HTTP_HOST'])) {
+                $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['SERVER_PORT'] ?? 80) == 443;
+                return ($isHttps ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'];
+            }
+            return getenv('APP_URL') ?: 'https://sinnotario.cl';
+        }
+    }
+}
+
 return [
     'app_name' => 'SinNotario.cl',
-    'app_url' => getenv('APP_URL') ?: 'https://sinnotario.cl',
+    'app_url' => AppUrl::getBaseUrl(),
     'support_whatsapp' => AppSettings::getWhatsAppPhone(),
     'support_whatsapp_display' => AppSettings::getWhatsAppPhoneDisplay(),
     'support_whatsapp_digits' => AppSettings::getWhatsAppPhone(true),

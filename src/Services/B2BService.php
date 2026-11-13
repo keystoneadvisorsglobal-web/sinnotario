@@ -438,7 +438,9 @@ class B2BService {
             // Paso 3: Despacho de notificación de firma
             $destEmail = $isSimulation ? ($batch['simulation_email'] ?: $item['colaborador_email']) : $item['colaborador_email'];
             if (!empty($destEmail) && filter_var($destEmail, FILTER_VALIDATE_EMAIL)) {
-                $baseUrl = getenv('APP_URL') ?: 'https://sinnotario.cl';
+                $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['SERVER_PORT'] ?? 80) == 443;
+                $host = $_SERVER['HTTP_HOST'] ?? '';
+                $baseUrl = !empty($host) ? (($isHttps ? 'https://' : 'http://') . $host) : (getenv('APP_URL') ?: 'https://sinnotario.cl');
                 $signUrl = rtrim($baseUrl, '/') . "/firmar.php?code={$code}&token={$tokenColab}";
                 $empresaNombre = $batch['razon_social'] ?: 'Keystone Advisors SpA';
                 
@@ -1104,7 +1106,9 @@ class B2BService {
 
             // Despacho de notificación WhatsApp si la empresa tiene WhatsApp Oficial conectado
             if (!empty($waInstance) && !empty($tel)) {
-                $baseUrl = getenv('APP_URL') ?: 'https://sinnotario.cl';
+                $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['SERVER_PORT'] ?? 80) == 443;
+                $host = $_SERVER['HTTP_HOST'] ?? '';
+                $baseUrl = !empty($host) ? (($isHttps ? 'https://' : 'http://') . $host) : (getenv('APP_URL') ?: 'https://sinnotario.cl');
                 $signUrl = rtrim($baseUrl, '/') . "/firmar.php?code={$verifCode}&token={$tokenColab}";
                 $waMsg = "Hola {$nombre}. {$company['razon_social']} ha emitido el documento corporativo oficial: *{$titulo}*.\n\n" .
                          "Conforme a la normativa laboral, puedes revisar el PDF certificado y estampar tu firma de recepción conforme aquí:\n" .
