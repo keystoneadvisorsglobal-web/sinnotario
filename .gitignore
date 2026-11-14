@@ -22,3 +22,9 @@ Thumbs.db
 *.log
 /tmp/
 /vendor/
+
+# Keystone AI Governance Suite (Local only - Repo platform is keystone-context-engine)
+.agents/
+.cursorrules
+.vscode/keystone.code-snippets
+.keystone_mcp.json
